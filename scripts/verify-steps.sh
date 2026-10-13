@@ -72,6 +72,12 @@ if ! go build -o /dev/null ./cmd/iptv-tunerr; then
   err "build failed"
 fi
 
+# --- Linux ARMv7 compile regression ---
+step "linux ARMv7 compile (vendored go-fuse splice)"
+if ! GOOS=linux GOARCH=arm GOARM=7 go build -mod=vendor -o /dev/null github.com/hanwen/go-fuse/v2/splice; then
+  err "linux ARMv7 vendored go-fuse compile failed"
+fi
+
 # --- Binary smoke ---
 step "binary smoke (scripts/ci-smoke.sh)"
 if ! bash ./scripts/ci-smoke.sh; then

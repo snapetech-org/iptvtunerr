@@ -62,3 +62,41 @@ func TestTransportWithOptionalBrotli_disabledPassesThrough(t *testing.T) {
 		t.Fatalf("body=%q", body)
 	}
 }
+
+func TestHTTPCompressorWildcardNegotiation(t *testing.T) {
+	tests := []struct {
+		name           string
+		acceptEncoding string
+		want           string
+	}{
+		{
+			name:           "wildcard applies to unlisted encoding",
+			acceptEncoding: "gzip;q=0.2, *;q=0.8",
+			want:           "br",
+		},
+		{
+			name:           "explicit refusal overrides earlier wildcard",
+			acceptEncoding: "*, br;q=0",
+			want:           "gzip",
+		},
+		{
+			name:           "wildcard applies after explicit refusal",
+			acceptEncoding: "br;q=0, *;q=0.5",
+			want:           "gzip",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			recorder := httptest.NewRecorder()
+			req := httptest.NewRequest(http.MethodGet, "/", nil)
+			req.Header.Set("Accept-Encoding", tt.acceptEncoding)
+			compressor := brotli.HTTPCompressor(recorder, req)
+			if err := compressor.Close(); err != nil {
+				t.Fatal(err)
+			}
+			if got := recorder.Header().Get("Content-Encoding"); got != tt.want {
+				t.Fatalf("Content-Encoding = %q, want %q", got, tt.want)
+			}
+		})
+	}
+}
