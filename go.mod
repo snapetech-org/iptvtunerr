@@ -3,7 +3,7 @@ module github.com/snapetech/iptvtunerr
 go 1.26.9
 
 require (
-	github.com/andybalholm/brotli v1.2.2
+	github.com/andybalholm/brotli v1.2.6
 	github.com/hanwen/go-fuse/v2 v2.12.0
 	github.com/prometheus/client_golang v1.24.1
 	golang.org/x/crypto v0.58.0
