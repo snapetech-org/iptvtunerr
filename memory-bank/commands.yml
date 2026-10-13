@@ -24,6 +24,7 @@ verify_steps:
   - council
   - test
   - build
+  - armv7_compile  # cross-compile the vendored go-fuse splice package for Linux ARMv7
   - smoke
 
 release_channel_wiring: "bash scripts/check-release-channel-wiring.sh  # required channel map, latest stable tag guard, publisher completion wait, and container alias contract"
