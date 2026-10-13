@@ -2087,14 +2087,20 @@ func TestServer_virtualChannelStreamReportsRecoveryExhaustion(t *testing.T) {
 			if f, ok := w.(http.Flusher); ok {
 				f.Flush()
 			}
-			time.Sleep(1200 * time.Millisecond)
+			select {
+			case <-r.Context().Done():
+			case <-time.After(5 * time.Second):
+			}
 		case "/fallback-stall.mp4":
 			w.Header().Set("Content-Type", "video/mp4")
 			_, _ = w.Write([]byte(fallbackLead))
 			if f, ok := w.(http.Flusher); ok {
 				f.Flush()
 			}
-			time.Sleep(1200 * time.Millisecond)
+			select {
+			case <-r.Context().Done():
+			case <-time.After(5 * time.Second):
+			}
 		default:
 			http.NotFound(w, r)
 		}
