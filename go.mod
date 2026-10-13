@@ -1,6 +1,6 @@
 module github.com/snapetech/iptvtunerr
 
-go 1.26.0
+go 1.26.9
 
 require (
 	github.com/andybalholm/brotli v1.2.2
