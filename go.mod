@@ -4,7 +4,7 @@ go 1.26.0
 
 require (
 	github.com/andybalholm/brotli v1.2.2
-	github.com/hanwen/go-fuse/v2 v2.11.0
+	github.com/hanwen/go-fuse/v2 v2.12.0
 	github.com/prometheus/client_golang v1.24.1
 	golang.org/x/crypto v0.58.0
 	golang.org/x/net v0.61.0
