@@ -12,8 +12,8 @@ updates, and container images from release tags only. A release tag must be a
 `v*` tag that points at the current `main` commit; release workflows reject tags
 that point anywhere else.
 
-Public GitHub Actions workflows use GitHub-hosted Ubuntu or Windows runners so
-their logs do not expose paths from a private self-hosted runner.
+Public GitHub Actions workflows use GitHub-hosted Ubuntu or Windows runners,
+so their logs do not depend on filesystem paths from local machines.
 
 The primary release workflow builds and uploads:
 
