@@ -121,10 +121,11 @@ PMS using `/library/sections`. This means:
   passing through unscanned.
 
 `-elevate-all` is deprecated and unsafe: every authorized user acts as the
-server owner. It now refuses to start without `-unsafe-elevate-all` (or
-`IPTV_TUNERR_PROXY_UNSAFE_ELEVATE_ALL=1`), and it never lends the owner token
-to owner-only areas (`/myplex`, `/security`, `/:/prefs`, `/accounts`,
-`/devices`, `/status/sessions`, `/servers`, `/clients`, `/updater`, ...). Those
+server owner. It still works, but logs a startup warning unless
+`-unsafe-elevate-all` (or `IPTV_TUNERR_PROXY_UNSAFE_ELEVATE_ALL=1`)
+acknowledges the risk. It never lends the owner token to owner-only areas
+(`/myplex`, `/security`, `/accounts`, `/:/prefs`, `/status/sessions`,
+`/status/history`, `/updater`, `/diagnostics`, `/butler`, `/admin`); those
 requests continue with the caller's own token. Prefer `-elevate-live-tv`.
 
 Keep the owner token out of the process list: use `-owner-token-file` (or
@@ -144,7 +145,7 @@ The owner token is elevated only after the inbound Plex token is present and
 already authorized for this server. After that check, elevation is limited to
 known Live TV surfaces:
 
-- `/livetv/dvrs/*`, `/livetv/epg/*`, `/livetv/sessions/*`, `/livetv/hubs/*`
+- `/livetv/*` (canonical paths only)
 - `/media/providers`
 - `/media/grabbers/devices`
 - `/tv.plex.providers.epg.xmltv:*`

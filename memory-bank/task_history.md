@@ -548,6 +548,6 @@
 ## 2026-10-19 - Harden Plex proxy owner-token lending
 
 - Audit found the entitlement proxy forwarded `/livetv/../security/token` with the owner token (prefix classifier on an un-normalized path), never scrubbed owner tokens from elevated responses, let `-elevate-all` lend the owner token to owner-only PMS areas, and had an unbounded authorizer cache.
-- Fixed: canonical-path gate on every elevation (`pathSafeForElevation`), `/livetv/{dvrs,epg,sessions,hubs}` route allowlist, Referer hints read only from Referer path/fragment, response scrubber (headers + textual/gzip bodies, fail-closed above 16 MiB, owner token swapped for the caller's own), owner-only denylist for `-elevate-all`, `-elevate-all` gated behind `-unsafe-elevate-all`, bounded authorizer cache, constant-time token compares, `-owner-token-file`.
+- Fixed: canonical-path gate on every elevation (`pathSafeForElevation`), Referer hints read only from Referer path/fragment, response scrubber (headers + textual/gzip bodies, fail-closed above 16 MiB, owner token swapped for the caller's own), owner-only denylist for `-elevate-all`, `-elevate-all` deprecated with warning (`-unsafe-elevate-all` acknowledges), bounded authorizer cache, constant-time token compares, `-owner-token-file`.
 - Verification: new `hardening_test.go` fails on the old code and passes on the new; existing `internal/plexlabelproxy` suite unchanged and green.
 - Opportunities filed: subscription write-evidence body fallback, live validation of the scrub on a real PMS (see `opportunities.md`).

@@ -33,8 +33,8 @@ func plexLabelProxyCommands() []commandSpec {
 	stripPrefix := cmd.String("strip-prefix", "iptvtunerr-", "Prefix to strip from DVR lineup titles when forming labels (\"\" disables)")
 	refreshSec := cmd.Int("refresh-seconds", 30, "TTL for the cached /livetv/dvrs label map")
 	spoofIdentity := cmd.Bool("spoof-identity", false, "Also rewrite root MediaContainer friendlyName for Plex Web (carries identity-cache risk; see runbook)")
-	elevateAll := cmd.Bool("elevate-all", false, "DEPRECATED, unsafe: inject owner token on every proxied request except owner-only PMS areas (watch history is shared with owner). Requires -unsafe-elevate-all")
-	unsafeElevateAll := cmd.Bool("unsafe-elevate-all", false, "Acknowledge that -elevate-all lends the owner's full library/server authority to every authorized user (env IPTV_TUNERR_PROXY_UNSAFE_ELEVATE_ALL=1)")
+	elevateAll := cmd.Bool("elevate-all", false, "DEPRECATED, unsafe: inject owner token on every proxied request except owner-only PMS areas (watch history is shared with owner)")
+	unsafeElevateAll := cmd.Bool("unsafe-elevate-all", false, "Acknowledge that -elevate-all lends the owner's authority to every authorized user and silences the startup warning (env IPTV_TUNERR_PROXY_UNSAFE_ELEVATE_ALL=1)")
 	elevateLiveTV := cmd.Bool("elevate-live-tv", false, "Use owner token only for Live TV classified paths; normal library paths pass through as the user")
 	elevateDiscoveryOnly := cmd.Bool("elevate-discovery-only", false, "With -elevate-live-tv: only elevate browse/EPG paths, not stream start")
 	userHeader := cmd.Bool("user-header", false, "With -elevate-live-tv: inject X-Plex-User header with the original client token when elevating")
@@ -55,11 +55,7 @@ func plexLabelProxyCommands() []commandSpec {
 			Run: func(_ *config.Config, args []string) {
 				_ = cmd.Parse(args)
 				if *elevateAll && !*unsafeElevateAll && strings.TrimSpace(os.Getenv("IPTV_TUNERR_PROXY_UNSAFE_ELEVATE_ALL")) != "1" {
-					log.Print("plex-label-proxy: -elevate-all is deprecated and unsafe (every authorized user acts as the server owner); prefer -elevate-live-tv, or add -unsafe-elevate-all to accept the risk")
-					os.Exit(1)
-				}
-				if *elevateAll {
-					log.Print("plex-label-proxy: WARNING -elevate-all is enabled; owner-only PMS areas (/myplex, /security, /:/prefs, ...) are still withheld")
+					log.Print("plex-label-proxy: WARNING -elevate-all is deprecated and unsafe: every authorized user acts as the server owner (owner-only areas such as /myplex and /security are still withheld). Prefer -elevate-live-tv; add -unsafe-elevate-all to acknowledge and silence this warning")
 				}
 				if strings.TrimSpace(*ownerToken) != "" {
 					log.Print("plex-label-proxy: WARNING -owner-token is visible in the process list; prefer -owner-token-file or IPTV_TUNERR_PMS_OWNER_TOKEN")

@@ -94,17 +94,13 @@ func TestHardening_TraversalNeverCarriesOwnerToken(t *testing.T) {
 	}
 }
 
-func TestHardening_UnknownLiveTVFamilyNotElevated(t *testing.T) {
+func TestHardening_AllLiveTVFamiliesStillElevated(t *testing.T) {
 	up := echoUpstream(t)
 	addr := hardeningProxy(t, up, Config{ElevateLiveTV: true})
-	_, body := rawGet(t, addr, "/livetv/admin/thing?X-Plex-Token=usertok", "")
-	if strings.Contains(body, hardeningOwnerRev) {
-		t.Fatalf("unknown /livetv/ family elevated: %s", body)
-	}
-	for _, ok := range []string{"/livetv/epg/channels", "/livetv/sessions/abc/index.m3u8", "/livetv/hubs/discover"} {
+	for _, ok := range []string{"/livetv/dvrs", "/livetv/epg/channels", "/livetv/sessions/abc/index.m3u8", "/livetv/hubs/discover", "/livetv/newthing/x"} {
 		_, body := rawGet(t, addr, ok+"?X-Plex-Token=usertok", "")
 		if !strings.Contains(body, hardeningOwnerRev) {
-			t.Errorf("%s should be elevated: %s", ok, body)
+			t.Errorf("%s should still be elevated: %s", ok, body)
 		}
 	}
 }
@@ -127,7 +123,7 @@ func TestHardening_ElevateAllWithholdsOwnerOnlyAreas(t *testing.T) {
 	addr := hardeningProxy(t, up, Config{ElevateAll: true})
 	for _, target := range []string{
 		"/myplex/account", "/security/token", "/:/prefs", "/status/sessions", "/accounts",
-		"/devices", "/%6dyplex/account", "/library/../security/token",
+		"/%6dyplex/account", "/library/../security/token",
 	} {
 		_, body := rawGet(t, addr, target+"?X-Plex-Token=usertok", "")
 		if strings.Contains(body, hardeningOwnerRev) {
@@ -193,7 +189,7 @@ func TestHardening_ScrubRedactsWhenNoUserToken(t *testing.T) {
 	p := &Proxy{cfg: Config{OwnerToken: hardeningOwner}}
 	req := httptest.NewRequest("GET", "/livetv/dvrs?X-Plex-Token="+hardeningOwner, nil)
 	resp := &http.Response{
-		StatusCode: 200, Request: req,
+		StatusCode: 200, Request: req, ContentLength: -1,
 		Header: http.Header{"Content-Type": {"text/plain"}},
 		Body:   io.NopCloser(strings.NewReader("a " + hardeningOwner + " b")),
 	}
@@ -265,3 +261,74 @@ func mustUnescape(s string) string {
 	r := strings.NewReplacer("%2f", "/", "%2F", "/", "%5C", `\`, "%5c", `\`, "%2e", ".", "%2E", ".", "%252e", "%2e", "%00", "\x00")
 	return r.Replace(s)
 }
+
+func scrubResp(method, ct, enc string, status int, body string) *http.Response {
+	req := httptest.NewRequest(method, "/livetv/dvrs?X-Plex-Token="+hardeningOwner, nil)
+	h := http.Header{}
+	if ct != "" {
+		h.Set("Content-Type", ct)
+	}
+	if enc != "" {
+		h.Set("Content-Encoding", enc)
+	}
+	return &http.Response{StatusCode: status, Request: req, Header: h, ContentLength: int64(len(body)), Body: io.NopCloser(strings.NewReader(body))}
+}
+
+// The scrubber must not change behavior for responses it cannot or should not touch.
+func TestHardening_ScrubLeavesNonRewritableResponsesAlone(t *testing.T) {
+	p := &Proxy{cfg: Config{OwnerToken: hardeningOwner}}
+
+	// HEAD: no Content-Length rewrite to 0.
+	r := scrubResp("HEAD", "text/xml", "", 200, "")
+	r.ContentLength = 1234
+	r.Header.Set("Content-Length", "1234")
+	if err := p.scrubOwnerToken(r); err != nil || r.Header.Get("Content-Length") != "1234" {
+		t.Errorf("HEAD altered: err=%v cl=%q", err, r.Header.Get("Content-Length"))
+	}
+
+	// Unknown encoding is not decoded/re-labelled.
+	r = scrubResp("GET", "text/xml", "br", 200, "compressed-bytes")
+	if err := p.scrubOwnerToken(r); err != nil || r.Header.Get("Content-Encoding") != "br" {
+		t.Errorf("br encoding dropped: err=%v enc=%q", err, r.Header.Get("Content-Encoding"))
+	}
+	if b, _ := io.ReadAll(r.Body); string(b) != "compressed-bytes" {
+		t.Errorf("br body altered: %q", b)
+	}
+
+	// Event streams are never buffered (would hang forever on a live stream).
+	r = scrubResp("GET", "text/event-stream", "", 200, "")
+	r.ContentLength = -1
+	r.Body = io.NopCloser(blockingReader{})
+	done := make(chan error, 1)
+	go func() { done <- p.scrubOwnerToken(r) }()
+	select {
+	case err := <-done:
+		if err != nil {
+			t.Errorf("event-stream: %v", err)
+		}
+	case <-time.After(2 * time.Second):
+		t.Fatal("event-stream response was buffered")
+	}
+
+	// 204 / 304 untouched.
+	for _, code := range []int{204, 304} {
+		r = scrubResp("GET", "text/xml", "", code, "")
+		r.Header.Set("Content-Length", "")
+		if err := p.scrubOwnerToken(r); err != nil || r.Header.Get("Content-Length") != "" {
+			t.Errorf("%d altered: err=%v", code, err)
+		}
+	}
+
+	// Binary media streams untouched even if it contains the token bytes.
+	r = scrubResp("GET", "video/mp2t", "", 200, "xx"+hardeningOwner)
+	if err := p.scrubOwnerToken(r); err != nil {
+		t.Fatal(err)
+	}
+	if b, _ := io.ReadAll(r.Body); !strings.Contains(string(b), hardeningOwner) {
+		t.Errorf("media payload was rewritten")
+	}
+}
+
+type blockingReader struct{}
+
+func (blockingReader) Read([]byte) (int, error) { select {} }

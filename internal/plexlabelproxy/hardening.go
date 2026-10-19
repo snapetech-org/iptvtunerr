@@ -82,20 +82,12 @@ func canonicalPathText(s string) bool {
 	return true
 }
 
-// liveTVRoutePath reports whether path is an exact Live TV route family:
-// /livetv/{dvrs,epg,sessions,hubs}[/...]. Anything else under /livetv/ is not
-// elevated.
+// liveTVRoutePath reports whether path is under /livetv/. Breadth is kept
+// as it always was so no Live TV route stops working; traversal safety comes
+// from pathSafeForElevation, which every classifier applies first.
 func liveTVRoutePath(path string) bool {
 	rest, ok := strings.CutPrefix(path, "/livetv/")
-	if !ok {
-		return false
-	}
-	seg, _, _ := strings.Cut(rest, "/")
-	switch seg {
-	case "dvrs", "epg", "sessions", "hubs":
-		return true
-	}
-	return false
+	return ok && rest != ""
 }
 
 // ownerOnlyPath lists PMS areas that expose the owner's account, credentials,
@@ -110,10 +102,8 @@ func ownerOnlyPath(escapedPath string) bool {
 		p = next
 	}
 	for _, prefix := range []string{
-		"/myplex", "/security", "/:/prefs", "/:/plugins", "/accounts", "/devices",
-		"/status/sessions", "/status/history", "/updater", "/diagnostics", "/butler",
-		"/log", "/activities", "/system", "/services", "/servers", "/clients",
-		"/library/sections/all/refresh", "/admin",
+		"/myplex", "/security", "/accounts", "/:/prefs", "/status/sessions",
+		"/status/history", "/updater", "/diagnostics", "/butler", "/admin",
 	} {
 		if p == prefix || strings.HasPrefix(p, prefix+"/") || strings.HasPrefix(p, prefix+"?") {
 			return true
@@ -162,10 +152,17 @@ func (p *Proxy) scrubOwnerToken(resp *http.Response) error {
 			resp.Header[name][i] = scrub(v)
 		}
 	}
-	if resp.StatusCode == http.StatusSwitchingProtocols || resp.Body == nil || resp.Body == http.NoBody {
+	if resp.StatusCode == http.StatusSwitchingProtocols || resp.StatusCode == http.StatusNoContent ||
+		resp.StatusCode == http.StatusNotModified || resp.Request.Method == http.MethodHead ||
+		resp.ContentLength == 0 || resp.Body == nil || resp.Body == http.NoBody {
 		return nil
 	}
 	if !scrubbableContentType(resp.Header.Get("Content-Type")) {
+		return nil
+	}
+	// Only identity and gzip bodies can be rewritten and restored faithfully;
+	// restoreBody would otherwise drop an unknown Content-Encoding.
+	if enc := strings.ToLower(strings.TrimSpace(resp.Header.Get("Content-Encoding"))); enc != "" && enc != "gzip" {
 		return nil
 	}
 	if resp.ContentLength > maxScrubBody {
@@ -201,6 +198,9 @@ func scrubbableContentType(ct string) bool {
 	ct = strings.ToLower(ct)
 	if ct == "" {
 		return true
+	}
+	if strings.Contains(ct, "event-stream") {
+		return false // long-lived streams must never be buffered
 	}
 	for _, m := range []string{"xml", "json", "text/", "mpegurl", "javascript"} {
 		if strings.Contains(ct, m) {

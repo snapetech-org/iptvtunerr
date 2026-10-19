@@ -351,7 +351,7 @@
 - Classification uses `EscapedPath()` and the reverse proxy forwards the path verbatim, so anything PMS normalizes (dot segments, `%2e`, `%2f`) can escape the classifier's intent. Encoded slashes in *query values* are legitimate (Plex Web `path=%2Flivetv%2F...`), so a blanket URI scan breaks playback.
 
 **What works**
-- Every elevation goes through `pathSafeForElevation` (path only, never query) and exact route-family allowlists (`liveTVRoutePath`). New Live TV routes extend the allowlist; never widen to a bare prefix. Any elevated response is scrubbed by `scrubOwnerToken`, so a mistaken elevation cannot hand the owner token back to the client.
+- Every elevation goes through `pathSafeForElevation` (path only, never query) and `liveTVRoutePath`; the canonical-path gate, not route breadth, is what makes the prefix safe. Any elevated response is scrubbed by `scrubOwnerToken`, so a mistaken elevation cannot hand the owner token back to the client.
 
 **Where it's documented**
 - `internal/plexlabelproxy/hardening.go`, `internal/plexlabelproxy/hardening_test.go`, `docs/runbooks/plex-live-tv-entitlement-proxy.md`
