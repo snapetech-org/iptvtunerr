@@ -73,7 +73,7 @@ func (a *PlexTokenAuthorizer) AllowPlexTokenDetailed(ctx context.Context, token 
 	if token == "" {
 		return AuthorizationDecision{}
 	}
-	if a.ownerToken != "" && token == a.ownerToken {
+	if a.ownerToken != "" && tokensEqual(token, a.ownerToken) {
 		return AuthorizationDecision{Allowed: true, CacheHit: true}
 	}
 
@@ -87,9 +87,40 @@ func (a *PlexTokenAuthorizer) AllowPlexTokenDetailed(ctx context.Context, token 
 
 	allowed := a.check(ctx, token)
 	a.mu.Lock()
-	a.cache[token] = tokenDecision{allowed: allowed, expires: now.Add(a.ttl)}
+	a.storeLocked(token, allowed, now)
 	a.mu.Unlock()
 	return AuthorizationDecision{Allowed: allowed, CacheHit: false}
+}
+
+// maxAuthCacheEntries bounds the decision cache. Callers control the token
+// string, so an unbounded map would let anyone grow it with random tokens.
+const maxAuthCacheEntries = 4096
+
+func (a *PlexTokenAuthorizer) storeLocked(token string, allowed bool, now time.Time) {
+	if len(a.cache) >= maxAuthCacheEntries {
+		for k, d := range a.cache {
+			if !now.Before(d.expires) {
+				delete(a.cache, k)
+			}
+		}
+		// Still full of live entries: drop denials first (cheapest to
+		// recompute and the likeliest flood), then arbitrary entries.
+		for k, d := range a.cache {
+			if len(a.cache) < maxAuthCacheEntries {
+				break
+			}
+			if !d.allowed {
+				delete(a.cache, k)
+			}
+		}
+		for k := range a.cache {
+			if len(a.cache) < maxAuthCacheEntries {
+				break
+			}
+			delete(a.cache, k)
+		}
+	}
+	a.cache[token] = tokenDecision{allowed: allowed, expires: now.Add(a.ttl)}
 }
 
 func (a *PlexTokenAuthorizer) check(ctx context.Context, token string) bool {

@@ -113,11 +113,30 @@ PMS using `/library/sections`. This means:
 - a request with no `X-Plex-Token` is not elevated
 - a random Plex account token that cannot access this server is not elevated
 - an already-shared user token can borrow owner tuner entitlement for Live TV
-- the raw owner token is not returned to the client
+- the raw owner token is not returned to the client: for every elevated
+  request the proxy replaces the owner token with the caller's own token in
+  response headers (`Location`, `Set-Cookie`, ...) and in textual bodies
+  (XML, JSON, text, playlists, gzip-aware). Media payloads stream untouched.
+  An elevated textual response larger than 16 MiB fails with `502` rather than
+  passing through unscanned.
 
-`-elevate-all` still exists as a blunt compatibility mode, but it is not the
-recommended mode. Even there, owner-token injection is gated by the same
-inbound-token validation.
+`-elevate-all` is deprecated and unsafe: every authorized user acts as the
+server owner. It now refuses to start without `-unsafe-elevate-all` (or
+`IPTV_TUNERR_PROXY_UNSAFE_ELEVATE_ALL=1`), and it never lends the owner token
+to owner-only areas (`/myplex`, `/security`, `/:/prefs`, `/accounts`,
+`/devices`, `/status/sessions`, `/servers`, `/clients`, `/updater`, ...). Those
+requests continue with the caller's own token. Prefer `-elevate-live-tv`.
+
+Keep the owner token out of the process list: use `-owner-token-file` (or
+`IPTV_TUNERR_PMS_OWNER_TOKEN_FILE`) or the `IPTV_TUNERR_PMS_OWNER_TOKEN`
+environment variable instead of `-owner-token`.
+
+### Path canonicalization
+
+The owner token is never injected on a path that is not canonical: dot
+segments (`/livetv/../security/token`, `%2e%2e`), doubled slashes, encoded
+slashes/backslashes in the path (`%2f`, `%5c`), NUL or control characters.
+Encoded slashes in *query values* (`path=%2Flivetv%2F...`) are unaffected.
 
 ## Request Classification
 
@@ -125,7 +144,7 @@ The owner token is elevated only after the inbound Plex token is present and
 already authorized for this server. After that check, elevation is limited to
 known Live TV surfaces:
 
-- `/livetv/*`
+- `/livetv/dvrs/*`, `/livetv/epg/*`, `/livetv/sessions/*`, `/livetv/hubs/*`
 - `/media/providers`
 - `/media/grabbers/devices`
 - `/tv.plex.providers.epg.xmltv:*`

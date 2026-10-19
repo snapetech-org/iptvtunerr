@@ -53,6 +53,9 @@ func IsLiveTVDiscoveryRequest(req *http.Request) bool {
 	if req == nil || req.URL == nil {
 		return false
 	}
+	if !pathSafeForElevation(req) {
+		return false
+	}
 	if !liveTVElevationMethod(req.Method) {
 		return false
 	}
@@ -64,13 +67,13 @@ func IsLiveTVDiscoveryRequest(req *http.Request) bool {
 		return true
 	case path == "/media/grabbers/devices":
 		return true
-	case strings.HasPrefix(path, "/livetv/"):
+	case liveTVRoutePath(path):
 		return true
 	case strings.HasPrefix(path, "/tv.plex.providers.epg.xmltv:"):
 		return true
 	}
 	if path == "/" || path == "/identity" {
-		return refererIsLiveTV(req.Header.Get("Referer"))
+		return refererIsLiveTVStrict(req.Header.Get("Referer"))
 	}
 	// Intentionally excludes /video/:/transcode/ and /playQueues.
 	return false
@@ -81,6 +84,9 @@ func IsLiveTVDiscoveryRequest(req *http.Request) bool {
 // a session — and therefore watch history — to whichever token is used.
 func IsLiveTVStreamRequest(req *http.Request) bool {
 	if req == nil || req.URL == nil {
+		return false
+	}
+	if !pathSafeForElevation(req) {
 		return false
 	}
 	path := req.URL.EscapedPath()
@@ -109,6 +115,9 @@ func IsLiveTVRequest(req *http.Request) bool {
 	if req == nil || req.URL == nil {
 		return false
 	}
+	if !pathSafeForElevation(req) {
+		return false
+	}
 	if !liveTVElevationMethod(req.Method) {
 		if isLiveTVSubscriptionRequest(req) {
 			return true
@@ -128,7 +137,7 @@ func IsLiveTVRequest(req *http.Request) bool {
 		return true
 	case strings.HasPrefix(path, "/media/grabbers/"):
 		return true
-	case strings.HasPrefix(path, "/livetv/"):
+	case liveTVRoutePath(path):
 		return true
 	case strings.HasPrefix(path, "/tv.plex.providers.epg.xmltv:"):
 		return true
@@ -137,7 +146,7 @@ func IsLiveTVRequest(req *http.Request) bool {
 		return true
 	}
 	if path == "/" || path == "/identity" {
-		return refererIsLiveTV(req.Header.Get("Referer"))
+		return refererIsLiveTVStrict(req.Header.Get("Referer"))
 	}
 	return false
 }

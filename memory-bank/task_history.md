@@ -544,3 +544,10 @@
 - Reconfirmed the 24,908-channel smoketest timeout regression preserves untested rows. Updated the active bug-council backlog count for the new filesystem boundary test.
 - Verification: `./scripts/release-readiness.sh`, focused config/sports/indexer tests, the 24,908-channel regression, WebUI `npm run build`, shell syntax checks, release-note preview/validation, and `git diff --check` passed. `npm ci` reported zero vulnerabilities.
 - Prepared the changes for patch release `v0.1.90`; release publication follows the tagged commit.
+
+## 2026-10-19 - Harden Plex proxy owner-token lending
+
+- Audit found the entitlement proxy forwarded `/livetv/../security/token` with the owner token (prefix classifier on an un-normalized path), never scrubbed owner tokens from elevated responses, let `-elevate-all` lend the owner token to owner-only PMS areas, and had an unbounded authorizer cache.
+- Fixed: canonical-path gate on every elevation (`pathSafeForElevation`), `/livetv/{dvrs,epg,sessions,hubs}` route allowlist, Referer hints read only from Referer path/fragment, response scrubber (headers + textual/gzip bodies, fail-closed above 16 MiB, owner token swapped for the caller's own), owner-only denylist for `-elevate-all`, `-elevate-all` gated behind `-unsafe-elevate-all`, bounded authorizer cache, constant-time token compares, `-owner-token-file`.
+- Verification: new `hardening_test.go` fails on the old code and passes on the new; existing `internal/plexlabelproxy` suite unchanged and green.
+- Opportunities filed: subscription write-evidence body fallback, live validation of the scrub on a real PMS (see `opportunities.md`).

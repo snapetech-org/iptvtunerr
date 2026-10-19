@@ -28,9 +28,9 @@ history.
 
 | Section | Candidate count | Status | Current classification | Next action |
 | --- | ---: | --- | --- | --- |
-| `Proxy elevation trust boundary` | 17 | Open | Added by council sweep; classify this active-bughunt section for this repo. | Split into narrower subgroups, reject with rationale, or promote accepted bug classes into behavior tests and remediation anchors. |
+| `Proxy elevation trust boundary` | 18 | Open | Added by council sweep; classify this active-bughunt section for this repo. | Split into narrower subgroups, reject with rationale, or promote accepted bug classes into behavior tests and remediation anchors. |
 | `Tokenless session recovery boundary` | 24 | Open | Added by council sweep; classify this active-bughunt section for this repo. | Split into narrower subgroups, reject with rationale, or promote accepted bug classes into behavior tests and remediation anchors. |
 | `Response rewrite boundary` | 17 | Open | Added by council sweep; classify this active-bughunt section for this repo. | Split into narrower subgroups, reject with rationale, or promote accepted bug classes into behavior tests and remediation anchors. |
 | `Operator/debug HTTP boundary` | 198 | Open | Added by council sweep; classify this active-bughunt section for this repo. | Split into narrower subgroups, reject with rationale, or promote accepted bug classes into behavior tests and remediation anchors. |
-| `Provider process and file boundary` | 979 | Open | Added by council sweep; classify this active-bughunt section for this repo. | Split into narrower subgroups, reject with rationale, or promote accepted bug classes into behavior tests and remediation anchors. |
+| `Provider process and file boundary` | 980 | Open | Added by council sweep; classify this active-bughunt section for this repo. | Split into narrower subgroups, reject with rationale, or promote accepted bug classes into behavior tests and remediation anchors. |
 | `Red-team abuse lens` | 132 | Open | Required recurring attacker-view review across secrets, identity, redirects, paths, process launch, and downgrade risks. | Turn accepted hypotheses into behavior tests plus remediation anchors; add preservation tests for normal functionality. |

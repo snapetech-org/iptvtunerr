@@ -283,6 +283,8 @@ func New(cfg Config) (*Proxy, error) {
 			originalToken = req.Header.Get("X-Plex-Token")
 		}
 
+		withUserToken(req, originalToken)
+
 		originalDirector(req)
 		// httputil's director does not strip hop-by-hop headers — do it here.
 		for name := range hopHeaders {
@@ -311,7 +313,7 @@ func New(cfg Config) (*Proxy, error) {
 		// the safer default for behind-ingress deployments).
 		req.Host = u.Host
 
-		if p.cfg.ElevateAll && strings.TrimSpace(p.cfg.OwnerToken) != "" && p.canElevate(req, originalToken) {
+		if p.cfg.ElevateAll && strings.TrimSpace(p.cfg.OwnerToken) != "" && p.elevateAllEligible(req) && p.canElevate(req, originalToken) {
 			q := req.URL.Query()
 			q.Set("X-Plex-Token", p.cfg.OwnerToken)
 			req.URL.RawQuery = q.Encode()
@@ -338,6 +340,16 @@ func New(cfg Config) (*Proxy, error) {
 	return p, nil
 }
 
+// elevateAllEligible keeps -elevate-all from lending the owner token to
+// non-canonical paths or to PMS areas that expose owner credentials/activity.
+func (p *Proxy) elevateAllEligible(req *http.Request) bool {
+	if !pathSafeForElevation(req) || ownerOnlyPath(req.URL.EscapedPath()) {
+		p.auditElevation(req, "deny_owner_only_path", inboundPlexToken(req), "path is non-canonical or owner-only; owner token not lent")
+		return false
+	}
+	return true
+}
+
 func (p *Proxy) canElevate(req *http.Request, originalToken string) bool {
 	token := strings.TrimSpace(originalToken)
 	if token == "" {
@@ -345,7 +357,7 @@ func (p *Proxy) canElevate(req *http.Request, originalToken string) bool {
 		p.recordBadElevationAttempt(req, token, "missing_token")
 		return false
 	}
-	if token == strings.TrimSpace(p.cfg.OwnerToken) {
+	if tokensEqual(token, p.cfg.OwnerToken) {
 		return true
 	}
 	if p.authorizer == nil {
@@ -493,6 +505,10 @@ func shouldLogProxyAccess(req *http.Request) bool {
 // rewrite when applicable, and substitute the response body before it reaches
 // the client.
 func (p *Proxy) modifyResponse(resp *http.Response) error {
+	if err := p.scrubOwnerToken(resp); err != nil {
+		p.logger.Printf("plexlabelproxy: owner token scrub failed %s: %v", resp.Request.URL.Path, err)
+		return err
+	}
 	if resp.StatusCode != http.StatusOK {
 		return nil
 	}
@@ -950,7 +966,7 @@ func (p *Proxy) blockBypassAllowed(req *http.Request, token string) bool {
 	if token == "" {
 		return false
 	}
-	if token == strings.TrimSpace(p.cfg.OwnerToken) {
+	if tokensEqual(token, p.cfg.OwnerToken) {
 		return true
 	}
 	if p.authorizer == nil {
@@ -1361,7 +1377,7 @@ func (p *Proxy) neutralizeOwnerScrobble(req *http.Request) {
 }
 
 func (p *Proxy) elevateTrackedPlaybackRequest(req *http.Request) {
-	if strings.TrimSpace(p.cfg.OwnerToken) == "" || !isPlaybackProgressPath(req) {
+	if strings.TrimSpace(p.cfg.OwnerToken) == "" || !isPlaybackProgressPath(req) || !pathSafeForElevation(req) {
 		return
 	}
 	if matched, ok := p.matchTrackedPlaybackSession(req); ok {
