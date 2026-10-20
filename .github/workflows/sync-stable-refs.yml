@@ -1,0 +1,35 @@
+name: Sync stable refs
+
+# After a release or container publish, keep `master` and the `latest` image
+# aligned with the newest stable tag. See scripts/sync-stable-refs.sh.
+on:
+  workflow_run:
+    workflows: ["Release", "Docker"]
+    types: [completed]
+  workflow_dispatch:
+
+concurrency:
+  group: sync-stable-refs
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: read
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GHCR_TOKEN || secrets.GITHUB_TOKEN }}
+      - name: Sync master and verify the latest image
+        env:
+          # The Release run precedes the image publish, so only check the image after Docker (or manually).
+          IMAGE: ${{ github.event.workflow_run.name != 'Release' && format('ghcr.io/{0}', github.repository) || '' }}
+        run: ./scripts/sync-stable-refs.sh --apply
