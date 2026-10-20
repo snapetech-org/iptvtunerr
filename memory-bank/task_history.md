@@ -587,4 +587,4 @@
 ## 2026-10-19 - Unraid template moves to the main repo root
 
 - Moved `iptvtunerr.xml` and `ca_profile.xml` to the repository root, pointed their URLs at the main repo, and removed `packaging/unraid`, `scripts/sync-platform-packages.sh`, the post-commit hook, and the pre-push package-sync block. The separate `iptvtunerr-unraid` companion repository was deleted at the operator's direction.
-- Open: the Community Applications portal rejects the main repo because GitHub detects its license as `other` (dual-license preamble in `LICENSE`).
+- Fixed the license rejection: `LICENSE` is now the canonical AGPL-3.0 text (the dual-license preamble and reflowed copy made GitHub report `other`). The commercial-license terms stay in `LICENSE-COMMERCIAL.md` and the README. Verify with `gh repo view OWNER/REPO --json licenseInfo`.
