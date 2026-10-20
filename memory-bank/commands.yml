@@ -28,6 +28,9 @@ verify_steps:
   - smoke
 
 release_channel_wiring: "bash scripts/check-release-channel-wiring.sh  # required channel map, latest stable tag guard, publisher completion wait, and container alias contract"
+security_scan: "./scripts/security-scan-local.sh  # Semgrep CE plus applicable Trivy secret, dependency, and IaC checks; findings are report-only by default"
+update_security_tools: "./scripts/update-security-tools.sh  # refresh local Semgrep package and Trivy vulnerability database"
+install_git_hooks: "./scripts/install-git-hooks.sh  # enable .githooks/pre-commit staged Semgrep scan and release-note checks"
 
 # Short / QA helpers
 quick_verify: "scripts/verify  # same as CI; ~10–30s"

@@ -602,3 +602,18 @@
 - Closed the private identity denylist exposure in pull-request scans: a trusted scanner from the base commit reads PR files and history, and no PR code executes in the secret-bearing job. Read-only CI, scan, release, and publisher checkouts now disable persisted credentials; the stable-ref sync retains checkout auth because it performs a Git push.
 - Updated `SECURITY.md`, feature guidance, known issues, opportunities, and the security release note. Remaining risks include unauthenticated LAN tuner operator routes, compatibility-scoped subscription evidence pending live Plex validation, root container execution, action tag pinning, reverse-proxy cookie trust, and unbounded guide duration inputs.
 - Verification: `go vet ./...`, `go build ./...`, `gofmt`, dependency scans, shell checks, the local identity scan, and `git diff --check` passed. Actionlint passed with suppressions for two existing baseline diagnostics, which are filed in `opportunities.md`. Tests were not run. `govulncheck` found no reachable vulnerable code; its `x/crypto/openpgp` module advisory is not imported by the application (Tunerr uses the module's `bcrypt` package).
+
+## 2026-10-19 - Publish v0.1.93 with categorized Discord announcements
+
+- Updated the Discord release payload to show only curated user-facing changes under their release-note categories, with a direct link to release assets and checksums. GitHub retains the full commit list, asset inventory, and install notes.
+- Published `v0.1.93` with 18 assets. Discord and Matrix announcement jobs passed. Docker, AUR, COPR, and Chocolatey publishers succeeded; Winget submitted PR [#456399](https://github.com/microsoft/winget-pkgs/pull/456399). PPA failed because the configured GPG signer had no secret key, so the overall Release workflow ended in failure after GitHub Release publication.
+- Stable-ref run [39360483784](https://github.com/snapetech-org/iptvtunerr/actions/runs/39360483784) advanced `master` to `v0.1.93` and verified `:latest` at `sha256:81149fce942dc58183c15936e1f66f006b707cd515ffca27c9c94038efdca718`.
+- Verification: main CI, CodeQL, Gitleaks, Local Identity Leak Check, release smoke, release asset validation, changelog fragment validation (3 fragments), and changelog tag coverage (86 stable tags) passed. `git diff --check` passed. Filed the prepared-changelog update loop in `recurring_loops.md`.
+
+## 2026-10-20 - Restore Snap publishing and add repository security scans
+
+- Removed the `publish-snap.yml` release skip and changed the release-channel wiring check to require Snap dispatch while retaining the generic deferred-channel control.
+- Checked the newest Snap Store CI item in Proton Pass with its password masked. The existing `SNAPCRAFT_STORE_CREDENTIALS` repository secret succeeded; no key was created, replaced, or revoked.
+- Published `v0.1.93` to Snap stable with workflow run [39361186479](https://github.com/snapetech-org/iptvtunerr/actions/runs/39361186479). The public [Snap Store page](https://snapcraft.io/iptvtunerr) shows `latest/stable 0.1.93`.
+- Added Semgrep CE and Trivy scheduled/PR workflows, a local scan command, scanner maintenance command, and security-scanning documentation. Fixed the pre-commit hook's undefined repository-root variable and limited local Semgrep to one worker after the default parallel scan hit an `io_uring` allocation failure.
+- Verification: `bash scripts/check-release-channel-wiring.sh`, shell syntax checks, `git diff --check`, and the staged pre-commit scan passed. Semgrep reported seven mutable action references in `release.yml`; the repository-wide SHA-pinning follow-up remains in `opportunities.md`. Push/CI verification is pending.

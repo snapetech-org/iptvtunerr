@@ -40,9 +40,9 @@ with that same tag. Each publisher checks that the tag is the newest stable
 `vX.Y.Z` reachable from `main` immediately before submission. Publisher runs
 are serialized per channel so a newer dispatch cancels an older in-progress
 run. AUR, PPA, and COPR are dispatched once by the release workflow; they do
-not also subscribe to the GitHub Release event. The release job currently sets
-`SKIP_RELEASE_CHANNELS=publish-snap.yml`, so Snap remains listed in the channel
-map but is skipped until explicitly re-enabled.
+not also subscribe to the GitHub Release event. Snap is part of automatic
+release dispatch; `SKIP_RELEASE_CHANNELS` remains available for channels paused
+by operator choice.
 
 The dispatcher starts Docker from the current `main` workflow definition. The
 image uses the exact release tag for application source and version, with the
@@ -75,8 +75,8 @@ not reported as updated. The PPA workflow run
 failed while those builds were still processing; retry and poller fixes are on
 `main`. Continue monitoring the existing builds without re-uploading the
 release or moving its tag.
-Chocolatey `0.1.88` and Winget `0.1.88` have been submitted successfully. Snap
-and Docker Hub publishing are paused per the operator's direction.
+Chocolatey `0.1.88` and Winget `0.1.88` have been submitted successfully.
+Docker Hub publishing remains paused per the operator's direction.
 
 ## Release notes and changelog
 
@@ -258,8 +258,6 @@ Required GitHub secrets:
 - `CHOCO_API_KEY` - Chocolatey API key for the `iptvtunerr` package.
 - `WINGETCREATE_GITHUB_TOKEN` - GitHub token that can open PRs against
   `microsoft/winget-pkgs`.
-- `SNAPCRAFT_STORE_CREDENTIALS` - restricted Snap Store credentials for the
-  `iptvtunerr` snap.
 
 Current status:
 
@@ -268,8 +266,6 @@ Current status:
 - Chocolatey `0.1.87` is in the public feed.
 - Winget PR [`microsoft/winget-pkgs#444749`](https://github.com/microsoft/winget-pkgs/pull/444749)
   submitted version `0.1.87` and merged on October 1, 2026.
-- Further Snap Store submissions are deferred; the public stable channel remains
-  at `0.1.78` after the `v0.1.87` publisher was rejected for authentication.
 
 ## Snap
 
@@ -280,9 +276,20 @@ home directory and network interfaces; connect the `removable-media` plug if
 provider files are stored on removable media. The release dispatcher publishes
 the same version to the Snap Store's stable channel.
 
+Required GitHub secret:
+
+- `SNAPCRAFT_STORE_CREDENTIALS` - restricted Snap Store credentials for the
+  `iptvtunerr` snap.
+
+Current status: `v0.1.93` is available in the public `latest/stable` channel.
+The manual publisher run [39361186479](https://github.com/snapetech-org/iptvtunerr/actions/runs/39361186479)
+successfully built and released it. The existing repository credential passed;
+no replacement key was needed.
+
 Snap Store review controls when a new stable revision becomes available. The
 publisher uses the configured Store credential and records upload failures in
-GitHub Actions.
+GitHub Actions. The `v0.1.87` upload failed because its exported credentials had
+expired; verify channel availability after each recovery or republish.
 
 NuGet is not currently a fit for IPTV Tunerr. The project ships a Go CLI/server
 binary, not a .NET library or .NET global tool.

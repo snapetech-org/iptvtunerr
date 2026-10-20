@@ -74,10 +74,10 @@ done <<< "$expected_channels"
 
 release_workflow="$root/.github/workflows/release.yml"
 docker_workflow="$root/.github/workflows/docker.yml"
-if ! rg -Fq 'SKIP_RELEASE_CHANNELS: publish-snap.yml' "$release_workflow" || \
+if rg -Fq 'SKIP_RELEASE_CHANNELS: publish-snap.yml' "$release_workflow" || \
    ! rg -q 'SKIP_RELEASE_CHANNELS' "$dispatcher" || \
    ! rg -q 'Skipping deferred release channel' "$dispatcher"; then
-  echo "Snap must remain explicitly deferred from tag-triggered publisher dispatch." >&2
+  echo "Snap must be dispatched from releases while the generic deferred-channel control remains available." >&2
   exit 1
 fi
 if ! rg -q 'dispatch-release-channels\.sh' "$release_workflow"; then
@@ -173,4 +173,4 @@ if RELEASE_REPO_DIR="$tmp_repo" MAIN_REF=main RELEASE_TAG_MAIN_MODE=latest \
   exit 1
 fi
 
-echo "Release channel wiring is complete: enabled publishers dispatch the latest stable tag once, GHCR receives latest plus that version tag, and paused channels stay disabled."
+echo "Release channel wiring is complete: configured publishers dispatch the latest stable tag once, GHCR receives latest plus that version tag, and explicitly paused channels stay disabled."

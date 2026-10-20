@@ -1630,3 +1630,7 @@ This project is dual-licensed under the GNU Affero General Public License v3.0-o
 - **Catch-up recording (headless)**: `catchup-daemon` continuously schedules guide-derived programmes, records to `.ts` with spool-then-finalize, persists `recorder-state.json`, supports publish + optional Plex/Emby/Jellyfin lane registration, lane/channel filters, transient retries with optional HTTP `Range` resume on the same `.partial.ts`, and multi-upstream failover (Tunerr relay URL first, then catalog `stream_url` / `stream_urls`). **`IPTV_TUNERR_RECORD_DEPRIORITIZE_HOSTS`** pushes named bad CDN hosts to the end of the fallback list. Time-based completed retention and `scripts/recorder-daemon-soak.sh` for bounded soak runs. See [docs/reference/cli-and-env-reference.md](docs/reference/cli-and-env-reference.md) (`catchup-daemon`, `catchup-record`).
 
 See [docs/CHANGELOG.md](docs/CHANGELOG.md) for the full version history.
+
+## Local security scanning
+
+Run `./scripts/security-scan-local.sh` for local Semgrep CE and the Trivy scanners that fit this repository. The installed pre-commit hook runs Semgrep on staged source/config files only; Trivy runs on demand or in CI. This public repository also runs Semgrep CE in GitHub Actions on changes and weekly. See [security-scanning.md](docs/security-scanning.md). Use `./scripts/update-security-tools.sh` to refresh local scanner data and the Trivy database.

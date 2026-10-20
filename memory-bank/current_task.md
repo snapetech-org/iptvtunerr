@@ -1,11 +1,29 @@
-# Current task: Commit audit fixes and release v0.1.93 (in progress)
+# Current task: Restore Snap publishing and push release/audit updates (in progress)
+
+- **Goal:** restore Snap publishing for the existing `v0.1.93`, enable the channel in future release dispatches, and push all reviewed working-tree changes to GitHub `main`.
+- **Scope:** update the Snap dispatch and wiring check, preserve and complete the staged security-scanning additions, update project state, then push through `ghrelease`. Keep existing credentials and release tags intact; do not push the GitLab mirror.
+- **Status:** the existing Snap credential passed publisher run [39361186479](https://github.com/snapetech-org/iptvtunerr/actions/runs/39361186479); the public Store page reports `latest/stable 0.1.93`. No key was created, replaced, or revoked. Local checks passed; remote CI and push are pending. Semgrep reports seven mutable action references already tracked in opportunities.
+- **Next steps:** commit, push `main`, monitor CI, then close out the task.
+
+## Completed prerequisite: Commit audit fixes and release v0.1.93
 
 - **Goal:** commit the complete reviewed working tree, push it to GitHub `main`, prepare the curated changelog, improve the Discord announcement format, and publish a new stable release.
 - **Scope:** include the security audit remediation already present in the working tree; create append-only release fragments and a changelog section; send a concise, categorized Discord summary with a link to assets/checksums; push through the GitHub-only `ghrelease` remote; tag the release commit and monitor the GitHub release and stable-ref workflows.
 - **Assumptions:** `v0.1.92` is the latest stable release, so the next version is `v0.1.93`. The repository workflow advances `master` to the stable tag after publication. Do not push the configured GitLab mirror, whose ref service has a documented failure.
 - **Plan:** validate the release notes and Discord formatter; commit the implementation and fragment; regenerate and commit the `v0.1.93` changelog section; push `main`; check required CI; tag and push `v0.1.93`; monitor release, publisher, and stable-ref workflows; record final outcomes in task history.
-- **Status:** latest GitHub release `v0.1.92` published its assets and announcements. Its channel dispatcher reported Chocolatey `403 Forbidden` and PPA signing failure because the imported key does not match the configured signing fingerprint. Discord formatting changes and a new release-note fragment are committed locally; the prepared `v0.1.93` changelog section now includes the fragment.
-- **Next steps:** commit the updated `v0.1.93` section; push `main`; wait for required CI; tag and push `v0.1.93`; then monitor GitHub release, publisher, and stable-ref results.
+- **Status:** `v0.1.93` is published with 18 assets. Discord and Matrix announcement jobs succeeded. Docker, AUR, COPR, and Chocolatey publishing succeeded; Winget PR [#456399](https://github.com/microsoft/winget-pkgs/pull/456399) was submitted. PPA signing failed because the configured signer has no secret key, so the overall Release workflow ended in failure after publishing the GitHub Release.
+- **Stable refs:** sync run `39360483784` advanced `master` to `v0.1.93` and verified `:latest` at digest `sha256:81149fce942dc58183c15936e1f66f006b707cd515ffca27c9c94038efdca718`.
+- **Follow-ups:** restore the matching PPA signing key and check Chocolatey moderation and the Winget PR when their external reviews complete. Do not push the GitLab mirror.
+
+## Active follow-up: Restore Snap publishing (push pending)
+
+- **Goal:** check the latest Snap Store credential in Proton Pass without invalidating existing keys, restore Snap publishing for the already-published `v0.1.93`, and remove the intentional skip so future releases dispatch Snap automatically.
+- **Scope:** inspect the Snap publisher and wiring check; verify the existing repository secret against the Store without displaying it; if it fails, create an additional credential, update only `SNAPCRAFT_STORE_CREDENTIALS`, and publish `v0.1.93`; update release-channel and memory-bank status.
+- **Assumptions:** use the existing package and release tag; do not create another GitHub release or revoke old Snap credentials. Keep the pre-existing security-scanning worktree changes intact while handling this focused follow-up.
+- **Plan:** inspect Proton Pass and the Snap Store UI on the dedicated agent VM; test the existing workflow secret; if needed, add a new non-revoking credential and replace the GitHub secret; enable automatic dispatch, update its assertion/docs, push to GitHub `main`, and manually dispatch `v0.1.93`; record the workflow and Store result.
+- **Completed:** the existing `SNAPCRAFT_STORE_CREDENTIALS` secret passed the `v0.1.93` Snap build and stable publish. Proton Pass's newest Snap Store CI entry was checked with its password masked. No credential was created, replaced, or revoked. The release workflow no longer skips Snap, and the public Store page reports `latest/stable 0.1.93`.
+- **Verification:** Snap publisher run [39361186479](https://github.com/snapetech-org/iptvtunerr/actions/runs/39361186479) succeeded; `bash scripts/check-release-channel-wiring.sh`, shell syntax checks, and `git diff --check` passed. The local Semgrep hook now defaults to one worker after its unconstrained run hit an `io_uring` allocation failure.
+- **Next steps:** commit and push the preserved security-scanning work and the Snap re-enable, then confirm CI.
 
 ---
 
