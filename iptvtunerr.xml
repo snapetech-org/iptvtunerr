@@ -8,14 +8,14 @@
   <Privileged>false</Privileged>
   <Icon>https://raw.githubusercontent.com/snapetech/iptvtunerr/main/docs/assets/iptvtunerr-icon.svg</Icon>
   <WebUI>http://[IP]:[PORT:48879]/</WebUI>
-  <Overview>IPTV to Plex, Emby, and Jellyfin tuner and XMLTV guide bridge.</Overview>
-  <Description>IPTV Tunerr publishes a stable tuner endpoint, M3U playlist, and XMLTV guide from an IPTV provider or M3U source. It can relay live streams, cache guide data, and optionally use ffmpeg for remuxing or transcoding. The authenticated operator dashboard listens on port 48879. Keep both ports on a trusted LAN or VPN and set a strong dashboard password before starting.</Description>
+  <Overview>IPTV to Plex, Emby, and Jellyfin: HDHomeRun-emulating tuner, custom merged XMLTV guide, resilient stream gateway, DVR and recording rules, VOD libraries, and an operator dashboard.</Overview>
+  <Description>IPTV Tunerr turns IPTV providers and M3U sources into a polished live TV backend for Plex, Emby, and Jellyfin.[br][br][b]Sources:[/b] M3U and Xtream player_api (live, movies, series); multiple providers merged and de-duplicated with backup-stream failover; host probing and ranking; optional stream smoketest.[br][b]HDHomeRun emulation:[/b] discover.json, lineup.json, and lineup_status.json with a tuner-count limit, wizard-safe channel caps, lineup sharding, and per-instance numbering; also reads real HDHomeRun hardware.[br][b]Custom guide:[/b] layered XMLTV (provider, external, HDHomeRun, placeholder) with automatic EPG matching and repair, alias overrides, language preferences, and guide-health and EPG-doctor reports.[br][b]Stream gateway:[/b] HLS and DASH to MPEG-TS relay, optional ffmpeg remux or transcode with named profiles, shared sessions across viewers, failover, and Cloudflare-block resilience.[br][b]DVR and recording:[/b] catch-up capsules, recording rules and history, and request-driven recording for apps such as SeerrNG.[br][b]Lineup tools:[/b] Programming Manager, channel health scoring, lineup recipes, virtual channels, and API-Sports sports schedules.[br][b]VOD:[/b] movie and series catalog exposed over a FUSE mount or read-only WebDAV, with Plex library registration.[br][b]Plex tools:[/b] automatic DVR and channel registration, stale-session cleanup, and an optional Live TV entitlement proxy for shared users.[br][b]Operations:[/b] authenticated web dashboard, Prometheus metrics, event webhooks, health endpoints, and an Xtream-compatible output. Keep tuner ports on a trusted LAN or VPN.</Description>
   <Support>https://github.com/snapetech/iptvtunerr/issues</Support>
   <Project>https://github.com/snapetech/iptvtunerr</Project>
   <TemplateURL>https://raw.githubusercontent.com/snapetech-org/iptvtunerr/main/iptvtunerr.xml</TemplateURL>
   <ReadMe>https://raw.githubusercontent.com/snapetech-org/iptvtunerr/main/docs/how-to/install-on-unraid.md</ReadMe>
   <Category>MediaApp:Other</Category>
-  <ExtraSearchTerms>iptvtunerr iptv plex tuner xmltv m3u threadfin xteve jellyfin emby</ExtraSearchTerms>
+  <ExtraSearchTerms>iptvtunerr iptv plex tuner hdhomerun hdhr emulator xmltv epg guide m3u xtream dvr recording vod webdav threadfin xteve jellyfin emby</ExtraSearchTerms>
   <Changes>Initial Community Applications template. Tracks the GHCR latest image published by the IPTV Tunerr release workflow.</Changes>
   <Requires>Persistent appdata and cache paths. Set a reachable IPTV_TUNERR_BASE_URL before using Plex, Emby, or Jellyfin.</Requires>
   <ExtraParams>--restart=unless-stopped --security-opt=no-new-privileges:true</ExtraParams>
