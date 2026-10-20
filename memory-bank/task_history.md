@@ -630,3 +630,9 @@
 - Reproduced `io_uring_queue_init` allocation failures even with one worker. Configured the local scanner to use Semgrep's POSIX backend by default, with an environment override, and documented the workaround in [security-scanning.md](../docs/security-scanning.md).
 - Retained the Trivy 20-minute scan and 30-minute database-refresh timeout controls from the shared checkout.
 - Verification: shell syntax, release-channel wiring, `git diff --check`, and the staged pre-commit Semgrep scan passed; the staged scan reported zero findings in the two updated scanner scripts.
+
+## 2026-10-20 - Fix local security scanner default mode
+
+- Replaced string-negation checks on the `0`/`1` staged flag with arithmetic checks so the default local scan mode reaches Trivy after Semgrep. Updated the security-scanning how-to to state that both scanners run by default.
+- Pushed commit `ed9265d` to GitHub `main`; `master` remains on stable tag `v0.1.93`.
+- Verification: `bash -n scripts/security-scan-local.sh`, `git diff --check`, and the staged pre-commit Semgrep scan passed; Semgrep reported zero findings. GitHub CI verify, CodeQL, Gitleaks, Local Identity, Semgrep, and Trivy passed. CI smoke and release-assets jobs remained queued at final check.

@@ -1,9 +1,9 @@
-# Current task: Finish scanner fixes and final push (in progress)
+# Current task: Finish scanner fixes and final push (complete)
 
 - **Goal:** complete the local scanner reliability fixes discovered during Snap recovery, then push and verify them.
 - **Scope:** preserve the Trivy timeout changes; configure Semgrep to use the POSIX backend where `io_uring` is unavailable; fix the default scan-mode condition so Trivy runs; record findings and push through `ghrelease` only.
-- **Status:** Snap publishing for `v0.1.93` is complete in commit `143995a`; its publisher, CI, CodeQL, Gitleaks, Local Identity, Semgrep, and Trivy runs passed. Scanner follow-up `c5b81b2` is pushed; its CI, CodeQL, Gitleaks, Local Identity, Semgrep, and Trivy runs all passed. A shared-worktree change fixes the default scan-mode condition; it is under final review.
-- **Next steps:** check shell syntax and diff, commit and push the scan-mode fix, monitor CI, then close out the task.
+- **Status:** Snap publishing for `v0.1.93` is complete in commit `143995a`; its publisher, CI, CodeQL, Gitleaks, Local Identity, Semgrep, and Trivy runs passed. Scanner follow-up `c5b81b2` is pushed; its CI, CodeQL, Gitleaks, Local Identity, Semgrep, and Trivy runs all passed. Final scanner fix `ed9265d` is pushed; shell syntax, staged Semgrep, CI verify, CodeQL, Gitleaks, Local Identity, Semgrep, and Trivy passed. The CI workflow's smoke and release-assets jobs remained queued at final check.
+- **Next steps:** none for this task. Follow up on the queued CI smoke and release-assets jobs if they do not complete asynchronously.
 
 ## Completed prerequisite: Commit audit fixes and release v0.1.93
 
