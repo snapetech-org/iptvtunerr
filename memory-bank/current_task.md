@@ -4,8 +4,8 @@
 - **Scope:** include the security audit remediation already present in the working tree; create append-only release fragments and a changelog section; send a concise, categorized Discord summary with a link to assets/checksums; push through the GitHub-only `ghrelease` remote; tag the release commit and monitor the GitHub release and stable-ref workflows.
 - **Assumptions:** `v0.1.92` is the latest stable release, so the next version is `v0.1.93`. The repository workflow advances `master` to the stable tag after publication. Do not push the configured GitLab mirror, whose ref service has a documented failure.
 - **Plan:** validate the release notes and Discord formatter; commit the implementation and fragment; regenerate and commit the `v0.1.93` changelog section; push `main`; check required CI; tag and push `v0.1.93`; monitor release, publisher, and stable-ref workflows; record final outcomes in task history.
-- **Status:** latest GitHub release `v0.1.92` published its assets and announcements. Its channel dispatcher reported Chocolatey `403 Forbidden` and PPA signing failure because the imported key does not match the configured signing fingerprint. Continue the release workflow and report channel results accurately.
-- **Next steps:** commit the Discord formatting changes and release-note fragment; regenerate and commit the `v0.1.93` section; push `main`; wait for required CI; tag and push `v0.1.93`; then monitor GitHub release, publisher, and stable-ref results.
+- **Status:** latest GitHub release `v0.1.92` published its assets and announcements. Its channel dispatcher reported Chocolatey `403 Forbidden` and PPA signing failure because the imported key does not match the configured signing fingerprint. Discord formatting changes and a new release-note fragment are committed locally; the prepared `v0.1.93` changelog section now includes the fragment.
+- **Next steps:** commit the updated `v0.1.93` section; push `main`; wait for required CI; tag and push `v0.1.93`; then monitor GitHub release, publisher, and stable-ref results.
 
 ---
 

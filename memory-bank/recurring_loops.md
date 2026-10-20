@@ -355,3 +355,21 @@
 
 **Where it's documented**
 - `internal/plexlabelproxy/hardening.go`, `internal/plexlabelproxy/hardening_test.go`, `docs/runbooks/plex-live-tv-entitlement-proxy.md`
+
+### Loop: Updating a prepared changelog after adding a release fragment
+
+**Symptom**
+- `scripts/prepare-release-changelog.mjs --version vX.Y.Z` refuses to update a versioned changelog section that was prepared before a new fragment was committed, even though the release tag does not exist yet.
+
+**Why it's tricky**
+- The generator only prepends a new version section; it treats any existing section as a duplicate and exits before comparing it with the current fragments.
+- Published sections are append-only, so the correct fix depends on whether the release tag already exists.
+
+**What works**
+- If the tag is not published, preview all fragments from the previous release through `HEAD` with `scripts/preview-release-notes.mjs`, then update the untagged section to match that output.
+- After creating the release tag, run `scripts/verify-release-changelog.mjs vX.Y.Z` to validate the section against the tagged fragments. Do not edit a section after its tag is published.
+
+**Where it's documented**
+- `scripts/prepare-release-changelog.mjs`
+- `scripts/preview-release-notes.mjs`
+- `scripts/verify-release-changelog.mjs`

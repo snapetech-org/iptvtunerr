@@ -17,6 +17,7 @@ All notable changes to IPTV Tunerr are documented here. Repo: [github.com/snapet
 
 #### Changed
 
+- **Release Process:** Discord release announcements now group user-facing changes by category and link to the full release for downloads and checksums, leaving package inventories and commit details on GitHub.
 - **Release Automation:** After each release or container publish, the master branch is fast-forwarded to the newest stable tag and the latest container image is checked against that tag, so main, master, and latest stay aligned automatically.
 
 #### Security
