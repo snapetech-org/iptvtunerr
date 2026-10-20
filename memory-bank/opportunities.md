@@ -29,6 +29,8 @@
 
 ## External follow-up
 
+- **Unraid Community Applications validation.** After replacing the custom dual-license wrapper with canonical AGPL-3.0 text, GitHub now recognizes the package license. Rerun the portal's Validate and Scan actions, submit the repo for moderator review, then complete a real install/update/removal check on an Unraid host.
+- **Platform resource measurements.** Measure idle load, direct relay concurrency, guide refresh, recording, and ffmpeg remux/transcode on a representative x86 Unraid machine before publishing CPU/RAM minimums.
 - **Release-channel parity follow-up.** Monitor Launchpad binary publication and confirm `.87` appears in the PPA. Docker Hub compatibility and Snap publisher retries are deferred per the user's latest direction. Keep package/index availability distinct from successful workflow submission.
 - **Plex Live TV watchdog schedule.** The prior read-only audit found the watchdog service inactive and its newest snapshot dated 2026-06-18. No watchdog timer/service definition is owned by this repository. Verify the deployment's timer/service wiring and collect a fresh snapshot through its host-managed configuration before relying on it during a Live TV failure. See WBS story OPP-007.
 - **Plex proxy subscription write evidence is still substring-based.** `POST/PUT/PATCH/DELETE /media/subscriptions*` is elevated when any query value or body contains Live TV/XMLTV text. An authorized shared user can craft that evidence to make owner-attributed subscription writes. Tightening risks the Record-button regressions recorded in `recurring_loops.md`; needs live validation with a real shared user before narrowing to parsed `guid`/`hints[...]` fields.

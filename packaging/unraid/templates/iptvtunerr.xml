@@ -1,0 +1,43 @@
+<?xml version="1.0"?>
+<Container version="2">
+  <Name>IPTV Tunerr</Name>
+  <Repository>ghcr.io/snapetech/iptvtunerr:latest</Repository>
+  <Registry>https://ghcr.io/snapetech/iptvtunerr</Registry>
+  <Network>bridge</Network>
+  <Shell>sh</Shell>
+  <Privileged>false</Privileged>
+  <Icon>https://raw.githubusercontent.com/snapetech/iptvtunerr/main/docs/assets/iptvtunerr-icon.svg</Icon>
+  <WebUI>http://[IP]:[PORT:48879]/</WebUI>
+  <Overview>IPTV to Plex, Emby, and Jellyfin tuner and XMLTV guide bridge.</Overview>
+  <Description>IPTV Tunerr publishes a stable tuner endpoint, M3U playlist, and XMLTV guide from an IPTV provider or M3U source. It can relay live streams, cache guide data, and optionally use ffmpeg for remuxing or transcoding. The authenticated operator dashboard listens on port 48879. Keep both ports on a trusted LAN or VPN and set a strong dashboard password before starting.</Description>
+  <Support>https://github.com/snapetech/iptvtunerr/issues</Support>
+  <Project>https://github.com/snapetech/iptvtunerr</Project>
+  <TemplateURL>https://raw.githubusercontent.com/snapetech/iptvtunerr-unraid/main/templates/iptvtunerr.xml</TemplateURL>
+  <ReadMe>https://raw.githubusercontent.com/snapetech/iptvtunerr-unraid/main/docs/installation.md</ReadMe>
+  <Category>MediaApp:Other</Category>
+  <ExtraSearchTerms>iptvtunerr iptv plex tuner xmltv m3u threadfin xteve jellyfin emby</ExtraSearchTerms>
+  <Changes>Initial Community Applications template. Tracks the GHCR latest image published by the IPTV Tunerr release workflow.</Changes>
+  <Requires>Persistent appdata and cache paths. Set a reachable IPTV_TUNERR_BASE_URL before using Plex, Emby, or Jellyfin.</Requires>
+  <ExtraParams>--restart=unless-stopped --security-opt=no-new-privileges:true</ExtraParams>
+
+  <Config Name="Tuner Port" Target="5004" Default="5004" Mode="tcp" Description="HTTP tuner, stream, playlist, and guide endpoint. Keep this on a trusted LAN or VPN." Type="Port" Display="always" Required="true" Mask="false">5004</Config>
+  <Config Name="Operator Dashboard Port" Target="48879" Default="48879" Mode="tcp" Description="Authenticated Tunerr operator dashboard. Do not expose this port publicly." Type="Port" Display="always" Required="true" Mask="false">48879</Config>
+  <Config Name="Appdata" Target="/var/lib/iptvtunerr" Default="/mnt/user/appdata/iptvtunerr" Mode="rw" Description="Persistent catalog and dashboard state." Type="Path" Display="always" Required="true" Mask="false">/mnt/user/appdata/iptvtunerr</Config>
+  <Config Name="Cache" Target="/var/cache/iptvtunerr" Default="/mnt/user/appdata/iptvtunerr/cache" Mode="rw" Description="Persistent guide and provider caches. This directory can grow with provider data." Type="Path" Display="always" Required="true" Mask="false">/mnt/user/appdata/iptvtunerr/cache</Config>
+
+  <Config Name="Catalog File" Target="IPTV_TUNERR_CATALOG" Default="/var/lib/iptvtunerr/catalog.json" Mode="" Description="Persistent channel catalog path." Type="Variable" Display="advanced" Required="true" Mask="false">/var/lib/iptvtunerr/catalog.json</Config>
+  <Config Name="Cache Directory" Target="IPTV_TUNERR_CACHE" Default="/var/cache/iptvtunerr" Mode="" Description="Persistent cache directory." Type="Variable" Display="advanced" Required="true" Mask="false">/var/cache/iptvtunerr</Config>
+  <Config Name="Dashboard State File" Target="IPTV_TUNERR_WEBUI_STATE_FILE" Default="/var/lib/iptvtunerr/webui-state.json" Mode="" Description="Persistent operator dashboard preferences and state." Type="Variable" Display="advanced" Required="true" Mask="false">/var/lib/iptvtunerr/webui-state.json</Config>
+  <Config Name="Base URL" Target="IPTV_TUNERR_BASE_URL" Default="" Mode="" Description="Required URL that Plex, Emby, or Jellyfin can reach, including the host port if remapped (for example http://192.168.1.20:5004)." Type="Variable" Display="always" Required="true" Mask="false"></Config>
+  <Config Name="Provider URL" Target="IPTV_TUNERR_PROVIDER_URL" Default="" Mode="" Description="Optional Xtream-style provider base URL." Type="Variable" Display="always" Required="false" Mask="false"></Config>
+  <Config Name="Provider Username" Target="IPTV_TUNERR_PROVIDER_USER" Default="" Mode="" Description="Optional provider username." Type="Variable" Display="always" Required="false" Mask="false"></Config>
+  <Config Name="Provider Password" Target="IPTV_TUNERR_PROVIDER_PASS" Default="" Mode="" Description="Optional provider password." Type="Variable" Display="always" Required="false" Mask="true"></Config>
+  <Config Name="M3U URL" Target="IPTV_TUNERR_M3U_URL" Default="" Mode="" Description="Optional M3U source URL. Treat URLs containing credentials as secrets." Type="Variable" Display="advanced" Required="false" Mask="true"></Config>
+  <Config Name="Plex URL" Target="IPTV_TUNERR_PMS_URL" Default="" Mode="" Description="Optional Plex Media Server URL for automatic tuner registration." Type="Variable" Display="advanced" Required="false" Mask="false"></Config>
+  <Config Name="Plex Token" Target="IPTV_TUNERR_PMS_TOKEN" Default="" Mode="" Description="Optional Plex token for automatic tuner registration." Type="Variable" Display="advanced" Required="false" Mask="true"></Config>
+  <Config Name="API-Sports Key" Target="IPTV_TUNERR_API_SPORTS_KEY" Default="" Mode="" Description="Optional server-side API-Sports key for Sports Automation." Type="Variable" Display="advanced" Required="false" Mask="true"></Config>
+  <Config Name="Dashboard Username" Target="IPTV_TUNERR_WEBUI_USER" Default="admin" Mode="" Description="Username for the operator dashboard." Type="Variable" Display="always" Required="true" Mask="false">admin</Config>
+  <Config Name="Dashboard Password" Target="IPTV_TUNERR_WEBUI_PASS" Default="" Mode="" Description="Required strong password for the operator dashboard." Type="Variable" Display="always" Required="true" Mask="true"></Config>
+  <Config Name="Dashboard LAN Access" Target="IPTV_TUNERR_WEBUI_ALLOW_LAN" Default="1" Mode="" Description="Allow the authenticated dashboard to accept connections on the mapped LAN port." Type="Variable" Display="advanced" Required="true" Mask="false">1</Config>
+  <Config Name="Timezone" Target="TZ" Default="Etc/UTC" Mode="" Description="Container timezone." Type="Variable" Display="advanced" Required="false" Mask="false">Etc/UTC</Config>
+</Container>

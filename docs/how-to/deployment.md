@@ -46,6 +46,9 @@ Avoid changing the base URL, device ID, friendly name, or lineup split casually.
 
 For k3s-specific notes, manifests, and Plex reachability rules, see [Deploy IPTV Tunerr on k3s](k3s-deployment.md).
 
+The Unraid package is documented separately: [Unraid](install-on-unraid.md)
+and [platform suitability](../explanations/platform-suitability.md).
+
 ---
 
 ## 1. Binary (foreground or background)

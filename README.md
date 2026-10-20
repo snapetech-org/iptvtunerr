@@ -1406,6 +1406,8 @@ Full variable reference: [`docs/reference/cli-and-env-reference.md`](docs/refere
 
 Platform requirements: [`docs/how-to/platform-requirements.md`](docs/how-to/platform-requirements.md)
 
+Unraid package: [Unraid install](docs/how-to/install-on-unraid.md) · [platform fit and resource notes](docs/explanations/platform-suitability.md)
+
 ---
 
 ## Plex Live TV Entitlement Proxy

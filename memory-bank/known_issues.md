@@ -19,6 +19,7 @@
 
 ## Release / Packaging
 
+- **Unraid repository license detection needs a canonical root license file.** The app's dual-license preamble made GitHub report `Other`, which the Community Applications portal rejected. Keep `packaging/unraid/LICENSE` as the standard AGPL-3.0 text for Licensee detection; document the `-or-later` grant and commercial alternative in the package README. Verify with `gh repo view OWNER/REPO --json licenseInfo` after syncing.
 - **Winget ZIP manifests must point at the executable inside the archive directory.** The Windows release ZIP contains `iptv-tunerr-vX.Y.Z-windows-amd64/iptv-tunerr.exe`, not a root-level `iptv-tunerr-vX.Y.Z-windows-amd64.exe`. A wrong `NestedInstallerFiles.RelativeFilePath` downloads and hashes fine but fails Microsoft install validation.
 - **Docker Hub compatibility image is stale; follow-up deferred.** For `v0.1.87`, the configured Docker Hub identity published `snapetech/iptvtunerr` but received `insufficient_scope` when pushing `keefshape/iptvtunerr`; GHCR and the primary Docker Hub tags are current. Per the user's latest direction, do not rerun Docker Hub publishing or seek additional access for now.
 - **Snap stable is behind; follow-up deferred.** The public stable channel is `0.1.78`; the `v0.1.87` publisher run failed authentication. Per the user's latest direction, do not rerun Snap publishing or seek replacement credentials for now.

@@ -1,3 +1,17 @@
+# 2026-10-01 - Fix Unraid license discovery
+
+- The Community Applications submission portal did not recognize the Unraid package repo's copied dual-license `LICENSE`; GitHub classified it as `Other`.
+- Replaced `packaging/unraid/LICENSE` with canonical AGPL-3.0 text and documented the upstream AGPL-3.0-or-later/commercial terms in the package README. Synced the update to `snapetech/iptvtunerr-unraid`.
+- Verification: GitHub now reports `licenseInfo.key=agpl-3.0` and REST `spdx_id=AGPL-3.0`. Portal Validate/Scan and submission remain pending.
+
+# 2026-10-01 - Package for Unraid
+
+- Added a public Unraid Community Applications template repository using the existing GHCR image, persistent appdata, masked secret inputs, and LAN/VPN guidance. Published package snapshot tag `v0.1.88`.
+- Added post-commit and pre-push hooks plus `scripts/sync-platform-packages.sh`; installed `.githooks` in this checkout. Initial sync published the Unraid repository. Hook docs note that GitHub web-created tags bypass local hooks.
+- Added platform suitability and install docs. Research found Threadfin is already listed in Unraid Community Apps; Unraid targets 64-bit x86; no Tunerr performance minimum has been measured.
+- Verification: shell syntax, Unraid XML parse, and `git diff --check` passed. Application tests and repo verification were not run.
+- Remaining: Unraid portal Validate/Scan, submission, and moderator review. Resource benchmarks are filed in `opportunities.md`.
+
 # 2026-10-01 - Repair v0.1.90 AUR publication
 
 - Fixed the stale `iptvtunerr.env` checksum in both AUR package recipes. The AUR workflow now regenerates local-source hashes from the selected release tag before validating and publishing package metadata.
@@ -544,6 +558,12 @@
 - Reconfirmed the 24,908-channel smoketest timeout regression preserves untested rows. Updated the active bug-council backlog count for the new filesystem boundary test.
 - Verification: `./scripts/release-readiness.sh`, focused config/sports/indexer tests, the 24,908-channel regression, WebUI `npm run build`, shell syntax checks, release-note preview/validation, and `git diff --check` passed. `npm ci` reported zero vulnerabilities.
 - Prepared the changes for patch release `v0.1.90`; release publication follows the tagged commit.
+
+
+## 2026-10-02 - Rotate Discord announcement webhook
+
+- Replaced the `DISCORD_RELEASE_WEBHOOK` Actions secret in `snapetech/iptvtunerr` with the user-provided endpoint.
+- Verification: GitHub secret listing confirms the secret name exists; repository tracked files contain no webhook ID. The value itself is not readable through GitHub's secret listing.
 
 ## 2026-10-19 - Harden Plex proxy owner-token lending
 

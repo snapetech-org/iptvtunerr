@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if [[ "${SKIP_PACKAGE_SYNC:-}" == "1" ]]; then
+	echo "post-commit package sync skipped by SKIP_PACKAGE_SYNC=1" >&2
+	exit 0
+fi
+
+repo_root="$(git rev-parse --show-toplevel)"
+if ! git -C "$repo_root" cat-file -e "HEAD:packaging/unraid/ca_profile.xml" 2>/dev/null; then
+	echo "Package sync skipped: commit the Unraid package tree to the source repository first." >&2
+	exit 0
+fi
+
+"$repo_root/scripts/sync-platform-packages.sh"

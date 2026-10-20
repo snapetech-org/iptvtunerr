@@ -1,5 +1,19 @@
 # Work breakdown
 
+## 2026-10-01 - Unraid distribution
+
+Objective: ship an installable IPTV Tunerr package for Unraid Community Applications, submit it through the platform catalog, and keep the package mirror synchronized with the source repository.
+
+| Story ID | Scope | Status |
+| --- | --- | --- |
+| DIST-001 | Research platform fit, packaging formats, catalog paths, current release assets, and resource/security constraints. | Completed |
+| DIST-002 | Add the Unraid Docker template and install/upgrade guidance using the current GHCR image and persistent appdata; publish the companion template repository and submit it to Community Applications. | Package repository and `v0.1.88` tag published; XML parses. Fixed license detection; GitHub now recognizes AGPL-3.0. Portal Validate/Scan and submission remain. |
+| DIST-004 | Add post-commit and pre-push release-tag hooks that sync the canonical Unraid package tree to its companion repo; document hook installation and failure recovery. | Implemented and active in this checkout; initial package sync succeeded. |
+| DIST-005 | Complete Unraid platform submission checks where authenticated access allows; preserve external moderator review as an open gate. | Unraid portal submission is not yet started. |
+| DIST-006 | Update install/release docs, known issues/opportunities, current task, and append task history without running the application test suite. | Completed; docs and memory are updated, platform static checks passed, and application tests/repo verification were intentionally not run. |
+
+Guardrail: keep this work in packaging, release-sync, docs, and memory; do not change Tunerr runtime features or force-push histories.
+
 ## 2026-10-01 - API-Sports Sports Automation
 
 Objective: implement the supplied M3U Web Picker Sports Automation model in Tunerr: canonical API-Sports schedule anchors, provider/XMLTV reconciliation, temporary event channels, and operator API/WebUI controls.

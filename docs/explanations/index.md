@@ -12,6 +12,7 @@ Background and rationale. Add project-specific explanation docs here.
 | Doc | Description |
 |-----|-------------|
 | [architecture](architecture.md) | System architecture: three layers, ASCII + **Mermaid** data-flow diagram, package pointers, design tension. |
+| [platform-suitability](platform-suitability.md) | Platform fit, hardware limits, and package publishing path for Unraid. |
 | [project-backlog](project-backlog.md) | **Open work index:** epics, **opportunities**, **known_issues**, **docs-gaps**, features limits — maintained alongside those sources. |
 | [observability-prometheus-and-otel](observability-prometheus-and-otel.md) | **`/metrics`** (Prometheus) and bridging to OpenTelemetry via a collector scrape. |
 | [release-history-audit](release-history-audit.md) | Historical GitHub releases missing changelog sections and the documented no-release tag exceptions. |

@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+<CommunityApplications>
+  <Profile>IPTV Tunerr turns an IPTV provider or M3U source into a stable tuner and XMLTV guide endpoint for Plex, Emby, and Jellyfin. The container supports optional stream remuxing, guide caching, and operator controls. Keep tuner access on a trusted LAN or VPN.</Profile>
+  <Icon>https://raw.githubusercontent.com/snapetech/iptvtunerr/main/docs/assets/iptvtunerr-icon.svg</Icon>
+  <WebPage>https://github.com/snapetech/iptvtunerr-unraid</WebPage>
+  <Forum>https://github.com/snapetech/iptvtunerr/issues</Forum>
+</CommunityApplications>
