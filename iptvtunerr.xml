@@ -14,7 +14,7 @@
   <Project>https://github.com/snapetech/iptvtunerr</Project>
   <TemplateURL>https://raw.githubusercontent.com/snapetech-org/iptvtunerr/main/iptvtunerr.xml</TemplateURL>
   <ReadMe>https://raw.githubusercontent.com/snapetech-org/iptvtunerr/main/docs/how-to/install-on-unraid.md</ReadMe>
-  <Category>MediaApp:Other</Category>
+  <Category>MediaApp:Video MediaServer:Video Network:Proxy</Category>
   <ExtraSearchTerms>iptvtunerr iptv plex tuner hdhomerun hdhr emulator xmltv epg guide m3u xtream dvr recording vod webdav threadfin xteve jellyfin emby</ExtraSearchTerms>
   <Changes>Initial Community Applications template. Tracks the GHCR latest image published by the IPTV Tunerr release workflow.</Changes>
   <Requires>Persistent appdata and cache paths. Set a reachable IPTV_TUNERR_BASE_URL before using Plex, Emby, or Jellyfin.</Requires>
