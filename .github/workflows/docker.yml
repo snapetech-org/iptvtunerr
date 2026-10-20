@@ -30,6 +30,7 @@ jobs:
         with:
           ref: ${{ github.event.inputs.tag || github.ref }}
           fetch-depth: 0
+          persist-credentials: false
       - name: Require release tag on main
         env:
           TAG: ${{ env.RELEASE_TAG }}

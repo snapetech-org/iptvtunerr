@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+script_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+repo_root="$(cd "${LOCAL_IDENTITY_SCAN_ROOT:-$script_root}" && pwd)"
 cd "$repo_root"
 
 if ! command -v rg >/dev/null 2>&1; then

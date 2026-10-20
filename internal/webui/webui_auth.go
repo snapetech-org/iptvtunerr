@@ -2,18 +2,19 @@ package webui
 
 import (
 	"crypto/rand"
-	"crypto/sha256"
 	"crypto/subtle"
 	"encoding/hex"
 	"fmt"
 	"net"
 	"net/http"
-	"os"
+	"net/url"
 	"strconv"
 	"strings"
-	"sync/atomic"
 	"time"
 )
+
+const maxFailedLoginIPs = 1024
+const maxLoginFormBytes = 8 << 10
 
 func (s *Server) login(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
@@ -24,12 +25,17 @@ func (s *Server) login(w http.ResponseWriter, r *http.Request) {
 			s.renderLogin(w, r, http.StatusTooManyRequests, "Too many login attempts. Wait a few minutes and try again.")
 			return
 		}
+		r.Body = http.MaxBytesReader(w, r.Body, maxLoginFormBytes)
 		if err := r.ParseForm(); err != nil {
 			s.renderLogin(w, r, http.StatusBadRequest, "Invalid login form.")
 			return
 		}
 		user := strings.TrimSpace(r.Form.Get("username"))
 		pass := r.Form.Get("password")
+		if len(user) > 256 || len(pass) > 1024 {
+			s.renderLogin(w, r, http.StatusBadRequest, "Invalid login form.")
+			return
+		}
 		if !s.validCredentials(user, pass) {
 			s.noteFailedLogin(r)
 			s.recordActivity("auth", "login_failed", "Deck login failed.", map[string]interface{}{"username": user})
@@ -37,7 +43,10 @@ func (s *Server) login(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		s.clearFailedLogins(r)
-		s.startSession(w, r)
+		if err := s.startSession(w, r); err != nil {
+			http.Error(w, "unable to create session", http.StatusInternalServerError)
+			return
+		}
 		s.recordActivity("auth", "login", "Deck session opened.", map[string]interface{}{"username": user})
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 	default:
@@ -109,8 +118,14 @@ func (s *Server) sessionAuthOnly(h http.Handler) http.Handler {
 		user, pass, ok := r.BasicAuth()
 		if ok && s.validCredentials(user, pass) {
 			s.clearFailedLogins(r)
+			if requiresCSRF(r.Method) && !basicAuthMutationAllowed(w, r) {
+				return
+			}
 			if !isScriptableDeckPath(r.URL.Path) {
-				s.startSession(w, r)
+				if err := s.startSession(w, r); err != nil {
+					http.Error(w, "unable to create session", http.StatusInternalServerError)
+					return
+				}
 				s.recordActivity("auth", "basic_auth", "Deck session opened via HTTP Basic auth.", map[string]interface{}{"username": user})
 			}
 			h.ServeHTTP(w, r)
@@ -156,6 +171,40 @@ func (s *Server) validCredentials(user, pass string) bool {
 		subtle.ConstantTimeCompare([]byte(pass), []byte(s.settings.AuthPass)) == 1
 }
 
+// basicAuthMutationAllowed protects browser-cached HTTP Basic credentials from
+// cross-site form submissions while keeping command-line clients scriptable.
+// Requests without browser origin metadata are treated as non-browser clients.
+func basicAuthMutationAllowed(w http.ResponseWriter, r *http.Request) bool {
+	site := strings.ToLower(strings.TrimSpace(r.Header.Get("Sec-Fetch-Site")))
+	if site != "" && site != "same-origin" {
+		writeJSONError(w, http.StatusForbidden, "cross-origin mutation rejected")
+		return false
+	}
+
+	origin := strings.TrimSpace(r.Header.Get("Origin"))
+	if origin == "" {
+		origin = strings.TrimSpace(r.Header.Get("Referer"))
+	}
+	if origin == "" {
+		return true
+	}
+	u, err := url.Parse(origin)
+	if err != nil || u.Host == "" || u.User != nil || (u.Scheme != "http" && u.Scheme != "https") {
+		writeJSONError(w, http.StatusForbidden, "cross-origin mutation rejected")
+		return false
+	}
+
+	expectedScheme := "http"
+	if r.TLS != nil || (isLoopback(remoteHost(r)) && strings.EqualFold(strings.TrimSpace(r.Header.Get("X-Forwarded-Proto")), "https")) {
+		expectedScheme = "https"
+	}
+	if !strings.EqualFold(u.Scheme, expectedScheme) || !strings.EqualFold(u.Host, r.Host) {
+		writeJSONError(w, http.StatusForbidden, "cross-origin mutation rejected")
+		return false
+	}
+	return true
+}
+
 func mustGenerateDeckPassword(length int) string {
 	if length < 12 {
 		length = 12
@@ -163,13 +212,7 @@ func mustGenerateDeckPassword(length int) string {
 	const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789"
 	buf := make([]byte, length)
 	if _, err := rand.Read(buf); err != nil {
-		seed := []byte(strconv.FormatInt(time.Now().UTC().UnixNano(), 10))
-		if len(seed) == 0 {
-			seed = []byte("iptvtunerr-fallback")
-		}
-		for i := range buf {
-			buf[i] = seed[i%len(seed)] + byte(i)
-		}
+		panic("webui: cryptographic randomness unavailable for generated password")
 	}
 	out := make([]byte, length)
 	for i, b := range buf {
@@ -218,16 +261,14 @@ func (s *Server) validSessionToken(r *http.Request) (string, bool) {
 	return token, true
 }
 
-func (s *Server) startSession(w http.ResponseWriter, r *http.Request) {
+func (s *Server) startSession(w http.ResponseWriter, r *http.Request) error {
 	token, err := newSessionToken()
 	if err != nil {
-		sum := sha256.Sum256([]byte(fmt.Sprintf("session-%d-%d-%d", time.Now().UnixNano(), os.Getpid(), atomic.AddUint64(&fallbackTokenSeq, 1))))
-		token = hex.EncodeToString(sum[:])
+		return fmt.Errorf("create session token: %w", err)
 	}
 	csrfToken, err := newSessionToken()
 	if err != nil {
-		sum := sha256.Sum256([]byte(fmt.Sprintf("csrf-%d-%d-%d", time.Now().UnixNano(), os.Getpid(), atomic.AddUint64(&fallbackTokenSeq, 1))))
-		csrfToken = hex.EncodeToString(sum[:])
+		return fmt.Errorf("create CSRF token: %w", err)
 	}
 	s.sessionMu.Lock()
 	s.ensureStateMaps()
@@ -246,6 +287,7 @@ func (s *Server) startSession(w http.ResponseWriter, r *http.Request) {
 		MaxAge:   int(sessionTTL.Seconds()),
 		Secure:   requestCookieSecure(r),
 	})
+	return nil
 }
 
 func (s *Server) pruneSessionsLocked() {
@@ -295,6 +337,9 @@ func (s *Server) requireCSRFForToken(w http.ResponseWriter, r *http.Request, tok
 	}
 	header := strings.TrimSpace(r.Header.Get(csrfHeaderName))
 	if header == "" {
+		header = strings.TrimSpace(r.Header.Get(legacyCSRFHeaderName))
+	}
+	if header == "" {
 		writeJSONError(w, http.StatusForbidden, "missing csrf token")
 		return false
 	}
@@ -337,7 +382,18 @@ func (s *Server) loginBlocked(r *http.Request) bool {
 	defer s.failedLoginMu.Unlock()
 	s.ensureStateMaps()
 	s.trimFailedLoginsLocked(ip)
-	return len(s.failedLoginByIP[ip]) >= failedLoginLimit
+	if _, tracked := s.failedLoginByIP[ip]; tracked {
+		return len(s.failedLoginByIP[ip]) >= failedLoginLimit
+	}
+	if len(s.failedLoginByIP) >= maxFailedLoginIPs {
+		now := time.Now()
+		s.pruneFailedLoginsLocked(now)
+		if len(s.failedLoginByIP) >= maxFailedLoginIPs {
+			s.trimFailedLoginOverflowLocked(now)
+			return len(s.failedLoginOverflow) >= failedLoginLimit
+		}
+	}
+	return false
 }
 
 func (s *Server) noteFailedLogin(r *http.Request) {
@@ -348,8 +404,22 @@ func (s *Server) noteFailedLogin(r *http.Request) {
 	s.failedLoginMu.Lock()
 	defer s.failedLoginMu.Unlock()
 	s.ensureStateMaps()
-	s.trimFailedLoginsLocked(ip)
-	s.failedLoginByIP[ip] = append(s.failedLoginByIP[ip], time.Now())
+	now := time.Now()
+	s.trimFailedLoginsAtLocked(ip, now)
+	if _, exists := s.failedLoginByIP[ip]; !exists && len(s.failedLoginByIP) >= maxFailedLoginIPs {
+		s.pruneFailedLoginsLocked(now)
+		if len(s.failedLoginByIP) >= maxFailedLoginIPs {
+			s.trimFailedLoginOverflowLocked(now)
+			if len(s.failedLoginOverflow) < failedLoginLimit {
+				s.failedLoginOverflow = append(s.failedLoginOverflow, now)
+			}
+			return
+		}
+	}
+	if len(s.failedLoginByIP[ip]) >= failedLoginLimit {
+		return
+	}
+	s.failedLoginByIP[ip] = append(s.failedLoginByIP[ip], now)
 }
 
 func (s *Server) clearFailedLogins(r *http.Request) {
@@ -360,11 +430,28 @@ func (s *Server) clearFailedLogins(r *http.Request) {
 	s.failedLoginMu.Lock()
 	s.ensureStateMaps()
 	delete(s.failedLoginByIP, ip)
+	s.failedLoginOverflow = nil
 	s.failedLoginMu.Unlock()
 }
 
+func (s *Server) trimFailedLoginOverflowLocked(now time.Time) {
+	cutoff := now.Add(-failedLoginWindow)
+	entries := s.failedLoginOverflow
+	kept := entries[:0]
+	for _, at := range entries {
+		if at.After(cutoff) {
+			kept = append(kept, at)
+		}
+	}
+	s.failedLoginOverflow = kept
+}
+
 func (s *Server) trimFailedLoginsLocked(ip string) {
-	cutoff := time.Now().Add(-failedLoginWindow)
+	s.trimFailedLoginsAtLocked(ip, time.Now())
+}
+
+func (s *Server) trimFailedLoginsAtLocked(ip string, now time.Time) {
+	cutoff := now.Add(-failedLoginWindow)
 	entries := s.failedLoginByIP[ip]
 	kept := entries[:0]
 	for _, at := range entries {
@@ -377,6 +464,12 @@ func (s *Server) trimFailedLoginsLocked(ip string) {
 		return
 	}
 	s.failedLoginByIP[ip] = kept
+}
+
+func (s *Server) pruneFailedLoginsLocked(now time.Time) {
+	for ip := range s.failedLoginByIP {
+		s.trimFailedLoginsAtLocked(ip, now)
+	}
 }
 
 func remoteHost(r *http.Request) string {

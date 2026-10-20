@@ -584,7 +584,21 @@
 - Committed the council count and smoke portability fix as `4c38764` and `751ae6b`, then pushed `feat/seerrng-recording-rules` to `origin` without changing the pre-existing `AGENTS.md` edit.
 - Verification: the clean isolated `./scripts/verify` run passed release wiring, formatting, vet, shell syntax, council, Go tests, build, and binary smoke. GitHub Local Identity run `37630122249` passed. No real IPTV provider was available, so no live provider result is claimed.
 
+## 2026-10-19 - Rotate Chocolatey API key and republish v0.1.92
+
+- Replaced the `CHOCO_API_KEY` Actions secret for `snapetech-org/iptvtunerr` with the latest Chocolatey key from Proton Pass. The value was not recorded in files or command output.
+- Dispatched Chocolatey workflow run [39351964045](https://github.com/snapetech-org/iptvtunerr/actions/runs/39351964045) for `v0.1.92`. Tag validation, asset download, package preparation, and push all passed; Chocolatey returned `Created` and `Your package was pushed`.
+- The Chocolatey package page reports `Pending automated review`; approval/public listing is still outstanding. Filed the publisher's `iconUrl` deprecation and unrecognized uninstall-script warnings in `opportunities.md`.
+
 ## 2026-10-19 - Unraid template moves to the main repo root
 
 - Moved `iptvtunerr.xml` and `ca_profile.xml` to the repository root, pointed their URLs at the main repo, and removed `packaging/unraid`, `scripts/sync-platform-packages.sh`, the post-commit hook, and the pre-push package-sync block. The separate `iptvtunerr-unraid` companion repository was deleted at the operator's direction.
 - Fixed the license rejection: `LICENSE` is now the canonical AGPL-3.0 text (the dual-license preamble and reflowed copy made GitHub report `other`). The commercial-license terms stay in `LICENSE-COMMERCIAL.md` and the README. Verify with `gh repo view OWNER/REPO --json licenseInfo`.
+
+## 2026-10-19 - Security audit and remediation
+
+- Hardened Control Deck authentication: locality checks now run before login throttling; login parsing is size-limited; failed-login tracking has bounded per-IP and overflow state; insecure random fallbacks were removed; browser-origin checks protect HTTP Basic mutations; and the embedded UI and server now share the documented CSRF header while accepting the legacy header.
+- Hardened Plex subscription classification to recognize only known URL-encoded form fields and query keys. Oversized or unclassified request bodies are replayed intact to Plex.
+- Closed the private identity denylist exposure in pull-request scans: a trusted scanner from the base commit reads PR files and history, and no PR code executes in the secret-bearing job. Read-only CI, scan, release, and publisher checkouts now disable persisted credentials; the stable-ref sync retains checkout auth because it performs a Git push.
+- Updated `SECURITY.md`, feature guidance, known issues, opportunities, and the security release note. Remaining risks include unauthenticated LAN tuner operator routes, compatibility-scoped subscription evidence pending live Plex validation, root container execution, action tag pinning, reverse-proxy cookie trust, and unbounded guide duration inputs.
+- Verification: `go vet ./...`, `go build ./...`, `gofmt`, dependency scans, shell checks, the local identity scan, and `git diff --check` passed. Actionlint passed with suppressions for two existing baseline diagnostics, which are filed in `opportunities.md`. Tests were not run. `govulncheck` found no reachable vulnerable code; its `x/crypto/openpgp` module advisory is not imported by the application (Tunerr uses the module's `bcrypt` package).

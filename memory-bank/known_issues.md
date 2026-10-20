@@ -12,6 +12,8 @@
 
 - **Live TV abuse blocking must not override valid Plex authorization.** A source/IP block can be triggered by missing-token probes from Plex clients or shared networks. The proxy must allow an already-authorized Plex token to bypass the source block while continuing to deny missing or unauthorized tokens.
 
+- **Tuner APIs remain unauthenticated on the trusted network.** The media-server-facing listener on port `5004` has no general authentication. Operator handlers are localhost-only by default, but `IPTV_TUNERR_UI_ALLOW_LAN=1` exposes those operator routes to LAN clients without app credentials. Do not expose port `5004` to the internet; use this LAN option only on a trusted network.
+
 ## Sports Automation
 
 - **Event matching depends on provider and guide naming.** API-Sports does not provide channel carriage or stream URLs. Tunerr matches canonical team names/codes in current lineup channel names and merged XMLTV programme text, with programme starts limited to three hours from the canonical start. Provider-specific abbreviations and generic guide labels can leave a real game unmatched. Only current lineup channels with streams can be generated.
@@ -24,6 +26,8 @@
 - **Docker Hub compatibility image is stale; follow-up deferred.** For `v0.1.87`, the configured Docker Hub identity published `snapetech/iptvtunerr` but received `insufficient_scope` when pushing `keefshape/iptvtunerr`; GHCR and the primary Docker Hub tags are current. Per the user's latest direction, do not rerun Docker Hub publishing or seek additional access for now.
 - **Snap stable is behind; follow-up deferred.** The public stable channel is `0.1.78`; the `v0.1.87` publisher run failed authentication. Per the user's latest direction, do not rerun Snap publishing or seek replacement credentials for now.
 - **Launchpad binary publication is asynchronous.** For `v0.1.88`, the exact Jammy and Noble source packages are `Published`; both amd64 builds report `Successfully built` on the latest check, though Noble's state varied between processing states across earlier API reads. Neither exact amd64 binary is published yet. The first poll stopped on HTTP 502; later polling exposed delayed source visibility and a 30-second timeout that exhausted an equally short retry budget. The publisher now allows 20 minutes for source discovery and 180 seconds of curl retries per request. Report the channel as updated only after both exact amd64 binaries reach `Published`.
+- **PPA signing key mismatch blocks automated publication.** The `v0.1.92` Jammy and Noble publisher jobs imported the configured GPG secret but failed signing with `No secret key`; the imported key does not match the workflow's configured signer fingerprint. Restore the matching signing key or update the signer configuration before treating PPA publication as available.
+- **Chocolatey automated push still receives 403.** The `v0.1.92` GitHub publisher run returned `403 Forbidden` from Chocolatey's push endpoint. A separate manual push was recorded as accepted and pending review, so check the public package state and API-key permissions before retrying.
 
 ## Repository remotes
 

@@ -3,6 +3,7 @@ package plexlabelproxy
 import (
 	"bytes"
 	"io"
+	"mime"
 	"net/http"
 	"net/url"
 	"strings"
@@ -307,13 +308,11 @@ func queryValuesContainLiveTVPath(q url.Values) bool {
 func subscriptionHintKey(key string) bool {
 	key = strings.ToLower(strings.TrimSpace(key))
 	switch key {
-	case "guid", "key", "uri", "ratingkey":
+	case "guid", "key", "uri", "ratingkey",
+		"hints[guid]", "hints[key]", "hints[uri]", "hints[ratingkey]":
 		return true
 	}
-	return strings.HasSuffix(key, "[guid]") ||
-		strings.HasSuffix(key, "[key]") ||
-		strings.HasSuffix(key, "[uri]") ||
-		strings.HasSuffix(key, "[ratingkey]")
+	return false
 }
 
 func bodyParamIsLiveTVPath(req *http.Request, name string) bool {
@@ -329,19 +328,11 @@ func bodyContainsLiveTVPath(req *http.Request) bool {
 	if !ok {
 		return false
 	}
-	ct := strings.ToLower(req.Header.Get("Content-Type"))
-	if strings.Contains(ct, "application/x-www-form-urlencoded") || ct == "" {
-		if values, err := url.ParseQuery(string(body)); err == nil {
-			if queryParamIsLiveTVPath(values, "guid") ||
-				queryParamIsLiveTVPath(values, "key") ||
-				queryParamIsLiveTVPath(values, "uri") ||
-				queryParamIsLiveTVPath(values, "ratingKey") ||
-				queryValuesContainLiveTVPath(values) {
-				return true
-			}
-		}
+	values, ok := requestFormValues(req, body)
+	if !ok {
+		return false
 	}
-	return liveTVText(string(body))
+	return queryValuesContainLiveTVPath(values)
 }
 
 func readRequestBodyForClassification(req *http.Request) ([]byte, bool) {
@@ -349,28 +340,53 @@ func readRequestBodyForClassification(req *http.Request) ([]byte, bool) {
 		return nil, false
 	}
 	const maxBody = 1 << 20
-	body, err := io.ReadAll(io.LimitReader(req.Body, maxBody+1))
+	originalBody := req.Body
+	body, err := io.ReadAll(io.LimitReader(originalBody, maxBody+1))
 	if err != nil {
+		req.Body = &replayRequestBody{Reader: io.MultiReader(bytes.NewReader(body), originalBody), closer: originalBody}
 		return nil, false
-	}
-	req.Body = io.NopCloser(bytes.NewReader(body))
-	if req.ContentLength >= 0 && int64(len(body)) <= maxBody {
-		req.ContentLength = int64(len(body))
 	}
 	if len(body) > maxBody {
+		req.Body = &replayRequestBody{Reader: io.MultiReader(bytes.NewReader(body), originalBody), closer: originalBody}
 		return nil, false
+	}
+	req.Body = &replayRequestBody{Reader: bytes.NewReader(body), closer: originalBody}
+	if req.ContentLength >= 0 {
+		req.ContentLength = int64(len(body))
 	}
 	return body, true
 }
 
 func bodyBytesContainLiveTVPath(req *http.Request, body []byte, name string) bool {
-	ct := strings.ToLower(req.Header.Get("Content-Type"))
-	if strings.Contains(ct, "application/x-www-form-urlencoded") || ct == "" {
-		if values, err := url.ParseQuery(string(body)); err == nil && queryParamIsLiveTVPath(values, name) {
-			return true
+	values, ok := requestFormValues(req, body)
+	if !ok {
+		return false
+	}
+	return queryParamIsLiveTVPath(values, name)
+}
+
+type replayRequestBody struct {
+	io.Reader
+	closer io.Closer
+}
+
+func (b *replayRequestBody) Close() error {
+	if b.closer == nil {
+		return nil
+	}
+	return b.closer.Close()
+}
+
+func requestFormValues(req *http.Request, body []byte) (url.Values, bool) {
+	contentType := strings.TrimSpace(req.Header.Get("Content-Type"))
+	if contentType != "" {
+		mediaType, _, err := mime.ParseMediaType(contentType)
+		if err != nil || mediaType != "application/x-www-form-urlencoded" {
+			return nil, false
 		}
 	}
-	return liveTVText(string(body))
+	values, err := url.ParseQuery(string(body))
+	return values, err == nil
 }
 
 func refererIsLiveTV(ref string) bool {

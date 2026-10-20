@@ -26,6 +26,7 @@ jobs:
         with:
           ref: ${{ inputs.version }}
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v6

@@ -342,7 +342,7 @@ func buildRuntimeSnapshot(cfg *config.Config, addr, baseURL, deviceID, friendlyN
 			"telemetry_endpoint":      "/deck/telemetry.json",
 			"activity_endpoint":       "/deck/activity.json",
 			"settings_endpoint":       "/deck/settings.json",
-			"csrf_header":             "X-IPTVTunerr-Deck-CSRF",
+			"csrf_header":             "X-IPTVTunerr-CSRF",
 			"telemetry_history_max":   96,
 			"activity_history_max":    64,
 			"login_failure_limit":     8,

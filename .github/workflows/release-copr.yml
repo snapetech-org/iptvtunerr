@@ -33,6 +33,7 @@ jobs:
         with:
           ref: ${{ steps.version.outputs.tag }}
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Require latest release tag
         env:

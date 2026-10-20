@@ -28,7 +28,8 @@ const defaultTelemetryHistoryLimit = 96
 const defaultActivityHistoryLimit = 64
 const defaultDeckRefreshSec = 30
 const sessionCookieName = "iptvtunerr_deck_session"
-const csrfHeaderName = "X-IPTVTunerr-Deck-CSRF"
+const csrfHeaderName = "X-IPTVTunerr-CSRF"
+const legacyCSRFHeaderName = "X-IPTVTunerr-Deck-CSRF"
 const sessionTTL = 12 * time.Hour
 const failedLoginLimit = 8
 const failedLoginWindow = 15 * time.Minute
@@ -46,8 +47,6 @@ var deckJS string
 //go:embed login.html
 var loginHTML string
 
-var fallbackTokenSeq uint64
-
 // Server is the dedicated web dashboard HTTP server.
 type Server struct {
 	Port      int
@@ -62,17 +61,18 @@ type Server struct {
 	tmpl      *template.Template
 	loginTmpl *template.Template
 
-	settingsMu       sync.RWMutex
-	settings         DeckSettings
-	generatedPass    string
-	telemetryMu      sync.Mutex
-	telemetrySamples []DeckTelemetrySample
-	activityMu       sync.Mutex
-	activityEntries  []DeckActivityEntry
-	sessionMu        sync.Mutex
-	sessions         map[string]deckSession
-	failedLoginMu    sync.Mutex
-	failedLoginByIP  map[string][]time.Time
+	settingsMu          sync.RWMutex
+	settings            DeckSettings
+	generatedPass       string
+	telemetryMu         sync.Mutex
+	telemetrySamples    []DeckTelemetrySample
+	activityMu          sync.Mutex
+	activityEntries     []DeckActivityEntry
+	sessionMu           sync.Mutex
+	sessions            map[string]deckSession
+	failedLoginMu       sync.Mutex
+	failedLoginByIP     map[string][]time.Time
+	failedLoginOverflow []time.Time
 
 	broadcastMu sync.Mutex
 	subscribers []chan sseEvent
@@ -236,11 +236,11 @@ func (s *Server) Run(ctx context.Context) error {
 	s.registerRoutes(mux)
 
 	handler := http.Handler(mux)
+	handler = s.sessionAuthOnly(handler)
 	if !s.AllowLAN {
-		handler = localhostOnly(mux)
+		handler = localhostOnly(handler)
 	}
 	handler = securityHeaders(handler)
-	handler = s.sessionAuthOnly(handler)
 
 	srv := &http.Server{
 		Addr:              fmt.Sprintf(":%d", s.Port),
@@ -611,6 +611,7 @@ func (s *Server) proxy(w http.ResponseWriter, r *http.Request) {
 		req.Header.Del("Proxy-Authorization")
 		req.Header.Del("Cookie")
 		req.Header.Del("X-IPTVTunerr-Deck-CSRF")
+		req.Header.Del("X-IPTVTunerr-CSRF")
 	}
 	rp.ErrorHandler = func(w http.ResponseWriter, _ *http.Request, err error) {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")

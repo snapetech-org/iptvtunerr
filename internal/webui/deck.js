@@ -44,7 +44,7 @@ const endpoints = {
   oidcMigrationApply: "/deck/oidc-migration-apply.json",
   opsWorkflow: "/api/ops/workflows/ops-recovery.json"
 };
-const csrfHeaderName = "X-IPTVTunerr-Deck-CSRF";
+const csrfHeaderName = "X-IPTVTunerr-CSRF";
 const endpointCatalog = {
   deckTelemetry: { title: "Deck Telemetry", category: "Deck Memory", summary: "Read-only deck telemetry endpoint; browser trend memory stays local to the current operator session." },
   deckActivity: { title: "Deck Activity", category: "Deck Memory", summary: "Server-derived operator activity trail for the dedicated deck." },

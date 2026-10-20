@@ -27,6 +27,7 @@ jobs:
           ref: ${{ inputs.tag }}
           path: source
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Require latest release tag
         working-directory: source
@@ -43,6 +44,7 @@ jobs:
         with:
           ref: main
           path: publisher
+          persist-credentials: false
 
       - name: Prepare Snapcraft project
         env:
