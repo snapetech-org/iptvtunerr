@@ -551,3 +551,15 @@
 - Fixed: canonical-path gate on every elevation (`pathSafeForElevation`), Referer hints read only from Referer path/fragment, response scrubber (headers + textual/gzip bodies, fail-closed above 16 MiB, owner token swapped for the caller's own), owner-only denylist for `-elevate-all`, `-elevate-all` deprecated with warning (`-unsafe-elevate-all` acknowledges), bounded authorizer cache, constant-time token compares, `-owner-token-file`.
 - Verification: new `hardening_test.go` fails on the old code and passes on the new; existing `internal/plexlabelproxy` suite unchanged and green.
 - Opportunities filed: subscription write-evidence body fallback, live validation of the scrub on a real PMS (see `opportunities.md`).
+## 2026-10-06 - Request-driven recording rules for SeerrNG
+
+- Added exact-title (`title_equals`) and start-window (`start_after`/`start_before`) rule fields, applied consistently in rule preview, history, and recorder matching; unparsable bounds match nothing.
+- `/recordings/rules.json` responses now include `features` (`rules_only_recorder`, `start_window`, `title_equals`); the field is never persisted.
+- Added `catchup-daemon -rules-only` with `-recording-rules-file` (default `IPTV_TUNERR_RECORDING_RULES_FILE`). The daemon filters capsules by enabled rules before `-limit` via `BuildCatchupCapsulePreviewFiltered`, re-reads the rules file on change, and fails closed.
+- Verification: new focused tests in `internal/tuner/recording_rules_seerrng_test.go`, existing rule tests, `go vet` for touched packages, `go build ./...`, and `go test -count=1 ./...` passed. Local Go 1.27 `gofmt -s -l .` flags vendored files (untouched). Branch is local only; no push or release.
+
+## 2026-10-07 - Finish and push request-driven recording rules for SeerrNG
+
+- Updated the Tunerr council backlog count for the request-rule changes and made `scripts/ci-smoke.sh` portable across macOS and Linux by replacing GNU-only `sed -i` fixture edits.
+- Committed the council count and smoke portability fix as `4c38764` and `751ae6b`, then pushed `feat/seerrng-recording-rules` to `origin` without changing the pre-existing `AGENTS.md` edit.
+- Verification: the clean isolated `./scripts/verify` run passed release wiring, formatting, vet, shell syntax, council, Go tests, build, and binary smoke. GitHub Local Identity run `37630122249` passed. No real IPTV provider was available, so no live provider result is claimed.
