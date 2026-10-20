@@ -11,6 +11,14 @@ All notable changes to IPTV Tunerr are documented here. Repo: [github.com/snapet
 
 ---
 
+## [v0.1.92] - 2026-10-19
+
+### User-facing changes
+
+#### Fixed
+
+- **Containers:** Container images build again: the Dockerfile now uses the Go 1.26 toolchain required by the current module, so v0.1.91 container publishing failed and v0.1.92 supersedes it.
+
 ## [v0.1.91] - 2026-10-19
 
 ### User-facing changes
