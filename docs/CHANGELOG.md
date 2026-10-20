@@ -11,6 +11,25 @@ All notable changes to IPTV Tunerr are documented here. Repo: [github.com/snapet
 
 ---
 
+## [v0.1.91] - 2026-10-19
+
+### User-facing changes
+
+#### Added
+
+- **Recordings:** Recording rules can now target one airing exactly with title_equals and a start window, and catchup-daemon -rules-only records only what rules request. The rules API reports these features so SeerrNG recording requests can rely on them.
+  - **Action required:** To record only requested programmes, run catchup-daemon with -rules-only and IPTV_TUNERR_RECORDING_RULES_FILE.
+
+#### Fixed
+
+- **Linux Arm:** Linux ARMv7 release packages now build correctly with the updated Go-FUSE dependency.
+
+#### Security
+
+- **Runtime:** The Go toolchain now includes upstream security fixes for TLS, HTTP, HTML templates, and text protocol handling used by the application.
+- **Plex Live Tv Proxy:** The Plex Live TV proxy now refuses to lend the owner token on non-canonical paths such as `/livetv/../security/token`, and scrubs the owner token from elevated responses. `-elevate-all` is deprecated, logs a warning, and withholds owner-only areas such as `/myplex` and `/security`. Added `-owner-token-file`.
+  - **Action required:** Prefer -elevate-live-tv over -elevate-all, and -owner-token-file over -owner-token.
+
 ## [v0.1.90] - 2026-10-01
 
 ### User-facing changes
