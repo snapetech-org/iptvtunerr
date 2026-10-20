@@ -9,7 +9,7 @@ multi-architecture image from GHCR.
 
 After Community Applications approves the submission, search for **IPTV
 Tunerr** in the Unraid Apps tab. Until then, install the template XML from
-`templates/iptvtunerr.xml` as a user template.
+`iptvtunerr.xml` as a user template.
 
 Map the appdata and cache paths to persistent storage. Set
 `IPTV_TUNERR_BASE_URL` to the address and host port your media server can reach,

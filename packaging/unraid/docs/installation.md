@@ -7,7 +7,7 @@ amd64, arm64, and arm/v7. Unraid uses the amd64 image on supported hosts.
 
 After the package is approved, open **Apps**, search for **IPTV Tunerr**, and
 install the template. Until catalog approval, add the XML under
-`templates/iptvtunerr.xml` as a user template.
+`iptvtunerr.xml` as a user template.
 
 Use the following settings:
 
