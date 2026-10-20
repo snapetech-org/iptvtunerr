@@ -187,3 +187,6 @@ web/.vite/
 
 # Local private denylist/config
 /.local/
+
+# Local package-smoke output; never commit (the Unraid portal scans every .xml in the repo)
+artifacts/
