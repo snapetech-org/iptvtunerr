@@ -11,6 +11,19 @@ All notable changes to IPTV Tunerr are documented here. Repo: [github.com/snapet
 
 ---
 
+## [v0.1.93] - 2026-10-19
+
+### User-facing changes
+
+#### Changed
+
+- **Release Automation:** After each release or container publish, the master branch is fast-forwarded to the newest stable tag and the latest container image is checked against that tag, so main, master, and latest stay aligned automatically.
+
+#### Security
+
+- **Security:** Control Deck login now bounds inputs and failure tracking, rejects cross-origin Basic-auth mutations, and fails closed without secure tokens. The UI uses the server's CSRF header; the old header remains accepted. Plex Live TV classification checks explicit fields and preserves oversized bodies. CI uses trusted PR code without unused Git credentials or access to the private identity denylist.
+  - **Action required:** Keep Control Deck login protected and rely on recognized form fields for Plex Live TV subscription requests.
+
 ## [v0.1.92] - 2026-10-19
 
 ### User-facing changes

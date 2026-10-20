@@ -5,7 +5,7 @@
 - **Assumptions:** `v0.1.92` is the latest stable release, so the next version is `v0.1.93`. The repository workflow advances `master` to the stable tag after publication. Do not push the configured GitLab mirror, whose ref service has a documented failure.
 - **Plan:** validate the release note and repo diff; commit the reviewed working tree; prepare and commit the `v0.1.93` changelog section; push `main`; check required CI; tag and push `v0.1.93`; monitor release, publisher, and stable-ref workflows; record final outcomes in task history.
 - **Status:** latest GitHub release `v0.1.92` published its assets and announcements. Its channel dispatcher reported Chocolatey `403 Forbidden` and PPA signing failure because the imported key does not match the configured signing fingerprint. Continue the release workflow and report channel results accurately.
-- **Next steps:** validate, commit, prepare changelog, push, then tag after the required checks pass.
+- **Next steps:** commit the generated changelog section; push `main`; wait for required CI; tag and push `v0.1.93`; then monitor GitHub release, publisher, and stable-ref results.
 
 ---
 
