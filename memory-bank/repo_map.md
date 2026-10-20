@@ -15,8 +15,7 @@ First place to look before editing. This repo is IPTV Tunerr. Active deployment 
 | `internal/catalog/` | Normalized movie/series/live-channel catalog model. |
 | `internal/webui/` | Dedicated deck listener and API proxy. |
 | `web/src/api/sports.ts`, `web/src/pages/Sports.tsx` | Typed Sports Automation API and operator page for datasets/team rules, cache health, event matches, and generated feed playback. |
-| `packaging/unraid/` | Unraid Community Applications profile, Docker template, and install guidance. |
-| `scripts/sync-platform-packages.sh`, `.githooks/` | Mirrors the Unraid package tree after commits and on pushed `v*` release tags. |
+| `iptvtunerr.xml`, `ca_profile.xml` | Unraid Community Applications Docker template and profile (repo root). |
 | `docs/explanations/platform-suitability.md` | Unraid fit, resource limits, and catalog gate. |
 | `internal/vodfs/` / `internal/vodwebdav/` | Linux VOD filesystem and cross-platform read-only WebDAV surface. |
 | `docs/index.md` | Documentation map. |

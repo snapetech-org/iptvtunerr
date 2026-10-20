@@ -583,3 +583,8 @@
 - Updated the Tunerr council backlog count for the request-rule changes and made `scripts/ci-smoke.sh` portable across macOS and Linux by replacing GNU-only `sed -i` fixture edits.
 - Committed the council count and smoke portability fix as `4c38764` and `751ae6b`, then pushed `feat/seerrng-recording-rules` to `origin` without changing the pre-existing `AGENTS.md` edit.
 - Verification: the clean isolated `./scripts/verify` run passed release wiring, formatting, vet, shell syntax, council, Go tests, build, and binary smoke. GitHub Local Identity run `37630122249` passed. No real IPTV provider was available, so no live provider result is claimed.
+
+## 2026-10-19 - Unraid template moves to the main repo root
+
+- Moved `iptvtunerr.xml` and `ca_profile.xml` to the repository root, pointed their URLs at the main repo, and removed `packaging/unraid`, `scripts/sync-platform-packages.sh`, the post-commit hook, and the pre-push package-sync block. The separate `iptvtunerr-unraid` companion repository was deleted at the operator's direction.
+- Open: the Community Applications portal rejects the main repo because GitHub detects its license as `other` (dual-license preamble in `LICENSE`).

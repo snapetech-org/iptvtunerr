@@ -14,9 +14,9 @@ uses the amd64 image.
 ## Install
 
 Once the template is approved, install **IPTV Tunerr** from the Unraid Apps
-tab. The package source and manual XML are in the
-[IPTV Tunerr Unraid repository](https://github.com/snapetech/iptvtunerr-unraid).
-Until catalog approval, add `iptvtunerr.xml` as a user template.
+tab. The template is [`iptvtunerr.xml`](../../iptvtunerr.xml) in the root of
+this repository, next to `ca_profile.xml`. Until catalog approval, add it as a
+user template.
 
 Keep the default tuner port `5004` and dashboard port `48879` unless they
 conflict with another container. Map `/var/lib/iptvtunerr` and
@@ -42,13 +42,10 @@ Use the Base URL as the tuner device URL and append `/guide.xml` for the guide.
 If automatic registration is enabled, provide the optional Plex URL and token
 in the container template.
 
-For the package README and troubleshooting steps, see the
-[Unraid package installation guide](https://github.com/snapetech/iptvtunerr-unraid/blob/main/docs/installation.md).
-
 The [Community Apps submission flow](https://ca.unraid.net/submit/help)
-requires a public package repository, root `ca_profile.xml`, license, and
-valid template XML. Validate and Scan the repository before submitting it for
-review.
+requires a public repository with a root `ca_profile.xml`, an OSI-approved
+`LICENSE`, and valid template XML. Validate and Scan the repository before
+submitting it for review.
 
 See also
 --------

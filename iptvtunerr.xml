@@ -12,8 +12,8 @@
   <Description>IPTV Tunerr publishes a stable tuner endpoint, M3U playlist, and XMLTV guide from an IPTV provider or M3U source. It can relay live streams, cache guide data, and optionally use ffmpeg for remuxing or transcoding. The authenticated operator dashboard listens on port 48879. Keep both ports on a trusted LAN or VPN and set a strong dashboard password before starting.</Description>
   <Support>https://github.com/snapetech/iptvtunerr/issues</Support>
   <Project>https://github.com/snapetech/iptvtunerr</Project>
-  <TemplateURL>https://raw.githubusercontent.com/snapetech/iptvtunerr-unraid/main/iptvtunerr.xml</TemplateURL>
-  <ReadMe>https://raw.githubusercontent.com/snapetech/iptvtunerr-unraid/main/docs/installation.md</ReadMe>
+  <TemplateURL>https://raw.githubusercontent.com/snapetech-org/iptvtunerr/main/iptvtunerr.xml</TemplateURL>
+  <ReadMe>https://raw.githubusercontent.com/snapetech-org/iptvtunerr/main/docs/how-to/install-on-unraid.md</ReadMe>
   <Category>MediaApp:Other</Category>
   <ExtraSearchTerms>iptvtunerr iptv plex tuner xmltv m3u threadfin xteve jellyfin emby</ExtraSearchTerms>
   <Changes>Initial Community Applications template. Tracks the GHCR latest image published by the IPTV Tunerr release workflow.</Changes>

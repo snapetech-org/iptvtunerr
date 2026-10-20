@@ -135,28 +135,6 @@ Install local hooks with:
 The local pre-commit hook validates staged note fragments. CI enforces the
 fragment-or-opt-out choice for pull requests and direct pushes.
 
-The same hook directory also synchronizes the Unraid package repository.
-After each local commit, `.githooks/post-commit` mirrors `packaging/unraid/` to
-`snapetech/iptvtunerr-unraid` on `main`. When a `vX.Y.Z` source tag is pushed
-with Git, `.githooks/pre-push` first syncs the package tree at that tagged
-source commit, then adds the same package tag without moving any existing tag.
-Package mirror commits use a generic bot identity.
-
-These hooks publish package changes immediately, including commits made on a
-source feature branch. They need GitHub push access to the companion repository
-plus `git`, `rsync`, and `tar`. A sync failure is reported by the post-commit
-hook or stops the source tag push, with the package repo and branch to retry.
-Run `scripts/sync-platform-packages.sh` after correcting access or remote
-state. The post-commit hook safely skips until the package tree exists in the
-committed source snapshot. For the first publication, use
-`scripts/sync-platform-packages.sh --working-tree --tag v0.1.88` to include
-package files that are not committed yet.
-
-Git hooks only run for local Git operations. A release tag created directly
-in the GitHub web UI bypasses `.githooks/pre-push`; create release tags through
-the configured local Git workflow so the package repository receives the
-matching snapshot and tag.
-
 ## AUR
 
 The repo includes AUR packaging for:

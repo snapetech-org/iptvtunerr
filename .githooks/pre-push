@@ -124,20 +124,4 @@ fi
 
 fi
 
-# Release packages need the same package-tree snapshot and tag as the source
-# release. This runs after secret scanning and still runs with SKIP_SECRET_SCAN.
-while read -r local_ref local_sha remote_ref remote_sha; do
-	[[ -z "${local_ref:-}" ]] && continue
-	[[ "$local_sha" == "0000000000000000000000000000000000000000" ]] && continue
-	if [[ "$local_ref" =~ ^refs/tags/(v[0-9]+\.[0-9]+\.[0-9]+([.-][0-9A-Za-z]+)*)$ ]]; then
-		tag="${BASH_REMATCH[1]}"
-		repo_root="$(git rev-parse --show-toplevel)"
-		if ! git cat-file -e "$local_sha:packaging/unraid/ca_profile.xml" 2>/dev/null; then
-			echo "Package sync skipped for $tag: the tag predates the committed Unraid package tree." >&2
-			continue
-		fi
-		"$repo_root/scripts/sync-platform-packages.sh" --source-ref "$local_sha" --tag "$tag"
-	fi
-done <<<"$push_updates"
-
 exit 0
