@@ -119,12 +119,13 @@ and record the reason in `scripts/changelog-tag-exceptions.json`. Remove the
 exception when a changelog section is added.
 
 The GitHub Release body contains the curated notes, technical commit list,
-checksums, and install notes. Discord receives that same body as bounded embeds;
-the workflow checks Discord's response for every chunk so no later notes are
+checksums, and install notes. Discord receives the categorized user-facing
+summary, with a direct link to the release page for assets and checksums. The
+workflow checks Discord's response for every chunk so no later notes are
 silently dropped. A missing webhook or rejected message fails the announcement
-job. Matrix receives the same notes as bounded, HTML-escaped messages; same-day
-retry chunks are redacted before replacements are posted. Matrix announcement
-failures do not fail the release.
+job. Matrix receives the full release notes as bounded, HTML-escaped messages;
+same-day retry chunks are redacted before replacements are posted. Matrix
+announcement failures do not fail the release.
 
 Install local hooks with:
 

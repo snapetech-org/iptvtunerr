@@ -2,7 +2,9 @@
 
 Add one Markdown fragment for every user-facing pull request. The release
 process uses these fragments to prepare `docs/CHANGELOG.md`, the GitHub Release
-body, and the Discord announcement.
+body, and the categorized user-facing summary in the Discord announcement.
+Discord links to the GitHub Release for its assets, checksums, and technical
+details.
 
 The preview, validation, and local pre-commit tools require Node.js 22. CI sets
 up this version automatically.

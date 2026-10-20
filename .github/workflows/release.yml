@@ -95,7 +95,6 @@ jobs:
     env:
       DISCORD_RELEASE_WEBHOOK: ${{ secrets.DISCORD_RELEASE_WEBHOOK }}
       RELEASE_URL: ${{ github.server_url }}/${{ github.repository }}/releases/tag/${{ github.ref_name }}
-      RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
       RELEASE_BODY: ${{ needs.release.outputs.release_body }}
       VERSION: ${{ github.ref_name }}
     steps:
@@ -119,8 +118,10 @@ jobs:
             exit 1
           }
 
+          summary_file="$RUNNER_TEMP/iptvtunerr-discord-release-summary.md"
           chunks_file="$RUNNER_TEMP/iptvtunerr-discord-release-chunks.json"
-          printf '%s' "$RELEASE_BODY" | node scripts/discord-release-notes.mjs --split > "$chunks_file"
+          printf '%s' "$RELEASE_BODY" | node scripts/discord-release-notes.mjs --format > "$summary_file"
+          node scripts/discord-release-notes.mjs --split < "$summary_file" > "$chunks_file"
           chunk_count="$(jq 'length' "$chunks_file")"
           (( chunk_count > 0 )) || {
             echo 'The generated release notes are empty.' >&2
@@ -137,13 +138,13 @@ jobs:
           for ((index = 0; index < chunk_count; index += 1)); do
             description="$(jq -r --argjson index "$index" '.[$index]' "$chunks_file")"
             number=$((index + 1))
-            title="Release notes (${number}/${chunk_count})"
+            title="IPTV Tunerr ${VERSION} release notes (${number}/${chunk_count})"
             payload_file="$RUNNER_TEMP/iptvtunerr-discord-release-payload.json"
             jq -n \
               --arg title "$title" \
               --arg url "$RELEASE_URL" \
               --arg description "$description" \
-              --arg run_url "$RUN_URL" \
+              --arg release_url "$RELEASE_URL" \
               --argjson first "$index" \
               '{
                 allowed_mentions: { parse: [] },
@@ -155,8 +156,7 @@ jobs:
                   color: 5814783,
                   footer: { text: "IPTV Tunerr release" },
                   fields: (if $first == 0 then [
-                    { name: "Release assets", value: "Downloads and SHA256SUMS are attached to the GitHub release.", inline: false },
-                    { name: "Workflow", value: $run_url, inline: false }
+                    { name: "Downloads & checksums", value: ("[View release assets and SHA256SUMS](" + $release_url + ")"), inline: false }
                   ] else [] end)
                 }]
               }' > "$payload_file"
