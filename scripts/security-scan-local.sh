@@ -143,7 +143,7 @@ trivy_run() {
   fi
 }
 
-if [[ "$mode" == all && ! $staged && -x scripts/run-security-scans.sh ]]; then
+if [[ "$mode" == all ]] && (( ! staged )) && [[ -x scripts/run-security-scans.sh ]]; then
   # Preserve this repository's established Semgrep + Trivy policy and exclusions.
   SLSKR_SECURITY_SCANS_REQUIRED="${SLSKR_SECURITY_SCANS_REQUIRED:-0}" bash scripts/run-security-scans.sh
   exit $?
@@ -159,4 +159,4 @@ if [[ "$mode" != trivy ]]; then
     semgrep_run
   fi
 fi
-if [[ "$mode" != semgrep && ! $staged ]]; then trivy_run; fi
+if [[ "$mode" != semgrep ]] && (( ! staged )); then trivy_run; fi
