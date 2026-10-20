@@ -3,6 +3,7 @@ set -euo pipefail
 
 repo_root="$(git rev-parse --show-toplevel)"
 cd "$repo_root"
+export EIO_BACKEND="${SEMGREP_EIO_BACKEND:-posix}"
 mode="all"
 staged=0
 ci_mode=0
@@ -44,6 +45,7 @@ has_semgrep_input() {
 
 semgrep_run() {
   local args=(scan --config "${SEMGREP_CONFIG:-p/default}" --metrics=off -j "${SEMGREP_JOBS:-1}")
+  local eio_backend="${SEMGREP_EIO_BACKEND:-posix}"
   local targets=()
   if [[ "${SEMGREP_OFFLINE:-0}" == 1 ]]; then
     args+=(--disable-version-check)
@@ -73,20 +75,20 @@ semgrep_run() {
   echo "Semgrep Community Edition: config=${SEMGREP_CONFIG:-p/default}, targets=${#targets[@]}"
   if [[ -n "${SEMGREP_BIN:-}" ]]; then
     [[ -x "$SEMGREP_BIN" ]] || { echo "SEMGREP_BIN is not executable: $SEMGREP_BIN" >&2; return 127; }
-    "$SEMGREP_BIN" "${args[@]}" "${targets[@]}"
+    EIO_BACKEND="$eio_backend" "$SEMGREP_BIN" "${args[@]}" "${targets[@]}"
   elif command -v uvx >/dev/null 2>&1; then
     local uv_args=()
     [[ "${SEMGREP_OFFLINE:-0}" == 1 ]] && uv_args+=(--offline)
-    uvx "${uv_args[@]}" --from semgrep semgrep "${args[@]}" "${targets[@]}"
+    EIO_BACKEND="$eio_backend" uvx "${uv_args[@]}" --from semgrep semgrep "${args[@]}" "${targets[@]}"
   elif command -v semgrep >/dev/null 2>&1; then
-    semgrep "${args[@]}" "${targets[@]}"
+    EIO_BACKEND="$eio_backend" semgrep "${args[@]}" "${targets[@]}"
   elif command -v docker >/dev/null 2>&1; then
     local image="semgrep/semgrep:latest"
     if ! docker image inspect "$image" >/dev/null 2>&1; then
       [[ "${SEMGREP_OFFLINE:-0}" == 0 ]] || { echo "Semgrep image is not cached for offline mode." >&2; return 127; }
       docker pull "$image"
     fi
-    docker run --rm --user "$(id -u):$(id -g)" -e HOME=/tmp \
+    docker run --rm --user "$(id -u):$(id -g)" -e HOME=/tmp -e "EIO_BACKEND=$eio_backend" \
       -v "$repo_root:/src:ro" -w /src "$image" semgrep "${args[@]}" "${targets[@]}"
   else
     echo "Semgrep is unavailable. Install uv, pipx, Semgrep, or Docker." >&2
@@ -117,7 +119,7 @@ trivy_run() {
   local scanner_list
   scanner_list="$(printf '%s,' "${scanners[@]}")"
   scanner_list="${scanner_list%,}"
-  args+=(fs --scanners "$scanner_list" --severity HIGH,CRITICAL --ignore-unfixed --exit-code "${TRIVY_EXIT_CODE:-0}")
+  args+=(fs --scanners "$scanner_list" --timeout "${TRIVY_TIMEOUT:-20m}" --severity HIGH,CRITICAL --ignore-unfixed --exit-code "${TRIVY_EXIT_CODE:-0}")
   for dir in .git node_modules vendor target dist build coverage .venv; do args+=(--skip-dirs "$dir"); done
   if (( ci_mode )); then args+=(--config= --ignorefile= --secret-config=); fi
   if [[ "${TRIVY_OFFLINE:-0}" == 1 ]]; then args+=(--skip-db-update --skip-java-db-update --skip-check-update); fi

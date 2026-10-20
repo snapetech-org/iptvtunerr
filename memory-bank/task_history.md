@@ -617,3 +617,16 @@
 - Published `v0.1.93` to Snap stable with workflow run [39361186479](https://github.com/snapetech-org/iptvtunerr/actions/runs/39361186479). The public [Snap Store page](https://snapcraft.io/iptvtunerr) shows `latest/stable 0.1.93`.
 - Added Semgrep CE and Trivy scheduled/PR workflows, a local scan command, scanner maintenance command, and security-scanning documentation. Fixed the pre-commit hook's undefined repository-root variable and limited local Semgrep to one worker after the default parallel scan hit an `io_uring` allocation failure.
 - Verification: `bash scripts/check-release-channel-wiring.sh`, shell syntax checks, `git diff --check`, and the staged pre-commit scan passed. Semgrep reported seven mutable action references in `release.yml`; the repository-wide SHA-pinning follow-up remains in `opportunities.md`. Push/CI verification is pending.
+
+## 2026-10-20 - Close out Snap publishing recovery
+
+- Pushed commit `143995a` to GitHub `main`; `master` remains at the stable `v0.1.93` tag.
+- CI run [39362058325](https://github.com/snapetech-org/iptvtunerr/actions/runs/39362058325), CodeQL [39362058473](https://github.com/snapetech-org/iptvtunerr/actions/runs/39362058473), Gitleaks [39362058351](https://github.com/snapetech-org/iptvtunerr/actions/runs/39362058351), Local Identity [39362058284](https://github.com/snapetech-org/iptvtunerr/actions/runs/39362058284), Semgrep [39362058370](https://github.com/snapetech-org/iptvtunerr/actions/runs/39362058370), and Trivy [39362058275](https://github.com/snapetech-org/iptvtunerr/actions/runs/39362058275) passed.
+- The `.93` Snap stable publication remains available; no new release tag or credential rotation was needed.
+- Added configurable Trivy timeouts for slow initial vulnerability-database downloads: 20 minutes for filesystem scans and 30 minutes for database refresh.
+
+## 2026-10-20 - Stabilize local Semgrep on restricted hosts
+
+- Reproduced `io_uring_queue_init` allocation failures even with one worker. Configured the local scanner to use Semgrep's POSIX backend by default, with an environment override, and documented the workaround in [security-scanning.md](../docs/security-scanning.md).
+- Retained the Trivy 20-minute scan and 30-minute database-refresh timeout controls from the shared checkout.
+- Verification: shell syntax, release-channel wiring, `git diff --check`, and the staged pre-commit Semgrep scan passed; the staged scan reported zero findings in the two updated scanner scripts.

@@ -373,3 +373,18 @@
 - `scripts/prepare-release-changelog.mjs`
 - `scripts/preview-release-notes.mjs`
 - `scripts/verify-release-changelog.mjs`
+
+### Loop: Local Semgrep engine fails when io_uring is unavailable
+
+**Symptom**
+- The local Semgrep pre-commit scan exits with `Cannot allocate memory io_uring_queue_init`, including when limited to one worker.
+
+**Why it's tricky**
+- Semgrep's Linux backend can try to create io_uring queues even in a one-worker scan. Container and sandbox policies may block or constrain io_uring, so reducing worker count alone is intermittent.
+
+**What works**
+- Set `EIO_BACKEND=posix` for Semgrep. `scripts/security-scan-local.sh` defaults to this backend and supports `SEMGREP_EIO_BACKEND` to override it. Keep the staged scan and report-only finding policy intact.
+
+**Where it's documented**
+- `scripts/security-scan-local.sh`
+- `docs/security-scanning.md`

@@ -22,7 +22,7 @@ fi
 if command -v trivy >/dev/null 2>&1; then
   cache_dir="${TRIVY_CACHE_DIR:-${XDG_CACHE_HOME:-$HOME/.cache}/trivy}"
   mkdir -p "$cache_dir"
-  TRIVY_CACHE_DIR="$cache_dir" trivy image --download-db-only
+  TRIVY_CACHE_DIR="$cache_dir" trivy image --download-db-only --timeout "${TRIVY_TIMEOUT:-30m}"
 elif command -v docker >/dev/null 2>&1; then
   cache_dir="${TRIVY_CACHE_DIR:-${XDG_CACHE_HOME:-$HOME/.cache}/trivy}"
   mkdir -p "$cache_dir"

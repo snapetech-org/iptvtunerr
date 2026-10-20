@@ -1,9 +1,9 @@
-# Current task: Restore Snap publishing and push release/audit updates (in progress)
+# Current task: Finalize local security-scanner recovery (in progress)
 
-- **Goal:** restore Snap publishing for the existing `v0.1.93`, enable the channel in future release dispatches, and push all reviewed working-tree changes to GitHub `main`.
-- **Scope:** update the Snap dispatch and wiring check, preserve and complete the staged security-scanning additions, update project state, then push through `ghrelease`. Keep existing credentials and release tags intact; do not push the GitLab mirror.
-- **Status:** the existing Snap credential passed publisher run [39361186479](https://github.com/snapetech-org/iptvtunerr/actions/runs/39361186479); the public Store page reports `latest/stable 0.1.93`. No key was created, replaced, or revoked. Local checks passed; remote CI and push are pending. Semgrep reports seven mutable action references already tracked in opportunities.
-- **Next steps:** commit, push `main`, monitor CI, then close out the task.
+- **Goal:** complete the scanner reliability updates that appeared in the shared checkout after the Snap recovery push, then push and verify them.
+- **Scope:** preserve the Trivy timeout changes; configure local Semgrep to use the POSIX backend where `io_uring` is unavailable; record the failure and workaround; push through `ghrelease` only.
+- **Status:** Snap publishing for `v0.1.93` is complete in commit `143995a`; its publisher, full CI, CodeQL, Gitleaks, Local Identity, Semgrep, and Trivy runs passed. Local Semgrep now defaults to the POSIX backend; release wiring, shell syntax, staged pre-commit scan, and `git diff --check` passed. The final scanner follow-up commit/push and CI are pending.
+- **Next steps:** commit and push scanner timeout/backend updates, then monitor CI.
 
 ## Completed prerequisite: Commit audit fixes and release v0.1.93
 
@@ -15,7 +15,7 @@
 - **Stable refs:** sync run `39360483784` advanced `master` to `v0.1.93` and verified `:latest` at digest `sha256:81149fce942dc58183c15936e1f66f006b707cd515ffca27c9c94038efdca718`.
 - **Follow-ups:** restore the matching PPA signing key and check Chocolatey moderation and the Winget PR when their external reviews complete. Do not push the GitLab mirror.
 
-## Active follow-up: Restore Snap publishing (push pending)
+## Completed follow-up: Restore Snap publishing
 
 - **Goal:** check the latest Snap Store credential in Proton Pass without invalidating existing keys, restore Snap publishing for the already-published `v0.1.93`, and remove the intentional skip so future releases dispatch Snap automatically.
 - **Scope:** inspect the Snap publisher and wiring check; verify the existing repository secret against the Store without displaying it; if it fails, create an additional credential, update only `SNAPCRAFT_STORE_CREDENTIALS`, and publish `v0.1.93`; update release-channel and memory-bank status.
@@ -23,7 +23,7 @@
 - **Plan:** inspect Proton Pass and the Snap Store UI on the dedicated agent VM; test the existing workflow secret; if needed, add a new non-revoking credential and replace the GitHub secret; enable automatic dispatch, update its assertion/docs, push to GitHub `main`, and manually dispatch `v0.1.93`; record the workflow and Store result.
 - **Completed:** the existing `SNAPCRAFT_STORE_CREDENTIALS` secret passed the `v0.1.93` Snap build and stable publish. Proton Pass's newest Snap Store CI entry was checked with its password masked. No credential was created, replaced, or revoked. The release workflow no longer skips Snap, and the public Store page reports `latest/stable 0.1.93`.
 - **Verification:** Snap publisher run [39361186479](https://github.com/snapetech-org/iptvtunerr/actions/runs/39361186479) succeeded; `bash scripts/check-release-channel-wiring.sh`, shell syntax checks, and `git diff --check` passed. The local Semgrep hook now defaults to one worker after its unconstrained run hit an `io_uring` allocation failure.
-- **Next steps:** commit and push the preserved security-scanning work and the Snap re-enable, then confirm CI.
+- **Next steps:** none.
 
 ---
 
