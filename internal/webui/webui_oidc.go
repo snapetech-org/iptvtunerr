@@ -2,7 +2,9 @@ package webui
 
 import (
 	"context"
+	"crypto/sha256"
 	"crypto/subtle"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -19,11 +21,11 @@ import (
 )
 
 const (
-	oidcTransactionTTL   = 10 * time.Minute
-	maxOIDCTransactions  = 256
-	maxOIDCResponseBytes = 1 << 20
-	oidcStateCookieName  = "iptvtunerr_oidc_state"
-	maxOIDCReturnToBytes = 2048
+	oidcTransactionTTL    = 10 * time.Minute
+	maxOIDCTransactions   = 16
+	maxOIDCResponseBytes  = 1 << 20
+	oidcStateCookiePrefix = "iptvtunerr_oidc_state_"
+	maxOIDCReturnToBytes  = 2048
 )
 
 // OIDCSettings contains operator-owned OIDC configuration. The client secret
@@ -53,7 +55,7 @@ func oidcProviderPresentation(provider string) oidcProviderDisplay {
 	case "microsoft-entra":
 		return oidcProviderDisplay{"Microsoft Entra ID", "microsoft", "https://learn.microsoft.com/en-us/entra/identity-platform/v2-protocols-oidc"}
 	case "okta":
-		return oidcProviderDisplay{"Okta", "okta", "https://developer.okta.com/docs/guides/implement-grant-type/-/main/"}
+		return oidcProviderDisplay{"Okta", "okta", "https://developer.okta.com/docs/guides/implement-grant-type/authcodepkce/main/"}
 	case "auth0":
 		return oidcProviderDisplay{"Auth0", "auth0", "https://auth0.com/docs/get-started/authentication-and-authorization-flow/authorization-code-flow"}
 	case "keycloak":
@@ -79,6 +81,11 @@ func oidcProviderPresentation(provider string) oidcProviderDisplay {
 	default:
 		return oidcProviderDisplay{"identity provider", "generic", "https://openid.net/developers/how-connect-works/"}
 	}
+}
+
+func oidcStateCookieName(state string) string {
+	digest := sha256.Sum256([]byte(state))
+	return oidcStateCookiePrefix + hex.EncodeToString(digest[:16])
 }
 
 func (c OIDCSettings) enabled() bool {
@@ -166,7 +173,7 @@ func (s *Server) oidcLogin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	http.SetCookie(w, &http.Cookie{
-		Name:     oidcStateCookieName,
+		Name:     oidcStateCookieName(state),
 		Value:    state,
 		Path:     "/auth/oidc/",
 		Expires:  transaction.ExpiresAt,
@@ -208,7 +215,7 @@ func (s *Server) oidcCallback(w http.ResponseWriter, r *http.Request) {
 		params = r.PostForm
 	}
 	state, stateOK := oneOIDCFormValue(params, "state")
-	cookie, cookieErr := r.Cookie(oidcStateCookieName)
+	cookie, cookieErr := r.Cookie(oidcStateCookieName(state))
 	if !stateOK || state == "" || len(state) > 256 || cookieErr != nil || subtle.ConstantTimeCompare([]byte(state), []byte(cookie.Value)) != 1 {
 		s.failOIDC(w, r, state, "invalid_transaction")
 		return
@@ -303,7 +310,7 @@ func (s *Server) oidcCallback(w http.ResponseWriter, r *http.Request) {
 		s.failOIDC(w, r, state, "session_failed")
 		return
 	}
-	s.clearOIDCStateCookie(w, r)
+	s.clearOIDCStateCookie(w, r, state)
 	s.recordActivityWithEntry(DeckActivityEntry{
 		Kind:    "auth",
 		Title:   "OIDC login",
@@ -313,15 +320,18 @@ func (s *Server) oidcCallback(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, transaction.ReturnTo, http.StatusSeeOther)
 }
 
-func (s *Server) failOIDC(w http.ResponseWriter, r *http.Request, _ string, code string) {
-	s.clearOIDCStateCookie(w, r)
+func (s *Server) failOIDC(w http.ResponseWriter, r *http.Request, state string, code string) {
+	s.clearOIDCStateCookie(w, r, state)
 	log.Printf("webui: OIDC sign-in failed (%s)", code)
 	s.renderLogin(w, r, http.StatusUnauthorized, "Single sign-on failed. Check the identity provider and allowed-account settings.")
 }
 
-func (s *Server) clearOIDCStateCookie(w http.ResponseWriter, r *http.Request) {
+func (s *Server) clearOIDCStateCookie(w http.ResponseWriter, r *http.Request, state string) {
+	if state == "" {
+		return
+	}
 	http.SetCookie(w, &http.Cookie{
-		Name:     oidcStateCookieName,
+		Name:     oidcStateCookieName(state),
 		Value:    "",
 		Path:     "/auth/oidc/",
 		Expires:  time.Unix(1, 0),
@@ -330,6 +340,18 @@ func (s *Server) clearOIDCStateCookie(w http.ResponseWriter, r *http.Request) {
 		Secure:   s.secureCookie(r),
 		SameSite: oidcCookieSameSite(s.oidcSettings.IssuerURL),
 	})
+}
+
+func (s *Server) clearAllOIDCStateCookies(w http.ResponseWriter, r *http.Request) {
+	// The state cookies are scoped to the callback path, so a logout request
+	// cannot receive them. Expire them from the matching pending server flows.
+	runtime := s.oidcRuntimeState()
+	runtime.mu.Lock()
+	defer runtime.mu.Unlock()
+	for state := range runtime.transactions {
+		s.clearOIDCStateCookie(w, r, state)
+		delete(runtime.transactions, state)
+	}
 }
 
 // A configured HTTPS callback URL is the operator-owned public URL hint for

@@ -1870,3 +1870,54 @@ func TestOIDCEmailVerifiedClaimAcceptsAppleBooleanAndStringForms(t *testing.T) {
 		})
 	}
 }
+
+func TestOIDCStateCookiesAreIsolatedPerTransaction(t *testing.T) {
+	first := oidcStateCookieName("first-flow")
+	second := oidcStateCookieName("second-flow")
+	if first == second {
+		t.Fatalf("different OIDC states shared cookie name %q", first)
+	}
+	if !strings.HasPrefix(first, oidcStateCookiePrefix) {
+		t.Fatalf("unexpected OIDC state cookie name %q", first)
+	}
+}
+
+func TestOIDCTransactionLimitRejectsAdditionalAttemptsWithoutEviction(t *testing.T) {
+	server := &Server{}
+	for i := 0; i < maxOIDCTransactions; i++ {
+		state := fmt.Sprintf("flow-%d", i)
+		if !server.storeOIDCTransaction(state, oidcTransaction{ExpiresAt: time.Now().Add(time.Minute)}) {
+			t.Fatalf("failed to store pending OIDC transaction %q", state)
+		}
+	}
+	if server.storeOIDCTransaction("overflow", oidcTransaction{ExpiresAt: time.Now().Add(time.Minute)}) {
+		t.Fatal("accepted an OIDC transaction beyond the pending-flow limit")
+	}
+	if _, ok := server.consumeOIDCTransaction("flow-0"); !ok {
+		t.Fatal("rejecting a new attempt evicted an earlier pending flow")
+	}
+}
+
+func TestLogoutClearsPendingOIDCStateCookies(t *testing.T) {
+	server := &Server{oidc: oidcRuntime{transactions: map[string]oidcTransaction{
+		"first-flow":  {ExpiresAt: time.Now().Add(time.Minute)},
+		"second-flow": {ExpiresAt: time.Now().Add(time.Minute)},
+	}}}
+	request := httptest.NewRequest(http.MethodPost, "/logout", nil)
+	response := httptest.NewRecorder()
+
+	server.clearAllOIDCStateCookies(response, request)
+
+	cookies := response.Result().Cookies()
+	if len(cookies) != 2 {
+		t.Fatalf("expected two cleared state cookies, got %d", len(cookies))
+	}
+	for _, cookie := range cookies {
+		if !strings.HasPrefix(cookie.Name, oidcStateCookiePrefix) || cookie.Path != "/auth/oidc/" || cookie.MaxAge >= 0 {
+			t.Fatalf("unexpected state-cookie clearing directive: %#v", cookie)
+		}
+	}
+	if len(server.oidc.transactions) != 0 {
+		t.Fatalf("expected pending OIDC transactions to be removed")
+	}
+}

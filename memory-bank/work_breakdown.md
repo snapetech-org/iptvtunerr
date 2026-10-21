@@ -1,5 +1,23 @@
 # Work breakdown
 
+## 2026-10-21 - Cross-project OIDC implementation audit
+
+Objective: audit and harden OIDC behavior, sign-in UX, and operator guidance across the nine SnapeTech apps while retaining their native session and authorization boundaries.
+
+| Story ID | Scope | Status |
+| --- | --- | --- |
+| OIDC-AUDIT-001 | SeerrNG issuer-bound linked identities, verified-email enforcement, migration compatibility, and account-recovery documentation. | Implemented; verification and delivery pending |
+| OIDC-AUDIT-002 | slskR per-tab state transactions, expiry, accessible callback status, provider-help polish, and docs. | Implemented; verification and delivery pending |
+| OIDC-AUDIT-003 | slskdN provider-help and sign-in error accessibility polish. | Implemented; verification and delivery pending |
+| OIDC-AUDIT-004 | TorrentNG per-transaction state cookies, bounded pending flows, Apple callback access, and docs. | Implemented; verification and delivery pending |
+| OIDC-AUDIT-005 | IPTV Tunerr bounded per-transaction state cookies, logout cleanup, callback docs, and login help accessibility. | Implemented; verification and delivery pending |
+| OIDC-AUDIT-006 | ROMarrNG per-transaction state cookies, bounded pending flows, failed-start cleanup, provider-help accessibility, and docs. | Implemented; verification and delivery pending |
+| OIDC-AUDIT-007 | QuestarrNG Apple POST callback allowlisting and bounded per-transaction cookies. | Implemented; verification and delivery pending |
+| OIDC-AUDIT-008 | BookshelfNG inline provider-map syntax repair and accessible provider/error help. | Implemented; verification and delivery pending |
+| OIDC-AUDIT-009 | ChaptarrNG unconditional verified-email admission and clear read-only UI/config guidance. | Implemented; verification and delivery pending |
+
+Guardrail: do not merge unrelated dirty work, claim live-provider testing without a real IdP, or add another developer's DCO sign-off.
+
 ## 2026-10-01 - Unraid distribution
 
 Objective: ship an installable IPTV Tunerr package for Unraid Community Applications, submit it through the platform catalog, and keep the package mirror synchronized with the source repository.

@@ -8,6 +8,8 @@
 
 ## Security
 
+- **OIDC was source-tested but not exercised against a live provider tenant in the 2026-10-21 cross-project audit.** Provider callback behavior can still depend on a specific tenant's claim shape, client registration, or browser cookie policy. Use the provider-specific setup and troubleshooting checklist before relying on OIDC as the only Control Deck sign-in path.
+
 - **Credentials:** Keep secrets in `.env`, environment variables, host-local service environment files, or a dedicated app-managed secret file with owner-only permissions. The Sports page stores only the API-Sports key this way; never expose or commit its state file. `.env` is ignored, and secrets must never be logged.
 
 - **Live TV abuse blocking must not override valid Plex authorization.** A source/IP block can be triggered by missing-token probes from Plex clients or shared networks. The proxy must allow an already-authorized Plex token to bypass the source block while continuing to deny missing or unauthorized tokens.
