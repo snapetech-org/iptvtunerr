@@ -11,6 +11,26 @@ All notable changes to IPTV Tunerr are documented here. Repo: [github.com/snapet
 
 ---
 
+## [v0.1.94] - 2026-10-21
+
+### User-facing changes
+
+#### Added
+
+- **Authentication:** The Control Deck can now sign in through an OpenID Connect provider while keeping its existing cookie session and leaving tuner, stream, and media-server endpoints unchanged.
+
+#### Changed
+
+- **Authentication:** Control Deck OIDC guidance now covers exact callbacks, provider admission, recovery, and troubleshooting, while clarifying that tuner and media endpoints remain separate.
+
+#### Fixed
+
+- **Authentication:** Concurrent Control Deck OIDC attempts now use separate short-lived state cookies, and logout clears outstanding transaction cookies.
+
+#### Security
+
+- **Web Build:** IPTV Tunerr's web build now uses a patched Vite release, closing the reported vulnerability in its frontend toolchain.
+
 ## [v0.1.93] - 2026-10-19
 
 ### User-facing changes
