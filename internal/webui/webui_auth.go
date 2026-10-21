@@ -48,7 +48,7 @@ func (s *Server) login(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		s.recordActivity("auth", "login", "Deck session opened.", map[string]interface{}{"username": user})
-		http.Redirect(w, r, "/", http.StatusSeeOther)
+		http.Redirect(w, r, safeOIDCReturnTo(r.Form.Get("next")), http.StatusSeeOther)
 	default:
 		writeMethodNotAllowedPlain(w, http.MethodGet, http.MethodHead, http.MethodPost)
 	}
@@ -72,13 +72,15 @@ func (s *Server) logout(w http.ResponseWriter, r *http.Request) {
 		MaxAge:   -1,
 		HttpOnly: true,
 		SameSite: http.SameSiteLaxMode,
-		Secure:   requestCookieSecure(r),
+		Secure:   s.secureCookie(r),
 	})
+	s.clearOIDCStateCookie(w, r)
 	http.Redirect(w, r, "/login", http.StatusSeeOther)
 }
 
 func (s *Server) renderLogin(w http.ResponseWriter, r *http.Request, status int, errText string) {
 	s.ensureTemplates()
+	provider := oidcProviderPresentation(s.oidcSettings.Provider)
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.Header().Set("Cache-Control", "no-store")
 	if status > 0 {
@@ -92,12 +94,19 @@ func (s *Server) renderLogin(w http.ResponseWriter, r *http.Request, status int,
 		"DefaultPassword":       s.deckSettingsReport().AuthDefaultPassword,
 		"GeneratedPassword":     s.generatedPass,
 		"ShowGeneratedPassword": s.generatedPass != "" && !s.AllowLAN,
+		"OIDCEnabled":           s.oidcSettings.enabled(),
+		"OIDCLoginURL":          "/auth/oidc/login?next=" + url.QueryEscape(safeOIDCReturnTo(r.URL.Query().Get("next"))),
+		"OIDCProviderLabel":     provider.Label,
+		"OIDCProviderIcon":      provider.Icon,
+		"OIDCProviderIconsURL":  "/oidc-provider-icons.svg",
+		"OIDCProviderSetupURL":  provider.SetupURL,
+		"Next":                  safeOIDCReturnTo(r.URL.Query().Get("next")),
 	})
 }
 
 func (s *Server) sessionAuthOnly(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path == "/login" {
+		if r.URL.Path == "/login" || r.URL.Path == "/auth/oidc/login" || r.URL.Path == "/auth/oidc/callback" {
 			h.ServeHTTP(w, r)
 			return
 		}
@@ -285,7 +294,7 @@ func (s *Server) startSession(w http.ResponseWriter, r *http.Request) error {
 		HttpOnly: true,
 		SameSite: http.SameSiteLaxMode,
 		MaxAge:   int(sessionTTL.Seconds()),
-		Secure:   requestCookieSecure(r),
+		Secure:   s.secureCookie(r),
 	})
 	return nil
 }

@@ -20,6 +20,7 @@ Where to find what. This repo uses the [Diátaxis](https://diataxis.fr/) split b
 | **[adr/](adr/index.md)** | Decision log: architecture decision records. |
 | **[runbooks/](runbooks/index.md)** | Operational procedures ([troubleshooting](runbooks/iptvtunerr-troubleshooting.md) §8: **`/healthz`**, **`/readyz`**). |
 | **[how-to/deployment.md](how-to/deployment.md)** | Deploy IPTV Tunerr (binary, Docker, systemd, k3s, local test script). |
+| **[how-to/oidc-control-deck.md](how-to/oidc-control-deck.md)** | Configure OIDC provider sign-in for the Control Deck while preserving its local session and the separate tuner/media endpoints. |
 | **[how-to/install-on-unraid.md](how-to/install-on-unraid.md)** | Install through Unraid Community Applications or a user template. |
 | **[explanations/platform-suitability.md](explanations/platform-suitability.md)** | Unraid fit, workload limits, and catalog submission path. |
 | **[how-to/sports-automation.md](how-to/sports-automation.md)** | API-Sports schedule matching, operator controls, and generated sports event feeds. |

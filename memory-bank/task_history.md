@@ -636,3 +636,17 @@
 - Replaced string-negation checks on the `0`/`1` staged flag with arithmetic checks so the default local scan mode reaches Trivy after Semgrep. Updated the security-scanning how-to to state that both scanners run by default.
 - Pushed commit `ed9265d` to GitHub `main`; `master` remains on stable tag `v0.1.93`.
 - Verification: `bash -n scripts/security-scan-local.sh`, `git diff --check`, and the staged pre-commit Semgrep scan passed; Semgrep reported zero findings. GitHub CI verify, CodeQL, Gitleaks, Local Identity, Semgrep, and Trivy passed. CI smoke and release-assets jobs remained queued at final check.
+
+## 2026-10-21 - Add OIDC sign-in to the Control Deck
+
+- Added server-side OpenID Connect Authorization Code sign-in with PKCE,
+  state/nonce validation, verified-email admission, the existing Control Deck
+  cookie session, and session-bound CSRF enforcement. The tuner, stream, and
+  media-server endpoint authentication boundaries are unchanged.
+- Added the shared 14-provider presentation catalog in the login page, local
+  provider icons, official setup links, and operator guidance covering issuer,
+  redirect, admission, private-issuer, and Apple form-post configuration.
+- Verification: the clean rollout worktree passed `go test ./...`; focused OIDC
+  UI checks passed; a cross-project check confirmed all nine apps expose the
+  same 14 branded provider IDs with byte-identical local SVG sprites. No live
+  identity-provider tenant or credentials were used.
