@@ -660,3 +660,10 @@
 - The existing Dependabot PR #57 checks remained queued; the same dependency patch was applied directly to `main` for timely remediation.
 - Verification: `npm --prefix web audit --json` reported 0 vulnerabilities; `git diff --check` passed. No application tests were run for this lockfile-only security update.
 - Follow-up: verify that GitHub Dependabot refreshes the five Vite dependency alerts after the push.
+
+
+## 2026-10-21 - Verify Vite dependency remediation
+
+- Confirmed GitHub `main` contains the Vite 8.3.5 package and lockfile updates from commit `33c563ea`; closed redundant Dependabot PR #57.
+- `npm --prefix web audit --json` reported zero vulnerabilities; Dependabot reports zero open alerts.
+- Seven hosted checks were still queued and none had failed at final review. No application tests were run for this dependency-only remediation.
