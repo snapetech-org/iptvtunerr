@@ -1,5 +1,21 @@
 # Recurring loops and hard-to-solve problems
 
+### Loop: OIDC concurrent login attempts must keep separate state
+
+**Symptom**
+- Starting a second sign-in in another tab or window invalidates the first callback, or logout leaves pending state usable until it expires.
+
+**Why it's tricky**
+- A single fixed state-cookie name is overwritten by the newest attempt. Callback-scoped cookies are not sent to the separate logout route, so logout cannot discover them from the request cookie header.
+
+**What works**
+- Derive a distinct cookie name from each random state, cap pending transactions, consume each transaction once, and expire pending state-cookie names from the server-side transaction map during logout.
+- Keep the cookie callback-scoped; do not broaden it to the whole app just to make it visible on logout.
+
+**Where it's documented**
+- `internal/webui/webui_oidc.go`
+- `docs/how-to/oidc-control-deck.md`
+
 ### Loop: Recreating the removed cluster fallback after it caused split-brain DVR churn
 
 **Symptom**

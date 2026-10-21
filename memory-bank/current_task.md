@@ -1,11 +1,11 @@
-# Current task: Expand cross-project OIDC operator documentation
+# Current task: Cross-project OIDC implementation audit and hardening
 
-- **Goal:** make OIDC setup, provider discovery, admission policy, recovery, and troubleshooting easy to find and consistent across all nine SnapeTech applications.
-- **Scope:** expand each app's OIDC guide; link it from the root README and documentation index; deepen the shared provider/template reference; add release-note fragments; preserve app-specific callback, configuration, session, and authorization behavior.
-- **Success criteria:** all nine repos expose accurate setup/runbook links; their guides agree on common protocol and provider-branding rules without erasing native app differences; changed Markdown and release notes validate; each change is committed, pushed, reviewed, and merged to the default branch.
-- **Status:** repository mapping is complete. Documentation edits and validation are in progress in isolated clean worktrees; existing dirty checkouts are untouched.
-- **Verification:** check every changed link and release-note fragment, run `git diff --check`, and use repository docs-specific checks where available. No live identity-provider tenant or credentials are available.
-- **Next steps:** finish guide/index/README updates, validate, commit, push, merge, update task history, and remove only this task's worktrees and scratch directory.
+- **Goal:** find and fix correctness, security, accessibility, configuration-help, and documentation gaps in OIDC across all nine SnapeTech applications.
+- **Scope:** audit `seerrng`, `slskR`, `slskdN`, `TorrentNG`, `iptvTunerr`, `ROMarrNG`, `QuestarrNG`, `bookshelfng`, and `chaptarrng`; preserve each app's native session and authorization model; add focused regression coverage and release notes; publish through each repo's default-branch review path.
+- **Story IDs:** OIDC-AUDIT-001 through OIDC-AUDIT-009 in [work_breakdown.md](work_breakdown.md).
+- **Status:** source-level fixes, provider-help accessibility polish, and operator-doc updates are implemented in isolated worktrees. Formatting, focused/full verification, PR checks, and cross-repo delivery are in progress. Original dirty checkouts remain untouched.
+- **Verification:** run the repository-prescribed or focused OIDC suites and builds where available, validate changed release notes and docs, and run `git diff --check`. Live identity-provider credentials are not part of this local audit; no live provider flow will be claimed.
+- **Next steps:** finish formatting and regression checks; inspect current remote default-branch heads; commit, push, review, and merge each repository where required checks allow; append actual results to task history; clean only task-owned build outputs and worktrees.
 
 ---
 

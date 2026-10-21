@@ -14,6 +14,7 @@ First place to look before editing. This repo is IPTV Tunerr. Active deployment 
 | `internal/indexer/` | M3U/Xtream parsing and provider indexing. |
 | `internal/catalog/` | Normalized movie/series/live-channel catalog model. |
 | `internal/webui/` | Dedicated deck listener and API proxy. |
+| `docs/how-to/oidc-control-deck.md` | Control Deck OIDC setup, provider links, callback requirements, admission, recovery, and troubleshooting. |
 | `web/src/api/sports.ts`, `web/src/pages/Sports.tsx` | Typed Sports Automation API and operator page for datasets/team rules, cache health, event matches, and generated feed playback. |
 | `iptvtunerr.xml`, `ca_profile.xml` | Unraid Community Applications Docker template and profile (repo root). |
 | `docs/explanations/platform-suitability.md` | Unraid fit, resource limits, and catalog gate. |

@@ -35,6 +35,13 @@ Register the exact redirect URI with the identity provider. For ordinary provide
 
 The OIDC callback creates the same cookie-backed Control Deck session as local password sign-in. Session-bound CSRF checks still apply to state-changing browser requests. Existing password sign-in and HTTP Basic access for scripts remain available. The app does not persist provider tokens or map provider groups to privileges.
 
+Each sign-in has its own short-lived HttpOnly state cookie, allowing separate
+browser attempts without one overwriting another. At most 16 transactions can
+be pending; another start is rejected until one completes or expires. Pending
+state is held in process memory for ten minutes, so a service restart requires
+a fresh sign-in. The callback accepts the usual GET response and Apple's
+URL-encoded POST form response.
+
 HTTPS is required for the issuer and redirect URI by default. For an intentionally private identity provider, set `IPTV_TUNERR_WEBUI_OIDC_ALLOW_PRIVATE_ISSUER=true`; this permits private-network endpoints, including HTTP. Keep that setting off for public deployments.
 
 `IPTV_TUNERR_WEBUI_OIDC_PROVIDER` is an optional display hint. The login page

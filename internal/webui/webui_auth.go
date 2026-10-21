@@ -74,7 +74,7 @@ func (s *Server) logout(w http.ResponseWriter, r *http.Request) {
 		SameSite: http.SameSiteLaxMode,
 		Secure:   s.secureCookie(r),
 	})
-	s.clearOIDCStateCookie(w, r)
+	s.clearAllOIDCStateCookies(w, r)
 	http.Redirect(w, r, "/login", http.StatusSeeOther)
 }
 
