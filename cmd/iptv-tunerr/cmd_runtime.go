@@ -44,7 +44,17 @@ func startDedicatedWebUI(ctx context.Context, cfg *config.Config, tunerAddr stri
 	if cfg == nil || !cfg.WebUIEnabled {
 		return
 	}
-	ui := webui.New(cfg.WebUIPort, tunerAddr, Version, cfg.WebUIAllowLAN, cfg.WebUIStateFile, cfg.WebUIUser, cfg.WebUIPass, cfg.WebUIDBPath)
+	ui := webui.NewWithOIDC(cfg.WebUIPort, tunerAddr, Version, cfg.WebUIAllowLAN, cfg.WebUIStateFile, cfg.WebUIUser, cfg.WebUIPass, cfg.WebUIDBPath, webui.OIDCSettings{
+		Provider:             cfg.WebUIOIDCProvider,
+		IssuerURL:            cfg.WebUIOIDCIssuerURL,
+		ClientID:             cfg.WebUIOIDCClientID,
+		ClientSecret:         cfg.WebUIOIDCClientSecret,
+		RedirectURI:          cfg.WebUIOIDCRedirectURI,
+		AllowedEmails:        cfg.WebUIOIDCAllowedEmails,
+		AllowedEmailDomains:  cfg.WebUIOIDCAllowedEmailDomains,
+		AllowAnyVerifiedUser: cfg.WebUIOIDCAllowAnyVerifiedUser,
+		AllowPrivateIssuer:   cfg.WebUIOIDCAllowPrivateIssuer,
+	})
 	go func() {
 		if err := ui.Run(ctx); err != nil {
 			log.Printf("Web UI failed: %v", err)

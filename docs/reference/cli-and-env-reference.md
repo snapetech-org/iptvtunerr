@@ -1617,6 +1617,13 @@ Merge semantics for HDHR + IPTV catalogs: [adr/0002-hdhr-hardware-iptv-merge.md]
 | `IPTV_TUNERR_WEBUI_STATE_FILE` | Optional JSON state file for server-derived deck activity plus non-secret deck preferences across process restarts. |
 | `IPTV_TUNERR_WEBUI_USER` | Dedicated deck HTTP Basic auth username (defaults to `admin` only when unset at startup). |
 | `IPTV_TUNERR_WEBUI_PASS` | Dedicated deck HTTP Basic auth password. When unset, Tunerr generates a one-time startup password instead of using `admin/admin`. That generated password is logged once at startup and shown on the localhost login page until you pin a real password. |
+| `IPTV_TUNERR_WEBUI_OIDC_ISSUER_URL` | Optional OIDC issuer for browser sign-in to the Control Deck. Requires client ID, secret, and redirect URI. |
+| `IPTV_TUNERR_WEBUI_OIDC_CLIENT_ID` / `IPTV_TUNERR_WEBUI_OIDC_CLIENT_SECRET` | OIDC confidential-client credentials. The secret is server-side only. |
+| `IPTV_TUNERR_WEBUI_OIDC_REDIRECT_URI` | Exact callback URL registered at the identity provider, ending in `/auth/oidc/callback`. |
+| `IPTV_TUNERR_WEBUI_OIDC_ALLOWED_EMAILS` | Comma/space separated verified email addresses admitted to the single-operator deck. |
+| `IPTV_TUNERR_WEBUI_OIDC_ALLOWED_EMAIL_DOMAINS` | Optional verified email domains admitted to the deck. |
+| `IPTV_TUNERR_WEBUI_OIDC_ALLOW_ANY_VERIFIED_USER` | If `1`, admits any account with a verified email claim. Default `false`; use an email or domain allowlist instead. |
+| `IPTV_TUNERR_WEBUI_OIDC_ALLOW_PRIVATE_ISSUER` | If `1`, permits an issuer on private addresses, including HTTP. Default `false`; enable only for a trusted private IdP. |
 | `IPTV_TUNERR_EVENT_WEBHOOKS_FILE` | Optional JSON file that configures outbound event webhooks. Each hook can declare `name`, `url`, optional `events`, optional extra `headers`, and optional per-hook `timeout` duration. `/debug/event-hooks.json` redacts credential-bearing webhook URLs and sensitive custom header values in its report; delivery still uses the configured values. |
 | `IPTV_TUNERR_RECORDING_RULES_FILE` | Optional JSON file for durable server-side recording rules used by `/recordings/rules.json`, `/recordings/rules/preview.json`, and `/recordings/history.json`. |
 | `IPTV_TUNERR_PLEX_LINEUP_HARVEST_FILE` | Optional JSON file storing the latest persisted Plex lineup-harvest report, surfaced via `/programming/harvest.json`, `/programming/preview.json`, and `/programming/harvest-import.json`. |

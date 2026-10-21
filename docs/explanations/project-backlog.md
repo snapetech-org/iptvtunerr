@@ -67,7 +67,7 @@ The opportunities file is authoritative for **dated entries** (including **Statu
 - **EPG:** provider-specific contracts for true incremental-only pulls; **Postgres** for multi-writer EPG only if HA becomes a requirement ([ADR 0003](../adr/0003-epg-sqlite-vs-postgres.md)).
 - **Guide-health:** optional deeper wiring of scores into more paths (policy already shipped — see opportunities).
 - **Catch-up:** programme-bound / “true replay” vs near-live launcher; category libraries / scans (large scope).
-- **Migration / janitor:** identity-cutover/OIDC follow-through and the larger “Tunerr as a general-purpose library janitor” direction remain future backlog themes; see `memory-bank/opportunities.md`.
+- **Migration / janitor:** identity-cutover follow-through and the larger “Tunerr as a general-purpose library janitor” direction remain future backlog themes; the Control Deck's OIDC sign-in is implemented and documented. See `memory-bank/opportunities.md`.
 - **Product surface:** first-run onboarding is now narrower (`setup-doctor`, `.env.minimal.example`, readiness-first deck copy/lane ordering, advanced raw/workflow deck surfaces hidden by default), but deeper persona splitting between simple user, operator, and lab surfaces remains open; see `memory-bank/opportunities.md`.
 - **Sports Automation:** API-Sports MLB/NFL/NCAA/NBA fixtures are matched to Tunerr lineup feeds and published through separate event M3U/XMLTV outputs. Team-name aliases, further sport adapters, and live-provider validation remain in `memory-bank/opportunities.md`.
 - **Plex / host adjacent:** split-pipeline instrumentation, postvalidate tuning, external scripts — often **sibling repo**; read each entry’s **Context**.

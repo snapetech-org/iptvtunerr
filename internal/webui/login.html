@@ -187,6 +187,7 @@ button {
       <p>Access is scoped to the dedicated deck origin. Tuner endpoints still stay behind the deck proxy.</p>
       [[if .Error]]<div class="error">[[.Error]]</div>[[end]]
       <form method="post" action="/login">
+        <input type="hidden" name="next" value="[[.Next]]">
         <label>
           Username
           <input type="text" name="username" value="[[.User]]" autocomplete="username" required>
@@ -197,6 +198,14 @@ button {
         </label>
         <button type="submit">Enter Deck</button>
       </form>
+      [[if .OIDCEnabled]]
+      <p class="hint" style="margin: 18px 0 8px; text-align: center;">or sign in with your identity provider</p>
+      <a href="[[.OIDCLoginURL]]" style="display: flex; align-items: center; justify-content: center; gap: 9px; padding: 12px; border: 1px solid var(--line, #29465f); border-radius: 10px; color: var(--text, #e8f2fb); text-align: center; text-decoration: none;">
+        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24"><use href="[[.OIDCProviderIconsURL]]#oidc-[[.OIDCProviderIcon]]"></use></svg>
+        Continue with [[.OIDCProviderLabel]]
+      </a>
+      <a href="[[.OIDCProviderSetupURL]]" target="_blank" rel="noopener noreferrer" class="hint" style="display: block; margin-top: 8px; text-align: center;">Provider setup guide</a>
+      [[end]]
       <p class="hint">Browser/API clients can still use HTTP Basic auth directly if they need scriptable access.</p>
     </div>
     <div class="foot">Rendered [[.Now]] UTC · version [[.Version]]</div>

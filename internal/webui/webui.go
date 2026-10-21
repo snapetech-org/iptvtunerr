@@ -44,6 +44,9 @@ var deckCSS string
 //go:embed deck.js
 var deckJS string
 
+//go:embed oidc-provider-icons.svg
+var oidcProviderIconsSVG string
+
 //go:embed login.html
 var loginHTML string
 
@@ -63,6 +66,8 @@ type Server struct {
 
 	settingsMu          sync.RWMutex
 	settings            DeckSettings
+	oidcSettings        OIDCSettings
+	oidc                oidcRuntime
 	generatedPass       string
 	telemetryMu         sync.Mutex
 	telemetrySamples    []DeckTelemetrySample
@@ -178,6 +183,12 @@ type deckOIDCApplyRequest struct {
 
 // New constructs a dedicated dashboard server. dbPath is the path to tunerr.db (empty = disabled).
 func New(port int, tunerAddr, version string, allowLAN bool, stateFile, user, pass, dbPath string) *Server {
+	return NewWithOIDC(port, tunerAddr, version, allowLAN, stateFile, user, pass, dbPath, OIDCSettings{})
+}
+
+// NewWithOIDC constructs a dedicated dashboard server with optional OIDC sign-in.
+// dbPath is the path to tunerr.db (empty = disabled).
+func NewWithOIDC(port int, tunerAddr, version string, allowLAN bool, stateFile, user, pass, dbPath string, oidcSettings OIDCSettings) *Server {
 	if port <= 0 {
 		port = DefaultPort
 	}
@@ -193,12 +204,13 @@ func New(port int, tunerAddr, version string, allowLAN bool, stateFile, user, pa
 		log.Printf("webui: generated one-time password for %q: %s (set IPTV_TUNERR_WEBUI_PASS to pin it)", user, pass)
 	}
 	return &Server{
-		Port:      port,
-		TunerAddr: tunerAddr,
-		Version:   version,
-		AllowLAN:  allowLAN,
-		StateFile: strings.TrimSpace(stateFile),
-		DBPath:    strings.TrimSpace(dbPath),
+		Port:         port,
+		TunerAddr:    tunerAddr,
+		Version:      version,
+		AllowLAN:     allowLAN,
+		StateFile:    strings.TrimSpace(stateFile),
+		DBPath:       strings.TrimSpace(dbPath),
+		oidcSettings: oidcSettings,
 		settings: DeckSettings{
 			AuthUser:                        user,
 			AuthPass:                        pass,
@@ -216,6 +228,7 @@ func (s *Server) Run(ctx context.Context) error {
 	s.tmpl = template.Must(template.New("webui").Delims("[[", "]]").Parse(indexHTML))
 	s.loginTmpl = template.Must(template.New("login").Delims("[[", "]]").Parse(loginHTML))
 	s.sessions = make(map[string]deckSession)
+	s.oidc.transactions = make(map[string]oidcTransaction)
 	s.failedLoginByIP = make(map[string][]time.Time)
 	if err := s.loadState(); err != nil {
 		log.Printf("webui state load: %v", err)
@@ -721,6 +734,18 @@ func (s *Server) recordActivityWithEntry(entry DeckActivityEntry) {
 func (s *Server) registerRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("/login", s.login)
 	mux.HandleFunc("/logout", s.logout)
+	mux.HandleFunc("/auth/oidc/login", s.oidcLogin)
+	mux.HandleFunc("/auth/oidc/callback", s.oidcCallback)
+	mux.HandleFunc("/oidc-provider-icons.svg", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet && r.Method != http.MethodHead {
+			writeMethodNotAllowedPlain(w, http.MethodGet, http.MethodHead)
+			return
+		}
+		w.Header().Set("Content-Type", "image/svg+xml; charset=utf-8")
+		if r.Method == http.MethodGet {
+			_, _ = io.WriteString(w, oidcProviderIconsSVG)
+		}
+	})
 
 	// /api/v2/ is handled by the webui store layer (registered by apiv2 init).
 	s.registerV2(mux)

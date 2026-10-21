@@ -1,9 +1,15 @@
-# Current task: Finish scanner fixes and final push (complete)
+# Current task: OIDC sign-in for the Control Deck (implementation complete)
 
-- **Goal:** complete the local scanner reliability fixes discovered during Snap recovery, then push and verify them.
-- **Scope:** preserve the Trivy timeout changes; configure Semgrep to use the POSIX backend where `io_uring` is unavailable; fix the default scan-mode condition so Trivy runs; record findings and push through `ghrelease` only.
-- **Status:** Snap publishing for `v0.1.93` is complete in commit `143995a`; its publisher, CI, CodeQL, Gitleaks, Local Identity, Semgrep, and Trivy runs passed. Scanner follow-up `c5b81b2` is pushed; its CI, CodeQL, Gitleaks, Local Identity, Semgrep, and Trivy runs all passed. Final scanner fix `ed9265d` is pushed; shell syntax, staged Semgrep, CI verify, CodeQL, Gitleaks, Local Identity, Semgrep, and Trivy passed. The CI workflow's smoke and release-assets jobs remained queued at final check.
-- **Next steps:** none for this task. Follow up on the queued CI smoke and release-assets jobs if they do not complete asynchronously.
+- **Goal:** add server-side OpenID Connect sign-in to the IPTV Tunerr Control Deck while preserving its native session, role, CSRF, password, Basic-authentication, and separate tuner/media boundaries.
+- **Scope:** implement the stack-native OIDC adapter, provider presentation for the shared 14-provider catalog, local provider icons and setup links, operator guidance, and focused automated coverage. Do not change authentication on tuner, stream, or media-server endpoints.
+- **Success criteria:** the Control Deck uses the shared authorization-code/admission contract; verified-email allow-lists deny by default; provider hints remain presentation-only; Apple uses its documented form-post exception; the existing app session remains authoritative.
+- **Status:** implementation and operator documentation are complete. The full Go suite and focused OIDC checks passed in the clean rollout worktree. Cross-project publication is handled by the authorized repository PR workflow.
+- **Verification:** `go test ./...`; provider-map parity check for all 14 branded IDs and byte-identical local SVG sprites; `git diff --check`.
+- **Next steps:** none for this implementation. No live identity-provider tenant or credentials were used.
+
+---
+
+## Completed task: Finish scanner fixes and final push
 
 ## Completed prerequisite: Commit audit fixes and release v0.1.93
 

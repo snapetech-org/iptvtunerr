@@ -1817,3 +1817,56 @@ func templateMustLogin(t *testing.T) *template.Template {
 	t.Helper()
 	return template.Must(template.New("login").Delims("[[", "]]").Parse(loginHTML))
 }
+
+func TestOIDCProviderPresentationUsesAllowlistedBranding(t *testing.T) {
+	for _, tc := range []struct{ provider, label, icon, setupURL string }{
+		{"fusionauth", "FusionAuth", "fusionauth", "https://fusionauth.io/docs/lifecycle/authenticate-users/oauth/"},
+		{"onelogin", "OneLogin", "onelogin", "https://developers.onelogin.com/docs/openid-connect/connect-to-onelogin/"},
+		{"pingone", "PingOne", "pingone", "https://docs.pingidentity.com/pingone/applications/p1_edit_application_oidc.html"},
+		{"jumpcloud", "JumpCloud", "jumpcloud", "https://jumpcloud.com/support/sso-with-oidc"},
+	} {
+		got := oidcProviderPresentation(tc.provider)
+		if got.Label != tc.label || got.Icon != tc.icon || got.SetupURL != tc.setupURL {
+			t.Fatalf("unexpected provider presentation for %s: %#v", tc.provider, got)
+		}
+	}
+	known := oidcProviderPresentation(" microsoft-entra ")
+	if known.Label != "Microsoft Entra ID" || known.Icon != "microsoft" ||
+		known.SetupURL != "https://learn.microsoft.com/en-us/entra/identity-platform/v2-protocols-oidc" {
+		t.Fatalf("unexpected provider presentation: %#v", known)
+	}
+	apple := oidcProviderPresentation("apple-sign-in")
+	if apple.Label != "Apple" || apple.Icon != "apple" ||
+		apple.SetupURL != "https://developer.apple.com/documentation/signinwithapple/configuring-your-environment-for-sign-in-with-apple" {
+		t.Fatalf("unexpected Apple provider presentation: %#v", apple)
+	}
+	unknown := oidcProviderPresentation("<svg/onload=alert(1)>")
+	if unknown.Label != "identity provider" || unknown.Icon != "generic" ||
+		unknown.SetupURL != "https://openid.net/developers/how-connect-works/" {
+		t.Fatalf("unknown provider did not use safe generic presentation: %#v", unknown)
+	}
+}
+
+func TestOIDCEmailVerifiedClaimAcceptsAppleBooleanAndStringForms(t *testing.T) {
+	tests := []struct {
+		name string
+		raw  string
+		want bool
+		ok   bool
+	}{
+		{name: "boolean true", raw: `true`, want: true, ok: true},
+		{name: "string true", raw: `"true"`, want: true, ok: true},
+		{name: "boolean false", raw: `false`, want: false, ok: true},
+		{name: "string false", raw: `"false"`, want: false, ok: true},
+		{name: "invalid string", raw: `"yes"`, want: false, ok: true},
+		{name: "missing", raw: "", want: false, ok: false},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			got, ok := oidcBooleanClaim(json.RawMessage(test.raw))
+			if got != test.want || ok != test.ok {
+				t.Fatalf("oidcBooleanClaim(%q) = (%v, %v), want (%v, %v)", test.raw, got, ok, test.want, test.ok)
+			}
+		})
+	}
+}
