@@ -73,6 +73,8 @@ For IdP migration, Tunerr can emit a provider-agnostic OIDC identity/group plan 
 
 The deck can show the same migration and OIDC readiness state as the CLI, and the OIDC workflow keeps recent apply history with success/failure badges, per-target delta counts, failure context, and `all / success / failed` filtering. That makes it possible to separate bad IdP runs from good ones without reading raw JSON walls.
 
+This identity-migration workflow is separate from browser authentication. For the Control Deck's OIDC login, including its exact callback, provider setup, admission rules, and recovery procedure, see the [OIDC Control Deck guide](docs/how-to/oidc-control-deck.md).
+
 The current limits are deliberate: Tunerr does not clone Plex passwords, it does not solve folder-by-folder library grants yet, and it does not automate every OIDC provider. The current slice is overlap-friendly account bootstrap, additive rights sync, and staged migration while Plex stays online.
 
 ---
@@ -1552,6 +1554,8 @@ docs/                 Reference, how-to guides, runbooks
 - [`docs/explanations/project-backlog.md`](docs/explanations/project-backlog.md) — **Open work index** (epics, `memory-bank/opportunities.md`, `known_issues`, `docs-gaps`, features limits)
 
 **How-To**
+- [`docs/how-to/oidc-control-deck.md`](docs/how-to/oidc-control-deck.md) — OIDC provider setup and login for the Control Deck, including the callback, account admission, recovery, troubleshooting, and security boundary
+- [Shared provider catalog and official setup links](https://github.com/snapetech-org/seerrng/blob/main/docs/maintainers/oidc-provider-catalog.md)
 - [`docs/how-to/sports-automation.md`](docs/how-to/sports-automation.md) — Configure API-Sports schedules, WebUI automation, operator API, and generated event feeds
 - [`docs/how-to/connect-plex-to-iptv-tunerr.md`](docs/how-to/connect-plex-to-iptv-tunerr.md) — Connect Plex (UI wizard vs `-register-plex` vs API; channelmap, limits)
 - [`docs/how-to/deployment.md`](docs/how-to/deployment.md) — Binary, Docker, systemd deployment
