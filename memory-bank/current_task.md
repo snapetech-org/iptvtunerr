@@ -1,4 +1,15 @@
-# Current task: Cross-project OIDC implementation audit and hardening
+# Current task: Remediate IPTV Tunerr web dependency advisories (2026-10-21)
+
+- **Goal:** move the web build from vulnerable Vite 8.0.16 to the fixed 8.3.5 release.
+- **Scope:** apply the matching `web/package.json` and lockfile security update; preserve Go runtime behavior and the separate in-progress OIDC work.
+- **Assumptions:** the affected Vite dependency graph is build-time tooling. Node CI already uses the maintained Node 22 line.
+- **Status:** the fixed dependency and lockfile are prepared; `npm --prefix web audit --json` reports zero advisories. Dependabot PR #57 has remained queued, so the exact security patch is being applied to main directly.
+- **Verification:** npm audit reports 0 vulnerabilities; `git diff --check` passed. No product tests were run for this dependency-only change.
+- **Next steps:** commit and push the staged security update, then check the main branch alert state and clean the task worktree.
+
+
+---
+## Deferred in-flight task: Cross-project OIDC implementation audit and hardening
 
 - **Goal:** find and fix correctness, security, accessibility, configuration-help, and documentation gaps in OIDC across all nine SnapeTech applications.
 - **Scope:** audit `seerrng`, `slskR`, `slskdN`, `TorrentNG`, `iptvTunerr`, `ROMarrNG`, `QuestarrNG`, `bookshelfng`, and `chaptarrng`; preserve each app's native session and authorization model; add focused regression coverage and release notes; publish through each repo's default-branch review path.

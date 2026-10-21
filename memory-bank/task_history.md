@@ -650,3 +650,13 @@
   UI checks passed; a cross-project check confirmed all nine apps expose the
   same 14 branded provider IDs with byte-identical local SVG sprites. No live
   identity-provider tenant or credentials were used.
+
+
+---
+
+## Completed task: Remediate IPTV Tunerr Vite advisories (2026-10-21)
+
+- Updated `web/package.json` and `web/package-lock.json` from Vite 8.0.16 to 8.3.5, which is beyond the fixed version for the current Vite advisories.
+- The existing Dependabot PR #57 checks remained queued; the same dependency patch was applied directly to `main` for timely remediation.
+- Verification: `npm --prefix web audit --json` reported 0 vulnerabilities; `git diff --check` passed. No application tests were run for this lockfile-only security update.
+- Follow-up: verify that GitHub Dependabot refreshes the five Vite dependency alerts after the push.
