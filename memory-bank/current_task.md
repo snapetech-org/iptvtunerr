@@ -1,11 +1,11 @@
-# Current task: Remediate IPTV Tunerr web dependency advisories (2026-10-21)
+# Current task: Prepare and publish IPTV Tunerr v0.1.94 (2026-10-21)
 
-- **Goal:** move the web build from vulnerable Vite 8.0.16 to fixed 8.3.5 and confirm the alert is cleared.
-- **Scope:** update `web/package.json` and `web/package-lock.json`; preserve Go runtime behavior and the separate in-progress OIDC work.
-- **Assumptions:** the affected Vite dependency graph is build-time tooling. The matching Dependabot PR can be closed once the exact dependency files are present on `main`.
-- **Status:** complete. Commit `33c563ea` is on GitHub `main`; Dependabot PR #57 was closed after its package and lockfile matched `main`, and the repository reports zero open Dependabot alerts.
-- **Verification:** `npm --prefix web audit --json` reported zero vulnerabilities; `git diff --check` passed. Seven hosted checks were still queued and none had failed at final review. No application tests were run for this lockfile-only security update.
-- **Next steps:** none for this dependency remediation; hosted checks can finish asynchronously.
+- **Goal:** release the current GitHub `main` head, including the patched Vite dependency and OIDC sign-in changes, through the repository's normal release and stable-ref workflows.
+- **Scope:** add a user-facing security note for the Vite toolchain update, generate the `v0.1.94` changelog section, push release preparation to GitHub `main`, wait for exact-head CI, and publish and verify the GitHub release. Do not push the GitLab mirror.
+- **Assumptions:** `v0.1.93` is the latest stable release, so the next version is `v0.1.94`; the package workflow advances `master` and stable images after release publication.
+- **Status:** in progress. The current `main` head is `3e0e101f9fa6fcc41acf7331c9fabf44d3d64aab`; hosted verification is still queued.
+- **Plan:** commit and push the new release-note fragment; generate and commit the checked-in changelog section; push `main`; require successful checks for the final exact head; tag `v0.1.94`; monitor release and stable-ref workflows; record actual outcomes in task history.
+- **Next steps:** add the Vite security fragment, prepare the changelog, then validate and publish only after exact-head checks pass.
 
 ---
 ## Deferred in-flight task: Cross-project OIDC implementation audit and hardening
