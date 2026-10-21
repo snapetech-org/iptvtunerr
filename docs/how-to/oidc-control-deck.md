@@ -44,14 +44,16 @@ shows a local provider icon and a direct official setup link for `google`,
 `jumpcloud`, and `apple-sign-in`. Unknown values use generic OIDC presentation;
 the configured issuer remains the authority for discovery and validation.
 
-The [shared provider catalog](https://github.com/snapetech-org/seerrng/blob/main/docs/maintainers/oidc-provider-catalog.json)
-lists each provider's example issuer, scopes, official setup link, and tenant
-or claim notes. It covers Google, Microsoft Entra ID, Okta, Auth0, Keycloak,
-authentik, ZITADEL, Amazon Cognito, GitLab, FusionAuth, OneLogin, PingOne,
-JumpCloud, and Apple. The [cross-project OIDC contract](https://github.com/snapetech-org/seerrng/blob/main/docs/maintainers/oidc-cross-project-template.md)
-defines the common flow and security rules.
+The [readable provider catalog](https://github.com/snapetech-org/seerrng/blob/main/docs/maintainers/oidc-provider-catalog.md)
+lists every supported ID, issuer example, official setup page, and tenant or
+claim note. Its adjacent
+[JSON catalog](https://github.com/snapetech-org/seerrng/blob/main/docs/maintainers/oidc-provider-catalog.json)
+is the machine-readable source used by app menus and presentation tests. The
+[cross-project OIDC contract](https://github.com/snapetech-org/seerrng/blob/main/docs/maintainers/oidc-cross-project-template.md)
+defines shared protocol requirements and documents the apps' intentional
+session and role differences.
 
-### Sign in with Apple
+## Sign in with Apple
 
 Set the issuer to exactly `https://appleid.apple.com`, use the Apple Services ID
 as `IPTV_TUNERR_WEBUI_OIDC_CLIENT_ID`, and set
@@ -78,6 +80,29 @@ Automated tests cover the OIDC handler and provider presentation. A real
 provider sign-in still requires an operator-owned test tenant and registered
 callback; no live identity-provider credentials are included in this repo.
 
+## Operate and recover
+
+Keep the issuer, client ID, client secret, redirect URI, provider hint, and
+admission policy in the Control Deck service's protected environment or
+secret source. Apply environment changes through the normal deployment
+procedure, and start a new login after changing provider configuration. Rotate
+the client secret in both the provider and IPTV Tunerr deployment; for Apple,
+install a replacement signed JWT before the six-month maximum expiry.
+
+The email/domain allow-list grants the existing Control Deck operator session.
+`IPTV_TUNERR_WEBUI_OIDC_ALLOW_ANY_VERIFIED_USER=true` grants that same access to
+any verified provider identity, so use it only when provider-side application
+assignment limits membership. Provider groups do not add roles. Test one
+admitted and one denied account, local password recovery, HTTP Basic access for
+scripts, and the expected CSRF rejection on a state-changing request without
+the session-bound token.
+
+OIDC protects only the dedicated Control Deck listener. It does not add
+authentication to the tuner, stream, guide, or media-server endpoints; keep
+those endpoints on the intended LAN/reverse-proxy boundary. OIDC Control Deck
+login is also separate from the README's Keycloak/authentik identity-migration
+plan/apply workflow.
+
 ## Rollback
 
 Remove the `IPTV_TUNERR_WEBUI_OIDC_*` variables from the service environment
@@ -86,14 +111,31 @@ access remain available.
 
 ## Troubleshooting
 
-- Check that the configured issuer exactly matches the `issuer` in the
-  provider's discovery document.
-- Check that the provider has the exact HTTPS redirect URI registered.
-- Check that the ID token includes `email` and affirmative `email_verified`
-  claims, and that the normalized address or domain is admitted.
+- **Provider rejects the callback:** compare scheme, hostname, port, and path
+  exactly with `IPTV_TUNERR_WEBUI_OIDC_REDIRECT_URI`; check forwarded HTTPS and
+  host headers on the reverse proxy.
+- **Discovery or token exchange fails:** compare the issuer to the discovery
+  document's `issuer`; check DNS, CA trust, outbound access, and whether the
+  trusted internal provider requires the private-issuer option.
+- **A verified user is denied:** confirm email and affirmative
+  `email_verified` claims, then check the normalized address/domain list and
+  provider claim release. An empty list denies by default.
+- **State, nonce, or session cookie is missing:** start a fresh login at the
+  same public hostname and browser. Confirm Secure cookie delivery, clock
+  accuracy, and proxy scheme/host forwarding.
+- **Apple returns to a failed page:** check the Services ID, signed client
+  secret, exact callback, `form_post`, cross-site cookie settings, and that the
+  Apple callback is not sent through a proxy that strips form bodies.
+- **Local login works but OIDC does not:** verify the OIDC variables are
+  present in the Control Deck process, not only in the container shell or the
+  separate migration CLI environment.
 - For an intentionally private issuer, set
   `IPTV_TUNERR_WEBUI_OIDC_ALLOW_PRIVATE_ISSUER=true` only for the trusted
   deployment.
+
+For support, provide the IPTV Tunerr version, provider ID, redacted issuer
+host, callback path, error code, and timestamp. Do not send provider secrets,
+authorization codes, tokens, raw claims, or full callback query strings.
 
 See also
 --------

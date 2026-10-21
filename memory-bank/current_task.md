@@ -1,4 +1,15 @@
-# Current task: OIDC sign-in for the Control Deck (implementation complete)
+# Current task: Expand cross-project OIDC operator documentation
+
+- **Goal:** make OIDC setup, provider discovery, admission policy, recovery, and troubleshooting easy to find and consistent across all nine SnapeTech applications.
+- **Scope:** expand each app's OIDC guide; link it from the root README and documentation index; deepen the shared provider/template reference; add release-note fragments; preserve app-specific callback, configuration, session, and authorization behavior.
+- **Success criteria:** all nine repos expose accurate setup/runbook links; their guides agree on common protocol and provider-branding rules without erasing native app differences; changed Markdown and release notes validate; each change is committed, pushed, reviewed, and merged to the default branch.
+- **Status:** repository mapping is complete. Documentation edits and validation are in progress in isolated clean worktrees; existing dirty checkouts are untouched.
+- **Verification:** check every changed link and release-note fragment, run `git diff --check`, and use repository docs-specific checks where available. No live identity-provider tenant or credentials are available.
+- **Next steps:** finish guide/index/README updates, validate, commit, push, merge, update task history, and remove only this task's worktrees and scratch directory.
+
+---
+
+## Completed task: OIDC sign-in for the Control Deck
 
 - **Goal:** add server-side OpenID Connect sign-in to the IPTV Tunerr Control Deck while preserving its native session, role, CSRF, password, Basic-authentication, and separate tuner/media boundaries.
 - **Scope:** implement the stack-native OIDC adapter, provider presentation for the shared 14-provider catalog, local provider icons and setup links, operator guidance, and focused automated coverage. Do not change authentication on tuner, stream, or media-server endpoints.
