@@ -26,6 +26,7 @@ All notable changes to IPTV Tunerr are documented here. Repo: [github.com/snapet
 #### Fixed
 
 - **Authentication:** Concurrent Control Deck OIDC attempts now use separate short-lived state cookies, and logout clears outstanding transaction cookies.
+- **Docker Compose:** The Docker Compose example now exposes the Control Deck on host loopback and persists its SQLite database. Missing database configuration and failed database opens also produce distinct messages to help diagnose channel-management errors.
 
 #### Security
 
