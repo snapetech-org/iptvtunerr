@@ -696,4 +696,5 @@
 ## 2026-10-22 - Remove the council verification gate
 
 - Removed the Bug Council phase from `scripts/verify-steps.sh` and its command from `memory-bank/commands.yml`; retained normal verification steps and the separate Semgrep and Trivy workflows.
-- Verification: `bash -n scripts/verify-steps.sh` and `git diff --check` passed. Tests were not run. Hosted checks will run after the direct push to `main`.
+- Pushed commit `fbec513` directly to GitHub `main`.
+- Verification: `bash -n scripts/verify-steps.sh` and `git diff --check` passed. Tests were not run locally. Hosted checks for the removal commit were queued at final review.

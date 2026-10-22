@@ -3,8 +3,8 @@
 - **Goal:** remove the Bug Council phase from automated verification now that Semgrep and Trivy scans are maintained for this repository.
 - **Scope:** remove the council entry from `scripts/verify-steps.sh` and `memory-bank/commands.yml`; keep translations, normal tests, and the separate Semgrep/Trivy workflows.
 - **Out of scope:** deleting historical council records or changing the scanners.
-- **Status:** implementation and diff review are complete in the isolated `main` checkout; focused shell syntax and diff checks passed. The direct push is next, followed by hosted verification.
-- **Plan:** push the reviewed change to `main` and inspect the hosted workflow results.
+- **Status:** the removal is pushed to `main` in commit `fbec513`; focused shell syntax and diff checks passed. Hosted verification for that commit is queued. Tests were not run locally.
+- **Plan:** none.
 
 ---
 
