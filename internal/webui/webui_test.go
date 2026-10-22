@@ -11,6 +11,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"testing"
 	"time"
@@ -33,6 +34,31 @@ func newTestWebUIServerWithStore(t *testing.T, root string) *Server {
 		}
 	})
 	return &Server{store: st}
+}
+
+var loginCSRFFieldPattern = regexp.MustCompile(`name="csrf_token" value="([^"]+)"`)
+
+func loginCSRFTokenForTest(t *testing.T, s *Server) string {
+	t.Helper()
+	req := httptest.NewRequest(http.MethodGet, "/login", nil)
+	w := httptest.NewRecorder()
+	s.login(w, req)
+	if w.Code != http.StatusOK {
+		t.Fatalf("login form status=%d body=%s", w.Code, w.Body.String())
+	}
+	match := loginCSRFFieldPattern.FindStringSubmatch(w.Body.String())
+	if len(match) != 2 {
+		t.Fatalf("login form has no CSRF token: %s", w.Body.String())
+	}
+	return match[1]
+}
+
+func loginPostForTest(t *testing.T, s *Server, form string) *http.Request {
+	t.Helper()
+	token := loginCSRFTokenForTest(t, s)
+	req := httptest.NewRequest(http.MethodPost, "/login", strings.NewReader(form+"&csrf_token="+token))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	return req
 }
 
 func TestRequireStoreExplainsDatabaseConfiguration(t *testing.T) {
@@ -1713,6 +1739,11 @@ func TestProxyStripsDeckAuthHeaders(t *testing.T) {
 		if got := r.Header.Get("X-IPTVTunerr-Deck-CSRF"); got != "" {
 			t.Fatalf("csrf leaked upstream: %q", got)
 		}
+		for _, name := range []string{"Forwarded", "X-Forwarded-For", "X-Forwarded-Host", "X-Forwarded-Proto"} {
+			if got := r.Header.Get(name); got != "" {
+				t.Fatalf("client forwarding header %s leaked upstream: %q", name, got)
+			}
+		}
 		w.WriteHeader(http.StatusNoContent)
 	}))
 	defer upstream.Close()
@@ -1722,6 +1753,10 @@ func TestProxyStripsDeckAuthHeaders(t *testing.T) {
 	req.Header.Set("Authorization", "Basic abc")
 	req.Header.Set("Cookie", "iptvtunerr_deck_session=abc")
 	req.Header.Set("X-IPTVTunerr-Deck-CSRF", "csrf")
+	req.Header.Set("Forwarded", "for=203.0.113.99;proto=https;host=attacker.example")
+	req.Header.Set("X-Forwarded-For", "203.0.113.99")
+	req.Header.Set("X-Forwarded-Host", "attacker.example")
+	req.Header.Set("X-Forwarded-Proto", "https")
 	w := httptest.NewRecorder()
 	s.proxy(w, req)
 	if w.Code != http.StatusNoContent {
@@ -1738,8 +1773,7 @@ func TestLoginAndLogoutFlow(t *testing.T) {
 		settings:        DeckSettings{AuthUser: "admin", AuthPass: "admin"},
 	}
 
-	badReq := httptest.NewRequest(http.MethodPost, "/login", strings.NewReader("username=admin&password=nope"))
-	badReq.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	badReq := loginPostForTest(t, s, "username=admin&password=nope")
 	badW := httptest.NewRecorder()
 	s.login(badW, badReq)
 	if badW.Code != http.StatusUnauthorized {
@@ -1749,8 +1783,7 @@ func TestLoginAndLogoutFlow(t *testing.T) {
 		t.Fatalf("bad login body=%q", badW.Body.String())
 	}
 
-	okReq := httptest.NewRequest(http.MethodPost, "/login", strings.NewReader("username=admin&password=admin"))
-	okReq.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	okReq := loginPostForTest(t, s, "username=admin&password=admin")
 	okW := httptest.NewRecorder()
 	s.login(okW, okReq)
 	if okW.Code != http.StatusSeeOther {
@@ -1780,6 +1813,31 @@ func TestLoginAndLogoutFlow(t *testing.T) {
 	}
 }
 
+func TestLoginRejectsMissingOrModifiedCSRFToken(t *testing.T) {
+	s := &Server{
+		Version:   "test",
+		loginTmpl: templateMustLogin(t),
+		settings:  DeckSettings{AuthUser: "admin", AuthPass: "admin"},
+	}
+	validToken := loginCSRFTokenForTest(t, s)
+	for _, token := range []string{"", validToken + "x"} {
+		form := "username=admin&password=admin"
+		if token != "" {
+			form += "&csrf_token=" + token
+		}
+		req := httptest.NewRequest(http.MethodPost, "/login", strings.NewReader(form))
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+		w := httptest.NewRecorder()
+		s.login(w, req)
+		if w.Code != http.StatusForbidden {
+			t.Fatalf("token=%q status=%d want %d", token, w.Code, http.StatusForbidden)
+		}
+	}
+	if len(s.sessions) != 0 {
+		t.Fatalf("invalid login CSRF token created sessions: %v", s.sessions)
+	}
+}
+
 func TestLoginIgnoresRedirectTargets(t *testing.T) {
 	s := &Server{
 		Version:         "test",
@@ -1788,8 +1846,7 @@ func TestLoginIgnoresRedirectTargets(t *testing.T) {
 		failedLoginByIP: map[string][]time.Time{},
 		settings:        DeckSettings{AuthUser: "admin", AuthPass: "admin"},
 	}
-	req := httptest.NewRequest(http.MethodPost, "/login", strings.NewReader("username=admin&password=admin&next=https%3A%2F%2Fevil.example%2Fpwn"))
-	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req := loginPostForTest(t, s, "username=admin&password=admin&next=https%3A%2F%2Fevil.example%2Fpwn")
 	w := httptest.NewRecorder()
 	s.login(w, req)
 	if w.Code != http.StatusSeeOther {
@@ -1800,15 +1857,53 @@ func TestLoginIgnoresRedirectTargets(t *testing.T) {
 	}
 }
 
+func TestSafeOIDCReturnToOnlyAllowsSameOriginPaths(t *testing.T) {
+	tests := []struct {
+		name string
+		in   string
+		want string
+	}{
+		{name: "root", in: "/", want: "/"},
+		{name: "local path and query", in: "/settings?tab=providers", want: "/settings?tab=providers"},
+		{name: "absolute URL", in: "https://evil.example/path", want: "/"},
+		{name: "network path", in: "//evil.example/path", want: "/"},
+		{name: "escaped network path", in: "/%2F%2Fevil.example/path", want: "/"},
+		{name: "escaped backslash", in: "/%5C%5Cevil.example/path", want: "/"},
+		{name: "literal backslash", in: "/\\\\evil.example/path", want: "/"},
+		{name: "oversized", in: "/" + strings.Repeat("a", maxOIDCReturnToBytes), want: "/"},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			if got := safeOIDCReturnTo(tc.in); got != tc.want {
+				t.Fatalf("safeOIDCReturnTo(%q)=%q want %q", tc.in, got, tc.want)
+			}
+		})
+	}
+}
+
+func TestSafeSSEEventTypeCannotInjectFields(t *testing.T) {
+	for input, want := range map[string]string{
+		"connected":              "connected",
+		"system.error-1":         "system.error-1",
+		"ready\ndata: injected":  "readydatainjected",
+		"ready\r\nevent: evil":   "readyeventevil",
+		"\x00\x01":               "message",
+		"event name with spaces": "eventnamewithspaces",
+	} {
+		if got := safeSSEEventType(input); got != want {
+			t.Errorf("safeSSEEventType(%q) = %q, want %q", input, got, want)
+		}
+	}
+}
+
 func TestLoginLazilyInitializesStateMaps(t *testing.T) {
 	s := &Server{
 		Version:  "test",
 		settings: DeckSettings{AuthUser: "admin", AuthPass: "admin"},
 	}
 
-	badReq := httptest.NewRequest(http.MethodPost, "/login", strings.NewReader("username=admin&password=wrong"))
+	badReq := loginPostForTest(t, s, "username=admin&password=wrong")
 	badReq.RemoteAddr = "127.0.0.1:1234"
-	badReq.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	badW := httptest.NewRecorder()
 	s.login(badW, badReq)
 	if badW.Code != http.StatusUnauthorized {
@@ -1818,9 +1913,8 @@ func TestLoginLazilyInitializesStateMaps(t *testing.T) {
 		t.Fatalf("failedLoginByIP=%v", s.failedLoginByIP)
 	}
 
-	okReq := httptest.NewRequest(http.MethodPost, "/login", strings.NewReader("username=admin&password=admin"))
+	okReq := loginPostForTest(t, s, "username=admin&password=admin")
 	okReq.RemoteAddr = "127.0.0.1:1234"
-	okReq.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	okW := httptest.NewRecorder()
 	s.login(okW, okReq)
 	if okW.Code != http.StatusSeeOther {
@@ -1894,15 +1988,13 @@ func TestLoginBlockedAfterRepeatedFailures(t *testing.T) {
 		settings:        DeckSettings{AuthUser: "admin", AuthPass: "admin", DefaultRefreshSec: 30},
 	}
 	for i := 0; i < failedLoginLimit; i++ {
-		req := httptest.NewRequest(http.MethodPost, "/login", strings.NewReader("username=admin&password=wrong"))
+		req := loginPostForTest(t, s, "username=admin&password=wrong")
 		req.RemoteAddr = "127.0.0.1:1234"
-		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 		w := httptest.NewRecorder()
 		s.login(w, req)
 	}
-	req := httptest.NewRequest(http.MethodPost, "/login", strings.NewReader("username=admin&password=admin"))
+	req := loginPostForTest(t, s, "username=admin&password=admin")
 	req.RemoteAddr = "127.0.0.1:1234"
-	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	w := httptest.NewRecorder()
 	s.login(w, req)
 	if w.Code != http.StatusTooManyRequests {

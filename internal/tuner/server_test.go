@@ -2646,6 +2646,26 @@ func TestServer_virtualChannelSlateRendersBranding(t *testing.T) {
 	}
 }
 
+func TestRenderVirtualChannelSlateSVGEscapesMarkup(t *testing.T) {
+	channel := virtualchannels.Channel{
+		Name:        `News </text><script>alert(1)</script>`,
+		Description: `Description </text><script>bad()</script>`,
+		Branding: virtualchannels.Branding{
+			LogoURL:    `https://img.example/logo.png" onload="alert(1)`,
+			BugText:    `BUG</text><script>bad()</script>`,
+			BannerText: `Banner</text><script>bad()</script>`,
+			ThemeColor: `#112233" onload="alert(1)`,
+		},
+	}
+	svg := renderVirtualChannelSlateSVG(channel)
+	if strings.Contains(svg, "<script>") || strings.Contains(svg, `onload="`) {
+		t.Fatalf("untrusted branding escaped SVG context: %s", svg)
+	}
+	if !strings.Contains(svg, "&lt;script&gt;") || !strings.Contains(svg, "&#34; onload=&#34;") {
+		t.Fatalf("expected escaped text and attribute values in SVG: %s", svg)
+	}
+}
+
 func TestServer_virtualChannelBrandedStreamUsesFFmpegPath(t *testing.T) {
 	t.Setenv("IPTV_TUNERR_VIRTUAL_CHANNEL_DENY_LITERAL_PRIVATE_UPSTREAM", "false")
 	argsPath := filepath.Join(t.TempDir(), "ffmpeg-args.txt")

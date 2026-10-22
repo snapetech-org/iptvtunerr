@@ -168,7 +168,7 @@ func inspectSQLiteTables(db *sql.DB, filters []string) ([]DBTableInspect, error)
 }
 
 func sqliteColumnNames(db *sql.DB, table string) ([]string, error) {
-	rows, err := db.Query(fmt.Sprintf("PRAGMA table_info(%s)", table))
+	rows, err := db.Query(fmt.Sprintf("PRAGMA table_info(%s)", quoteSQLiteIdentifier(table)))
 	if err != nil {
 		return nil, err
 	}
@@ -190,7 +190,7 @@ func sqliteColumnNames(db *sql.DB, table string) ([]string, error) {
 
 func sqliteRowCount(db *sql.DB, table string) int {
 	var n int
-	_ = db.QueryRow(fmt.Sprintf("SELECT COUNT(*) FROM %s", table)).Scan(&n)
+	_ = db.QueryRow(fmt.Sprintf("SELECT COUNT(*) FROM %s", quoteSQLiteIdentifier(table))).Scan(&n)
 	return n
 }
 

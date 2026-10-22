@@ -88,6 +88,7 @@ func setNativeMuxResponseKind(w http.ResponseWriter, muxKind string) {
 		k = "hls"
 	}
 	w.Header().Set(NativeMuxKindHeader, k)
+	w.Header().Set("X-Content-Type-Options", "nosniff")
 }
 
 // Diagnostic header values (stable tokens for scripts).
@@ -268,11 +269,8 @@ func respondHLSMuxUpstreamHTTP(w http.ResponseWriter, r *http.Request, status in
 	}
 	applyHLSMuxCORS(w)
 	w.Header().Set(hlsMuxDiagnosticHeader, diag)
-	if len(body) > 0 {
-		if ct := http.DetectContentType(body); ct != "" {
-			w.Header().Set("Content-Type", ct)
-		}
-	}
+	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+	w.Header().Set("X-Content-Type-Options", "nosniff")
 	w.WriteHeader(status)
 	if len(body) > 0 {
 		_, _ = w.Write(body)
@@ -830,6 +828,8 @@ func (g *Gateway) serveNativeMuxTarget(w http.ResponseWriter, r *http.Request, c
 		ct := strings.TrimSpace(resp.Header.Get("Content-Type"))
 		if ct == "" {
 			ct = "application/dash+xml"
+		} else {
+			ct = safeStreamContentType(ct)
 		}
 		w.Header().Set("Content-Type", ct)
 		w.Header().Set("Cache-Control", "no-store")
@@ -847,7 +847,7 @@ func (g *Gateway) serveNativeMuxTarget(w http.ResponseWriter, r *http.Request, c
 		}
 	}
 	if ct := strings.TrimSpace(resp.Header.Get("Content-Type")); ct != "" {
-		w.Header().Set("Content-Type", ct)
+		w.Header().Set("Content-Type", safeStreamContentType(ct))
 	} else {
 		w.Header().Set("Content-Type", "video/mp2t")
 	}

@@ -21,9 +21,10 @@ import os
 import sys
 import time
 import urllib.parse
-import urllib.request
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Any
+
+from safe_http import open_http_url
 
 
 def _derive_provider_from_catalog(catalog: dict[str, Any]) -> tuple[str, str, str, str]:
@@ -47,8 +48,7 @@ def _derive_provider_from_catalog(catalog: dict[str, Any]) -> tuple[str, str, st
 
 
 def _load_json(url: str, timeout: int) -> Any:
-    req = urllib.request.Request(url, headers={"User-Agent": "IptvTunerr/1.0"})
-    with urllib.request.urlopen(req, timeout=timeout) as r:
+    with open_http_url(url, timeout=timeout, headers={"User-Agent": "IptvTunerr/1.0"}) as r:
         return json.loads(r.read().decode("utf-8", "replace"))
 
 

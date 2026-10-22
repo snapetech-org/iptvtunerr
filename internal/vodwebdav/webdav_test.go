@@ -2,6 +2,7 @@ package vodwebdav
 
 import (
 	"context"
+	"crypto/tls"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -75,6 +76,91 @@ func TestMountCommand(t *testing.T) {
 	}
 	if got := MountCommand("windows", "127.0.0.1:8123", "Z:"); got == "" {
 		t.Fatal("expected windows mount command")
+	}
+}
+
+func TestMountHintsSupportHTTPS(t *testing.T) {
+	if got := MountHintForScheme("darwin", "media.example:58188", "https"); !strings.Contains(got, "https://media.example:58188/") {
+		t.Fatalf("HTTPS mount hint = %q", got)
+	}
+	if got := MountCommandForScheme("linux", "media.example:58188", "/mnt/vod", "https"); !strings.Contains(got, "davs://media.example:58188/") {
+		t.Fatalf("HTTPS mount command = %q", got)
+	}
+}
+
+func TestNewServerRestrictsNetworkListeners(t *testing.T) {
+	handler := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { _, _ = io.WriteString(w, "ok") })
+	for _, addr := range []string{"127.0.0.1:58188", "[::1]:58188", "localhost:58188"} {
+		if _, err := NewServer(addr, "", "", "", "", handler); err != nil {
+			t.Errorf("loopback %q rejected: %v", addr, err)
+		}
+	}
+	for _, addr := range []string{":58188", "0.0.0.0:58188", "192.0.2.10:58188"} {
+		if _, err := NewServer(addr, "", "", "", "", handler); err == nil {
+			t.Errorf("plaintext network listener %q was accepted", addr)
+		}
+		if _, err := NewServer(addr, "cert.pem", "key.pem", "", "", handler); err == nil {
+			t.Errorf("unauthenticated TLS network listener %q was accepted", addr)
+		}
+		server, err := NewServer(addr, "cert.pem", "key.pem", "operator", "sixteen-byte-secret", handler)
+		if err != nil {
+			t.Errorf("TLS and authenticated listener %q rejected: %v", addr, err)
+			continue
+		}
+		if server.TLSConfig == nil || server.TLSConfig.MinVersion != tls.VersionTLS12 {
+			t.Errorf("TLS minimum version for %q is not TLS 1.2", addr)
+		}
+	}
+	if _, err := NewServer("0.0.0.0:58188", "cert.pem", "key.pem", "operator", "short", handler); err == nil {
+		t.Fatal("weak password accepted for a network listener")
+	}
+}
+
+func TestNewServerRequiresCompleteTLSAndAuthPairs(t *testing.T) {
+	handler := http.HandlerFunc(func(http.ResponseWriter, *http.Request) {})
+	for _, tc := range []struct {
+		name, cert, key, user, password string
+	}{
+		{name: "certificate without key", cert: "cert.pem"},
+		{name: "username without password", user: "operator"},
+		{name: "password without username", password: "secret"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			if _, err := NewServer("127.0.0.1:0", tc.cert, tc.key, tc.user, tc.password, handler); err == nil {
+				t.Fatal("incomplete security configuration was accepted")
+			}
+		})
+	}
+}
+
+func TestWebDAVBasicAuth(t *testing.T) {
+	next := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { _, _ = io.WriteString(w, "ok") })
+	server, err := NewServer("127.0.0.1:58188", "", "", "operator", "secret", next)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, tc := range []struct {
+		name, user, password string
+		wantStatus           int
+	}{
+		{name: "missing", wantStatus: http.StatusUnauthorized},
+		{name: "wrong password", user: "operator", password: "wrong", wantStatus: http.StatusUnauthorized},
+		{name: "valid", user: "operator", password: "secret", wantStatus: http.StatusOK},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			req := httptest.NewRequest(http.MethodGet, "http://local/", nil)
+			if tc.user != "" {
+				req.SetBasicAuth(tc.user, tc.password)
+			}
+			w := httptest.NewRecorder()
+			server.Handler.ServeHTTP(w, req)
+			if w.Code != tc.wantStatus {
+				t.Fatalf("status = %d, want %d", w.Code, tc.wantStatus)
+			}
+			if tc.wantStatus == http.StatusUnauthorized && w.Header().Get("WWW-Authenticate") == "" {
+				t.Fatal("unauthorized response has no Basic challenge")
+			}
+		})
 	}
 }
 

@@ -214,8 +214,12 @@ func insertMetadataItem(db *sql.DB, metaCols []string, sectionID int, ch EPGChan
 		args[i] = metaRow[col]
 	}
 
-	sql := fmt.Sprintf("INSERT INTO metadata_items (%s) VALUES (%s)", strings.Join(validCols, ", "), strings.Join(placeholders, ", "))
-	_, err := db.Exec(sql, args...)
+	quotedCols := make([]string, len(validCols))
+	for i, col := range validCols {
+		quotedCols[i] = quoteSQLiteIdentifier(col)
+	}
+	query := fmt.Sprintf("INSERT INTO metadata_items (%s) VALUES (%s)", strings.Join(quotedCols, ", "), strings.Join(placeholders, ", "))
+	_, err := db.Exec(query, args...)
 	if err != nil {
 		return 0, err
 	}
@@ -242,8 +246,12 @@ func insertRow(db *sql.DB, table string, cols []string, row map[string]interface
 		placeholders[i] = "?"
 		args[i] = row[col]
 	}
-	sql := fmt.Sprintf("INSERT OR IGNORE INTO %s (%s) VALUES (%s)", table, strings.Join(cols, ", "), strings.Join(placeholders, ", "))
-	db.Exec(sql, args...)
+	quotedCols := make([]string, len(cols))
+	for i, col := range cols {
+		quotedCols[i] = quoteSQLiteIdentifier(col)
+	}
+	query := fmt.Sprintf("INSERT OR IGNORE INTO %s (%s) VALUES (%s)", quoteSQLiteIdentifier(table), strings.Join(quotedCols, ", "), strings.Join(placeholders, ", "))
+	db.Exec(query, args...)
 }
 
 func extractChannelNumber(tagValue string) string {

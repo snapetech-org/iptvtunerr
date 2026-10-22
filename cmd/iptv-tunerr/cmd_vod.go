@@ -3,7 +3,6 @@ package main
 import (
 	"flag"
 	"log"
-	"net/http"
 	"os"
 	"runtime"
 
@@ -40,9 +39,12 @@ func vodCommands() []commandSpec {
 	vodWebDAVCatalog := vodWebDAVCmd.String("catalog", "", "Catalog JSON path (default: IPTV_TUNERR_CATALOG_PATH (legacy alias: IPTV_TUNERR_CATALOG))")
 	vodWebDAVCache := vodWebDAVCmd.String("cache", "", "Cache dir for VOD materialization (default: IPTV_TUNERR_CACHE)")
 	vodWebDAVAddr := vodWebDAVCmd.String("addr", "127.0.0.1:58188", "Listen address for the WebDAV VOD server")
+	vodWebDAVTLSCert := vodWebDAVCmd.String("tls-cert", "", "TLS certificate file (required for non-loopback listeners)")
+	vodWebDAVTLSKey := vodWebDAVCmd.String("tls-key", "", "TLS private key file (required for non-loopback listeners)")
 
 	vodWebDAVMountHintCmd := flag.NewFlagSet("vod-webdav-mount-hint", flag.ExitOnError)
 	vodWebDAVMountHintAddr := vodWebDAVMountHintCmd.String("addr", "127.0.0.1:58188", "Listen address for the WebDAV VOD server")
+	vodWebDAVMountHintScheme := vodWebDAVMountHintCmd.String("scheme", "http", "URL scheme used by the WebDAV server (http or https)")
 	vodWebDAVMountHintOS := vodWebDAVMountHintCmd.String("os", runtime.GOOS, "Target OS for the mount hint (darwin, windows, linux)")
 	vodWebDAVMountHintTarget := vodWebDAVMountHintCmd.String("target", "", "Suggested mount target (path or drive letter)")
 
@@ -84,7 +86,7 @@ func vodCommands() []commandSpec {
 			FlagSet: vodWebDAVCmd,
 			Run: func(cfg *config.Config, args []string) {
 				_ = vodWebDAVCmd.Parse(args)
-				handleVODWebDAV(cfg, *vodWebDAVCatalog, *vodWebDAVAddr, *vodWebDAVCache)
+				handleVODWebDAV(cfg, *vodWebDAVCatalog, *vodWebDAVAddr, *vodWebDAVCache, *vodWebDAVTLSCert, *vodWebDAVTLSKey, os.Getenv("IPTV_TUNERR_VOD_WEBDAV_USER"), os.Getenv("IPTV_TUNERR_VOD_WEBDAV_PASSWORD"))
 			},
 		},
 		{
@@ -94,8 +96,8 @@ func vodCommands() []commandSpec {
 			FlagSet: vodWebDAVMountHintCmd,
 			Run: func(cfg *config.Config, args []string) {
 				_ = vodWebDAVMountHintCmd.Parse(args)
-				log.Printf("Mount hint (%s): %s", *vodWebDAVMountHintOS, vodwebdav.MountHint(*vodWebDAVMountHintOS, *vodWebDAVMountHintAddr))
-				log.Printf("Mount command (%s): %s", *vodWebDAVMountHintOS, vodwebdav.MountCommand(*vodWebDAVMountHintOS, *vodWebDAVMountHintAddr, *vodWebDAVMountHintTarget))
+				log.Printf("Mount hint (%s): %s", *vodWebDAVMountHintOS, vodwebdav.MountHintForScheme(*vodWebDAVMountHintOS, *vodWebDAVMountHintAddr, *vodWebDAVMountHintScheme))
+				log.Printf("Mount command (%s): %s", *vodWebDAVMountHintOS, vodwebdav.MountCommandForScheme(*vodWebDAVMountHintOS, *vodWebDAVMountHintAddr, *vodWebDAVMountHintTarget, *vodWebDAVMountHintScheme))
 			},
 		},
 	}
@@ -131,7 +133,7 @@ func handleMount(cfg *config.Config, catalogPath, mountPoint, cacheDir string, a
 	}
 }
 
-func handleVODWebDAV(cfg *config.Config, catalogPath, addr, cacheDir string) {
+func handleVODWebDAV(cfg *config.Config, catalogPath, addr, cacheDir, certFile, keyFile, username, password string) {
 	path := catalogPath
 	if path == "" {
 		path = cfg.CatalogPath
@@ -150,13 +152,27 @@ func handleVODWebDAV(cfg *config.Config, catalogPath, addr, cacheDir string) {
 	if cache != "" {
 		mat = &materializer.Cache{CacheDir: cache}
 	}
-	log.Printf("Starting VOD WebDAV on http://%s/ with %d movies and %d series", addr, len(movies), len(series))
-	log.Printf("Mount hint (%s): %s", runtime.GOOS, vodwebdav.MountHint(runtime.GOOS, addr))
-	log.Printf("Mount command (%s): %s", runtime.GOOS, vodwebdav.MountCommand(runtime.GOOS, addr, ""))
+	scheme := "http"
+	if certFile != "" || keyFile != "" {
+		scheme = "https"
+	}
+	server, err := vodwebdav.NewServer(addr, certFile, keyFile, username, password, vodwebdav.NewHandler(movies, series, mat))
+	if err != nil {
+		log.Printf("VOD WebDAV configuration invalid: %v", err)
+		os.Exit(2)
+	}
+	log.Printf("Starting VOD WebDAV on %s://%s/ with %d movies and %d series", scheme, addr, len(movies), len(series))
+	log.Printf("Mount hint (%s): %s", runtime.GOOS, vodwebdav.MountHintForScheme(runtime.GOOS, addr, scheme))
+	log.Printf("Mount command (%s): %s", runtime.GOOS, vodwebdav.MountCommandForScheme(runtime.GOOS, addr, "", scheme))
 	if cache == "" {
 		log.Printf("VOD WebDAV is using the stub materializer; directory scans work, but reads need -cache or IPTV_TUNERR_CACHE for on-demand bytes")
 	}
-	if err := http.ListenAndServe(addr, vodwebdav.NewHandler(movies, series, mat)); err != nil {
+	if scheme == "https" {
+		err = server.ListenAndServeTLS(certFile, keyFile)
+	} else {
+		err = server.ListenAndServe()
+	}
+	if err != nil {
 		log.Printf("VOD WebDAV failed: %v", err)
 		os.Exit(1)
 	}

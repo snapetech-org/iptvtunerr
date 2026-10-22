@@ -55,6 +55,44 @@ func TestInspectPlexDB(t *testing.T) {
 	}
 }
 
+func TestSQLiteSchemaIdentifiersAreQuoted(t *testing.T) {
+	db, err := sql.Open("sqlite", ":memory:")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+	db.SetMaxOpenConns(1)
+
+	name := `odd"; DROP TABLE sentinel;--`
+	if _, err := db.Exec(`CREATE TABLE sentinel (value TEXT)`); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := db.Exec(`CREATE TABLE ` + quoteSQLiteIdentifier(name) + ` ("column" TEXT)`); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := db.Exec(`INSERT INTO ` + quoteSQLiteIdentifier(name) + ` ("column") VALUES ('kept')`); err != nil {
+		t.Fatal(err)
+	}
+
+	columns, err := sqliteColumnNames(db, name)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(columns) != 1 || columns[0] != "column" {
+		t.Fatalf("unexpected columns: %#v", columns)
+	}
+	if got := sqliteRowCount(db, name); got != 1 {
+		t.Fatalf("quoted table row count = %d, want 1", got)
+	}
+	var sentinelExists int
+	if err := db.QueryRow(`SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='sentinel'`).Scan(&sentinelExists); err != nil {
+		t.Fatal(err)
+	}
+	if sentinelExists != 1 {
+		t.Fatal("schema-derived identifier altered another table")
+	}
+}
+
 func TestGetServerIdentityParsesRoot(t *testing.T) {
 	rec := &HTTPRequestRecord{
 		XMLRoot:     "MediaContainer",

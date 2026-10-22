@@ -75,6 +75,7 @@ type Server struct {
 	activityEntries     []DeckActivityEntry
 	sessionMu           sync.Mutex
 	sessions            map[string]deckSession
+	loginCSRFSecret     []byte
 	failedLoginMu       sync.Mutex
 	failedLoginByIP     map[string][]time.Time
 	failedLoginOverflow []time.Time
@@ -609,27 +610,26 @@ func (s *Server) proxy(w http.ResponseWriter, r *http.Request) {
 		writeJSONError(w, http.StatusInternalServerError, "invalid tuner base")
 		return
 	}
-	rp := httputil.NewSingleHostReverseProxy(base)
-	origDirector := rp.Director
-	rp.Director = func(req *http.Request) {
-		origDirector(req)
-		req.URL.Path = strings.TrimPrefix(r.URL.Path, "/api")
-		if req.URL.Path == "" {
-			req.URL.Path = "/"
-		}
-		req.URL.RawPath = req.URL.Path
-		req.Host = base.Host
-		req.Header.Del("X-Forwarded-For")
-		req.Header.Del("Authorization")
-		req.Header.Del("Proxy-Authorization")
-		req.Header.Del("Cookie")
-		req.Header.Del("X-IPTVTunerr-Deck-CSRF")
-		req.Header.Del("X-IPTVTunerr-CSRF")
-	}
-	rp.ErrorHandler = func(w http.ResponseWriter, _ *http.Request, err error) {
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(http.StatusBadGateway)
-		_, _ = w.Write([]byte(`{"error":"tuner unreachable"}`))
+	rp := &httputil.ReverseProxy{
+		Rewrite: func(proxyReq *httputil.ProxyRequest) {
+			proxyReq.SetURL(base)
+			proxyReq.Out.URL.Path = strings.TrimPrefix(proxyReq.In.URL.Path, "/api")
+			if proxyReq.Out.URL.Path == "" {
+				proxyReq.Out.URL.Path = "/"
+			}
+			proxyReq.Out.URL.RawPath = ""
+			proxyReq.Out.Header.Del("X-Forwarded-For")
+			proxyReq.Out.Header.Del("Authorization")
+			proxyReq.Out.Header.Del("Proxy-Authorization")
+			proxyReq.Out.Header.Del("Cookie")
+			proxyReq.Out.Header.Del("X-IPTVTunerr-Deck-CSRF")
+			proxyReq.Out.Header.Del("X-IPTVTunerr-CSRF")
+		},
+		ErrorHandler: func(w http.ResponseWriter, _ *http.Request, err error) {
+			w.Header().Set("Content-Type", "application/json; charset=utf-8")
+			w.WriteHeader(http.StatusBadGateway)
+			_, _ = w.Write([]byte(`{"error":"tuner unreachable"}`))
+		},
 	}
 	rp.ServeHTTP(w, r)
 }

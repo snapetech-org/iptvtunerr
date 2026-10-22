@@ -48,3 +48,7 @@
 ## Workflow lint follow-up (2026-10-19)
 
 - **Clear the existing actionlint baseline warnings.** A repo-wide actionlint pass reports the intentional `if: false` in `package-smoke-disabled.yml` and ShellCheck `SC2012` for `ls` in `tester-bundles.yml`. Keep the disabled job explicit, and replace the artifact-directory `ls` lookup with a filename-safe selection before removing the temporary lint suppressions.
+
+## Local security-scan scope (2026-10-22)
+
+- **Keep Trivy focused on the checkout instead of nested agent worktrees and captured diagnostics.** `scripts/security-scan-local.sh` scanned `.claude/worktrees/`, `.diag/`, and the 440 MB generated `catalog.json` during this task, producing additional findings from stale nested Dockerfiles and Kubernetes manifests. Add safe checkout/worktree exclusions or a tracked-file scan mode, while retaining dependency, IaC, and secret coverage for the active repository.

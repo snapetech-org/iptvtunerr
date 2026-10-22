@@ -14,7 +14,7 @@ jobs:
       contents: read
     steps:
       - name: Checkout pull request content
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: ${{ github.event.pull_request.head.repo.full_name }}
           ref: ${{ github.event.pull_request.head.sha }}
@@ -23,7 +23,7 @@ jobs:
           persist-credentials: false
 
       - name: Checkout trusted scanner
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ github.event.pull_request.base.sha }}
           path: scanner
@@ -49,7 +49,7 @@ jobs:
       contents: read
     steps:
       - name: Checkout trusted ref
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
           persist-credentials: false

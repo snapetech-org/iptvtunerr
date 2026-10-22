@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -23,7 +24,7 @@ func (s *Server) v2Events(w http.ResponseWriter, r *http.Request) {
 
 	send := func(event string, data any) {
 		b, _ := json.Marshal(data)
-		_, _ = fmt.Fprintf(w, "event: %s\ndata: %s\n\n", event, b)
+		_, _ = fmt.Fprintf(w, "event: %s\ndata: %s\n\n", safeSSEEventType(event), b)
 		flusher.Flush()
 	}
 
@@ -50,6 +51,21 @@ func (s *Server) v2Events(w http.ResponseWriter, r *http.Request) {
 			send(evt.Type, evt.Payload)
 		}
 	}
+}
+
+// safeSSEEventType prevents event names from introducing additional SSE fields
+// or events. Event names are protocol metadata, not arbitrary payload text.
+func safeSSEEventType(event string) string {
+	event = strings.Map(func(r rune) rune {
+		if r >= 'a' && r <= 'z' || r >= 'A' && r <= 'Z' || r >= '0' && r <= '9' || strings.ContainsRune("_-.", r) {
+			return r
+		}
+		return -1
+	}, event)
+	if event == "" {
+		return "message"
+	}
+	return event
 }
 
 // BroadcastEvent pushes an SSE event to all connected clients.

@@ -163,6 +163,8 @@ docker run -d --name iptvtunerr -p 5004:5004 --env-file .env iptv-tunerr:local
 # Or pass args to override the default (run -addr :5004): e.g. iptv-tunerr:local serve -addr :5004
 ```
 
+The container runs as UID/GID `10001:10001` and stores its default catalog and database under `/var/lib/iptvtunerr`; its cache directory is `/var/cache/iptvtunerr`. The Compose named volume is initialized with the required ownership. If you replace it with a host bind mount, make that directory writable by UID/GID `10001:10001` before starting the container.
+
 To enable the built-in reaper in Docker, add these to `.env` (or pass `-e` flags): `IPTV_TUNERR_PMS_URL`, `IPTV_TUNERR_PMS_TOKEN`, and `IPTV_TUNERR_PLEX_SESSION_REAPER=1`.
 
 If `.env` is missing, `docker compose up` will fail with "couldn't find env file". Create it from `.env.example` first.

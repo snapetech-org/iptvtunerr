@@ -9,9 +9,6 @@ on:
         required: true
         type: string
 
-env:
-  WINGETCREATE_GITHUB_TOKEN: ${{ secrets.WINGETCREATE_GITHUB_TOKEN }}
-
 permissions:
   contents: read
 
@@ -25,7 +22,7 @@ jobs:
     runs-on: windows-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ inputs.version }}
           fetch-depth: 0
@@ -42,11 +39,13 @@ jobs:
             bash -c "$(git show origin/main:scripts/ensure-release-tag-on-main.sh)" release-tag-guard "$TAG"
 
       - name: Require Winget token
-        if: ${{ env.WINGETCREATE_GITHUB_TOKEN == '' }}
         shell: pwsh
+        env:
+          WINGETCREATE_GITHUB_TOKEN: ${{ secrets.WINGETCREATE_GITHUB_TOKEN }}
         run: |
-          Write-Error "WINGETCREATE_GITHUB_TOKEN is not configured"
-          exit 1
+          if ([string]::IsNullOrWhiteSpace($env:WINGETCREATE_GITHUB_TOKEN)) {
+            throw "WINGETCREATE_GITHUB_TOKEN is not configured"
+          }
 
       - name: Download wingetcreate
         shell: pwsh
@@ -56,20 +55,38 @@ jobs:
       - name: Download Windows release asset
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_VERSION: ${{ inputs.version }}
+          RELEASE_REPOSITORY: ${{ github.repository }}
         shell: pwsh
         run: |
-          gh release download "${{ inputs.version }}" `
-            --repo ${{ github.repository }} `
-            --pattern "iptv-tunerr-${{ inputs.version }}-windows-amd64.zip"
+          if ($env:RELEASE_VERSION -notmatch '^v[0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z.-]+)?$') {
+            throw "Invalid release version"
+          }
+          if ($env:RELEASE_REPOSITORY -notmatch '^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$') {
+            throw "Invalid repository name"
+          }
+          gh release download "$env:RELEASE_VERSION" `
+            --repo "$env:RELEASE_REPOSITORY" `
+            --pattern "iptv-tunerr-$($env:RELEASE_VERSION)-windows-amd64.zip"
 
       - name: Prepare manifests
         shell: pwsh
+        env:
+          RELEASE_VERSION: ${{ inputs.version }}
+          RELEASE_REPOSITORY: ${{ github.repository }}
         run: |
           $ErrorActionPreference = "Stop"
-          $ReleaseVersion = "${{ inputs.version }}"
+          if ($env:RELEASE_VERSION -notmatch '^v[0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z.-]+)?$') {
+            throw "Invalid release version"
+          }
+          if ($env:RELEASE_REPOSITORY -notmatch '^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$') {
+            throw "Invalid repository name"
+          }
+          $ReleaseVersion = $env:RELEASE_VERSION
+          $Repository = $env:RELEASE_REPOSITORY
           $WingetVersion = $ReleaseVersion.TrimStart("v").Replace("-", ".")
           $Asset = "iptv-tunerr-$ReleaseVersion-windows-amd64.zip"
-          $InstallerUrl = "https://github.com/${{ github.repository }}/releases/download/$ReleaseVersion/$Asset"
+          $InstallerUrl = "https://github.com/$Repository/releases/download/$ReleaseVersion/$Asset"
           $InstallerSha = (Get-FileHash $Asset -Algorithm SHA256).Hash.ToLowerInvariant()
 
           bash packaging/scripts/update-winget-manifests.sh `
@@ -97,6 +114,8 @@ jobs:
 
       - name: Submit manifests to winget-pkgs
         shell: pwsh
+        env:
+          WINGETCREATE_GITHUB_TOKEN: ${{ secrets.WINGETCREATE_GITHUB_TOKEN }}
         run: |
           .\wingetcreate.exe submit $env:WINGET_SUBMIT_PATH `
             -t $env:WINGETCREATE_GITHUB_TOKEN

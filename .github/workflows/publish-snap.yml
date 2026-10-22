@@ -22,7 +22,7 @@ jobs:
     timeout-minutes: 45
     steps:
       - name: Checkout release source
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ inputs.tag }}
           path: source
@@ -40,7 +40,7 @@ jobs:
             bash -c "$(git show origin/main:scripts/ensure-release-tag-on-main.sh)" release-tag-guard "$TAG"
 
       - name: Checkout current Snap packaging metadata
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: main
           path: publisher
@@ -62,7 +62,7 @@ jobs:
 
       - name: Build Snap
         id: snap
-        uses: snapcore/action-build@v1
+        uses: snapcore/action-build@3bdaa03e1ba6bf59a65f84a751d943d549a54e79 # v1
         with:
           path: source
 
@@ -86,7 +86,7 @@ jobs:
             bash -c "$(git show origin/main:scripts/ensure-release-tag-on-main.sh)" release-tag-guard "$TAG"
 
       - name: Publish stable Snap
-        uses: snapcore/action-publish@v1
+        uses: snapcore/action-publish@214b86e5ca036ead1668c79afb81e550e6c54d40 # v1
         env:
           SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}
         with:

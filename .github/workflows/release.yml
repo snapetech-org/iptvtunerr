@@ -12,7 +12,7 @@ jobs:
     outputs:
       release_body: ${{ steps.generate-notes.outputs.release_body }}
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
           persist-credentials: false
@@ -20,11 +20,11 @@ jobs:
       - name: Require release tag on main
         run: ./scripts/ensure-release-tag-on-main.sh "${GITHUB_REF_NAME}"
 
-      - uses: actions/setup-go@v7
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version-file: go.mod
 
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: '22.23.4'
 
@@ -78,7 +78,7 @@ jobs:
             echo "$delimiter"
           } >> "$GITHUB_OUTPUT"
 
-      - uses: softprops/action-gh-release@v3
+      - uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3
         with:
           body_path: dist/release-notes.md
           files: |
@@ -98,11 +98,11 @@ jobs:
       RELEASE_BODY: ${{ needs.release.outputs.release_body }}
       VERSION: ${{ github.ref_name }}
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: '22.23.4'
 
@@ -288,7 +288,7 @@ jobs:
       actions: write
       contents: read
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 

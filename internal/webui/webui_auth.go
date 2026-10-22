@@ -2,7 +2,9 @@ package webui
 
 import (
 	"context"
+	"crypto/hmac"
 	"crypto/rand"
+	"crypto/sha256"
 	"crypto/subtle"
 	"encoding/hex"
 	"fmt"
@@ -16,6 +18,7 @@ import (
 
 const maxFailedLoginIPs = 1024
 const maxLoginFormBytes = 8 << 10
+const loginCSRFTokenTTL = 15 * time.Minute
 
 func (s *Server) login(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
@@ -29,6 +32,10 @@ func (s *Server) login(w http.ResponseWriter, r *http.Request) {
 		r.Body = http.MaxBytesReader(w, r.Body, maxLoginFormBytes)
 		if err := r.ParseForm(); err != nil {
 			s.renderLogin(w, r, http.StatusBadRequest, "Invalid login form.")
+			return
+		}
+		if !s.validLoginCSRFToken(r.Form.Get("csrf_token")) {
+			s.renderLogin(w, r, http.StatusForbidden, "Invalid or expired login form. Refresh the page and try again.")
 			return
 		}
 		user := strings.TrimSpace(r.Form.Get("username"))
@@ -81,6 +88,11 @@ func (s *Server) logout(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) renderLogin(w http.ResponseWriter, r *http.Request, status int, errText string) {
 	s.ensureTemplates()
+	csrfToken, err := s.newLoginCSRFToken()
+	if err != nil {
+		http.Error(w, "unable to prepare login form", http.StatusInternalServerError)
+		return
+	}
 	provider := oidcProviderPresentation(s.oidcSettings.Provider)
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.Header().Set("Cache-Control", "no-store")
@@ -91,6 +103,7 @@ func (s *Server) renderLogin(w http.ResponseWriter, r *http.Request, status int,
 		"Version":               fallbackVersion(s.Version),
 		"Now":                   time.Now().UTC().Format(time.RFC3339),
 		"Error":                 errText,
+		"LoginCSRF":             csrfToken,
 		"User":                  s.deckSettingsReport().AuthUser,
 		"DefaultPassword":       s.deckSettingsReport().AuthDefaultPassword,
 		"GeneratedPassword":     s.generatedPass,
@@ -103,6 +116,67 @@ func (s *Server) renderLogin(w http.ResponseWriter, r *http.Request, status int,
 		"OIDCProviderSetupURL":  provider.SetupURL,
 		"Next":                  safeOIDCReturnTo(r.URL.Query().Get("next")),
 	})
+}
+
+func (s *Server) newLoginCSRFToken() (string, error) {
+	secret, err := s.loginCSRFKey()
+	if err != nil {
+		return "", err
+	}
+	nonce, err := newSessionToken()
+	if err != nil {
+		return "", err
+	}
+	payload := fmt.Sprintf("%d.%s", time.Now().Add(loginCSRFTokenTTL).Unix(), nonce)
+	mac := hmac.New(sha256.New, secret)
+	_, _ = mac.Write([]byte(payload))
+	return payload + "." + hex.EncodeToString(mac.Sum(nil)), nil
+}
+
+func (s *Server) validLoginCSRFToken(token string) bool {
+	if len(token) == 0 || len(token) > 256 {
+		return false
+	}
+	parts := strings.Split(token, ".")
+	if len(parts) != 3 || len(parts[1]) != 64 {
+		return false
+	}
+	expiresAt, err := strconv.ParseInt(parts[0], 10, 64)
+	if err != nil {
+		return false
+	}
+	now := time.Now().Unix()
+	if expiresAt < now || expiresAt > now+int64(loginCSRFTokenTTL.Seconds())+60 {
+		return false
+	}
+	nonce, err := hex.DecodeString(parts[1])
+	if err != nil || len(nonce) != 32 {
+		return false
+	}
+	providedMAC, err := hex.DecodeString(parts[2])
+	if err != nil || len(providedMAC) != sha256.Size {
+		return false
+	}
+	secret, err := s.loginCSRFKey()
+	if err != nil {
+		return false
+	}
+	mac := hmac.New(sha256.New, secret)
+	_, _ = mac.Write([]byte(parts[0] + "." + parts[1]))
+	return hmac.Equal(providedMAC, mac.Sum(nil))
+}
+
+func (s *Server) loginCSRFKey() ([]byte, error) {
+	s.sessionMu.Lock()
+	defer s.sessionMu.Unlock()
+	if len(s.loginCSRFSecret) == 0 {
+		s.loginCSRFSecret = make([]byte, 32)
+		if _, err := rand.Read(s.loginCSRFSecret); err != nil {
+			s.loginCSRFSecret = nil
+			return nil, fmt.Errorf("create login CSRF key: %w", err)
+		}
+	}
+	return append([]byte(nil), s.loginCSRFSecret...), nil
 }
 
 func (s *Server) sessionAuthOnly(h http.Handler) http.Handler {

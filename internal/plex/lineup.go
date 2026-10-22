@@ -74,7 +74,11 @@ func SyncLineupToPlex(plexDataDir string, channels []LineupChannel) error {
 		for _, ch := range batchCh {
 			batchArgs = append(batchArgs, ch.GuideNumber, ch.GuideName, ch.URL)
 		}
-		_, err = tx.Exec(fmt.Sprintf("INSERT INTO %s (%s) VALUES %s", table, strings.Join(cols, ", "), sb.String()), batchArgs...)
+		quotedCols := make([]string, len(cols))
+		for j, col := range cols {
+			quotedCols[j] = quoteSQLiteIdentifier(col)
+		}
+		_, err = tx.Exec(fmt.Sprintf("INSERT INTO %s (%s) VALUES %s", quoteSQLiteIdentifier(table), strings.Join(quotedCols, ", "), sb.String()), batchArgs...)
 		if err != nil {
 			return fmt.Errorf("insert lineup batch: %w", err)
 		}
@@ -124,7 +128,7 @@ func createChannelTableFallback(db *sql.DB) (table string, cols []string, err er
 }
 
 func lineupColumnNames(db *sql.DB, table string) (numCol, nameCol, urlCol string) {
-	info, err := db.Query(fmt.Sprintf("PRAGMA table_info(%s)", table))
+	info, err := db.Query(fmt.Sprintf("PRAGMA table_info(%s)", quoteSQLiteIdentifier(table)))
 	if err != nil {
 		return "", "", ""
 	}

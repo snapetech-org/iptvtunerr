@@ -20,10 +20,10 @@ func TestVODCommandHelperProcess(t *testing.T) {
 	switch os.Getenv("IPTV_TUNERR_HELPER_MODE") {
 	case "vod-webdav-serve":
 		cfg := &config.Config{CatalogPath: os.Getenv("IPTV_TUNERR_HELPER_CATALOG")}
-		handleVODWebDAV(cfg, os.Getenv("IPTV_TUNERR_HELPER_CATALOG"), os.Getenv("IPTV_TUNERR_HELPER_ADDR"), "")
+		handleVODWebDAV(cfg, os.Getenv("IPTV_TUNERR_HELPER_CATALOG"), os.Getenv("IPTV_TUNERR_HELPER_ADDR"), "", "", "", "", "")
 	case "vod-webdav-missing":
 		cfg := &config.Config{}
-		handleVODWebDAV(cfg, os.Getenv("IPTV_TUNERR_HELPER_CATALOG"), os.Getenv("IPTV_TUNERR_HELPER_ADDR"), "")
+		handleVODWebDAV(cfg, os.Getenv("IPTV_TUNERR_HELPER_CATALOG"), os.Getenv("IPTV_TUNERR_HELPER_ADDR"), "", "", "", "", "")
 	case "mount-missing":
 		cfg := &config.Config{}
 		handleMount(cfg, os.Getenv("IPTV_TUNERR_HELPER_CATALOG"), os.Getenv("IPTV_TUNERR_HELPER_MOUNT"), "", false)

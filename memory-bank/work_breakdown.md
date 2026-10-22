@@ -1,5 +1,22 @@
 # Work breakdown
 
+## 2026-10-22 - GitHub code-scanning remediation and release
+
+Objective: resolve or substantiate all 227 open code-scanning alerts on `main` (225 Semgrep OSS, 2 CodeQL), then publish one verified stable release.
+
+| Story ID | Scope | Status |
+| --- | --- | --- |
+| SECQ-001 | Capture a redacted, reproducible inventory of all open alerts; group by rule, tool, path, and source line; confirm analysis commits and rule configuration before changing code. | Completed: exact 227-alert inventory, tools/rules/locations, main ref, and stale analysis head recorded under task scratch. |
+| SECQ-002 | Remediate workflow/dependency automation findings: mutable action references, shell interpolation, workflow secret exposure, and Dependabot configuration; pin immutable action SHAs and use safe inputs with focused wiring checks. | Implemented; 57-action pin checker, release-channel wiring, and Python input tests pass. Full verification and remote pin provenance review pending. |
+| SECQ-003 | Audit HTTP output and redirect findings across Go handlers, templates, proxies, and static assets; preserve content types/encoding contracts; fix actual injection and redirect flaws and add focused regressions. | Redirect hardening, proxy rewrites, SSE event-name filtering, SRI, and active HTML/SVG/JS/XML MIME downgrading implemented; focused suites pass. Exact-head source dispositions pending. |
+| SECQ-004 | Audit backend findings involving shell/process execution, SQL construction, weak hashes/randomness, cookies/TLS, proxy handling, and mutation/iteration patterns; validate reachable inputs and preserve compatibility. | SQL identifiers quoted and pagination bound; remaining command, identifier-hash, dynamic-cookie, and value-struct findings reviewed as safe by construction pending exact-head alert disposition. |
+| SECQ-005 | Review container and script findings (Docker user, Python URL/request handling, HTML integrity, and related configuration); fix genuine defects and document precise false-positive evidence where behavior is safe by construction. | All tracked runtime Dockerfiles use non-root identities; HTTP(S)-only redirect handling, verified HTTPS, SRI, and loopback-or-TLS/auth WebDAV implemented. Primary image smoke and final source scan pending. |
+| SECQ-006 | Run prescribed verification and security scans; update release fragments/changelog, docs and memory; push exact verified `main`, wait for hosted checks and refreshed alert analysis, publish the next stable release, and verify release assets plus `master` stable-ref synchronization. | Release fragment and memory updates staged in progress; full verification, current-main integration, alert reconciliation, push, changelog generation, and release pending. |
+
+Guardrail: do not suppress scanners or replace security controls merely to clear the dashboard. Each closure must follow a source fix with regression evidence or a narrow, documented alert disposition supported by the actual data flow. Keep unrelated opportunities out of this sweep.
+
+---
+
 ## 2026-10-21 - Cross-project OIDC implementation audit
 
 Objective: audit and harden OIDC behavior, sign-in UX, and operator guidance across the nine SnapeTech apps while retaining their native session and authorization boundaries.

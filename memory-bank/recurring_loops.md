@@ -421,3 +421,19 @@
 - `internal/webui/webui_auth.go`
 - `internal/webui/spa.go`
 - `internal/webui/webui_test.go`
+
+### Loop: Static-analysis response and process findings need sink-specific review
+
+**Symptom**
+- Broad rules flag every direct `http.ResponseWriter` write as XSS or every non-literal `exec.Command` executable as command injection, even when a handler emits JSON/XML/media or passes a validated value as one argv element.
+
+**Why it's tricky**
+- The rule sees a sink but not the response content type, encoder, protocol, or trust boundary. Replacing safe protocol output with HTML templates or putting argv behind a shell can introduce regressions while leaving the actual active-content path exposed.
+
+**What works**
+- Trace each sink to its encoding and declared content type. Use `html/template` for HTML, typed encoders for JSON/XML, and downgrade active HTML/SVG/JavaScript/XML proxy responses while setting `nosniff`. For process calls, keep argv execution without a shell and validate the executable and any untrusted inputs. Dismiss only reviewed locations with a comment naming the source-level boundary.
+
+**Where it's documented**
+- `internal/tuner/gateway_stream_response.go`
+- `internal/webui/`
+- `scripts/security-scan-local.sh`

@@ -494,7 +494,12 @@ func safeOIDCReturnTo(raw string) string {
 		return "/"
 	}
 	u, err := url.ParseRequestURI(raw)
-	if err != nil || u.IsAbs() || u.Host != "" || !strings.HasPrefix(u.Path, "/") {
+	if err != nil || u.IsAbs() || u.Opaque != "" || u.Host != "" || u.User != nil || !strings.HasPrefix(u.Path, "/") {
+		return "/"
+	}
+	// ParseRequestURI decodes escaped separators into Path. Reject paths that
+	// could be reinterpreted as a network-path reference by a browser or proxy.
+	if strings.HasPrefix(u.Path, "//") || strings.Contains(u.Path, "\\") {
 		return "/"
 	}
 	return u.RequestURI()

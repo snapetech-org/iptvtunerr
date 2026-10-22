@@ -36,6 +36,7 @@ import logging
 import os
 import re
 import socketserver
+import ssl
 import sys
 import threading
 import time
@@ -97,10 +98,12 @@ def build_http_conn(url: str) -> tuple[http.client.HTTPConnection, urllib.parse.
     pu = urllib.parse.urlparse(url)
     if pu.scheme not in ("http", "https"):
         raise ValueError(f"unsupported upstream scheme: {pu.scheme}")
-    host = pu.hostname or "127.0.0.1"
+    if not pu.hostname or pu.username is not None or pu.password is not None:
+        raise ValueError("upstream URL must have a hostname and no embedded credentials")
+    host = pu.hostname
     port = pu.port or (443 if pu.scheme == "https" else 80)
     if pu.scheme == "https":
-        conn = http.client.HTTPSConnection(host, port, timeout=60)
+        conn = http.client.HTTPSConnection(host, port, timeout=60, context=ssl.create_default_context())
     else:
         conn = http.client.HTTPConnection(host, port, timeout=60)
     return conn, pu

@@ -20,12 +20,21 @@ jobs:
     if: false
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Install smoke dependencies
         run: sudo apt-get update && sudo apt-get install -y bash ca-certificates curl jq unzip tar
       - name: Run package smoke
-        run: packaging/smoke/package-smoke iptvtunerr "${{ inputs.channel }}" "${{ inputs.version }}" --arch "${{ inputs.arch }}"
-      - uses: actions/upload-artifact@v7
+        env:
+          PACKAGE_CHANNEL: ${{ inputs.channel }}
+          PACKAGE_VERSION: ${{ inputs.version }}
+          PACKAGE_ARCH: ${{ inputs.arch }}
+        run: |
+          set -euo pipefail
+          [[ "$PACKAGE_CHANNEL" =~ ^[a-z0-9][a-z0-9-]*$ ]] || { echo "Invalid package channel" >&2; exit 2; }
+          [[ "$PACKAGE_VERSION" =~ ^v?[0-9]+\.[0-9]+\.[0-9]+([.-][0-9A-Za-z.-]+)?$ ]] || { echo "Invalid package version" >&2; exit 2; }
+          [[ "$PACKAGE_ARCH" =~ ^[A-Za-z0-9_-]+$ ]] || { echo "Invalid package architecture" >&2; exit 2; }
+          packaging/smoke/package-smoke iptvtunerr "$PACKAGE_CHANNEL" "$PACKAGE_VERSION" --arch "$PACKAGE_ARCH"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()
         with:
           name: package-smoke-${{ inputs.channel }}-${{ inputs.arch }}

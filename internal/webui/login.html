@@ -187,6 +187,7 @@ button {
       <p>Access is scoped to the dedicated deck origin. Tuner endpoints still stay behind the deck proxy.</p>
       [[if .Error]]<div class="error" role="alert" aria-live="assertive">[[.Error]]</div>[[end]]
       <form method="post" action="/login">
+        <input type="hidden" name="csrf_token" value="[[.LoginCSRF]]">
         <input type="hidden" name="next" value="[[.Next]]">
         <label>
           Username

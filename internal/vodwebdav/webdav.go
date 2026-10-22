@@ -321,34 +321,57 @@ func (f *lazyFile) Stat() (os.FileInfo, error) {
 }
 
 func MountHint(goos, addr string) string {
+	return MountHintForScheme(goos, addr, "http")
+}
+
+func MountHintForScheme(goos, addr, scheme string) string {
+	scheme = normalizeDAVScheme(scheme)
+	base := scheme + "://" + strings.TrimSpace(addr) + "/"
 	switch strings.ToLower(strings.TrimSpace(goos)) {
 	case "darwin":
-		return fmt.Sprintf("Finder -> Go -> Connect to Server -> http://%s/", addr)
+		return fmt.Sprintf("Finder -> Go -> Connect to Server -> %s", base)
 	case "windows":
-		return fmt.Sprintf("Use File Explorer 'Add a network location' or WebDAV client against http://%s/", addr)
+		return fmt.Sprintf("Use File Explorer 'Add a network location' or WebDAV client against %s", base)
 	default:
-		return fmt.Sprintf("Mount a WebDAV client against http://%s/", addr)
+		return fmt.Sprintf("Mount a WebDAV client against %s", base)
 	}
 }
 
 func MountCommand(goos, addr, target string) string {
+	return MountCommandForScheme(goos, addr, target, "http")
+}
+
+func MountCommandForScheme(goos, addr, target, scheme string) string {
 	addr = strings.TrimSpace(addr)
 	target = strings.TrimSpace(target)
+	scheme = normalizeDAVScheme(scheme)
+	webURL := scheme + "://" + addr + "/"
 	switch strings.ToLower(strings.TrimSpace(goos)) {
 	case "darwin":
 		if target == "" {
 			target = "/Volumes/IPTVTunerrVOD"
 		}
-		return fmt.Sprintf("mkdir -p %q && mount_webdav -S http://%s/ %q", target, addr, target)
+		return fmt.Sprintf("mkdir -p %q && mount_webdav -S %s %q", target, webURL, target)
 	case "windows":
 		if target == "" {
 			target = "Z:"
 		}
-		return fmt.Sprintf("net use %s http://%s/ /persistent:no", target, addr)
+		return fmt.Sprintf("net use %s %s /persistent:no", target, webURL)
 	default:
 		if target == "" {
 			target = "/mnt/iptvtunerr-vod"
 		}
-		return fmt.Sprintf("gio mount dav://%s/  # or map with your preferred WebDAV client, mount point %s", addr, target)
+		davScheme := "dav"
+		if scheme == "https" {
+			davScheme = "davs"
+		}
+		return fmt.Sprintf("gio mount %s://%s/  # or map with your preferred WebDAV client, mount point %s", davScheme, addr, target)
 	}
+}
+
+func normalizeDAVScheme(scheme string) string {
+	if strings.EqualFold(strings.TrimSpace(scheme), "https") {
+		return "https"
+	}
+	return "http"
 }

@@ -17,13 +17,15 @@ import argparse
 import json
 import math
 import os
+import re
 import subprocess
 import sys
 import time
 import urllib.parse
-import urllib.request
 from dataclasses import dataclass
 from typing import Any
+
+from safe_http import open_http_url, validate_http_url
 
 
 VIDEO_FRIENDLY = {"h264", "avc", "mpeg2video", "mpeg4"}
@@ -39,8 +41,11 @@ class ChannelRow:
 
 
 def load_json(source: str) -> Any:
-    if source.startswith(("http://", "https://")):
-        with urllib.request.urlopen(source, timeout=20) as resp:
+    windows_path = re.match(r"^[A-Za-z]:[\\/]", source) is not None
+    parsed = urllib.parse.urlsplit(source)
+    if parsed.scheme and not windows_path:
+        validate_http_url(source)
+        with open_http_url(source, timeout=20) as resp:
             return json.loads(resp.read().decode("utf-8", "replace"))
     with open(source, "r", encoding="utf-8") as f:
         return json.load(f)

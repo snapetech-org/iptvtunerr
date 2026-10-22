@@ -15,6 +15,12 @@ if ! bash ./scripts/check-release-channel-wiring.sh; then
   err "release-channel wiring contract failed"
 fi
 
+# --- Immutable GitHub Actions references ---
+step "workflow action pinning (scripts/check-workflow-action-pins.py)"
+if ! python3 ./scripts/check-workflow-action-pins.py; then
+  err "workflow actions must use immutable, version-documented commit SHAs"
+fi
+
 # --- Format (fail if any file needs formatting; vendor/ is excluded) ---
 step "format (gofmt -s -l)"
 # Prune vendored trees and nested Git worktrees so local agent checkouts do not
@@ -54,6 +60,8 @@ done
 for f in "$ROOT"/scripts/*.mjs; do
   node --check "$f" || err "node --check failed on $f"
 done
+step "Python support-script tests"
+python3 -m unittest discover -s "$ROOT/scripts/tests" -p 'test_*.py' || err "Python support-script tests failed"
 
 # --- Test ---
 step "test (go test ./...)"

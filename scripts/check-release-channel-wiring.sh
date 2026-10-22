@@ -110,6 +110,11 @@ fi
 if ! rg -q 'git show origin/main:Dockerfile > Dockerfile' "$docker_workflow" || \
    ! rg -Fq 'network=host' "$docker_workflow" || \
    ! rg -Fxq 'FROM debian:bookworm-slim' "$root/Dockerfile" || \
+   ! rg -Fxq 'WORKDIR /var/lib/iptvtunerr' "$root/Dockerfile" || \
+   ! rg -Fxq 'ENV HOME=/var/lib/iptvtunerr' "$root/Dockerfile" || \
+   ! rg -Fxq 'VOLUME ["/var/lib/iptvtunerr"]' "$root/Dockerfile" || \
+   ! rg -Fxq 'USER 10001:10001' "$root/Dockerfile" || \
+   ! rg -Fq 'install -d -m 0750 -o 10001 -g 10001 /var/lib/iptvtunerr /var/cache/iptvtunerr' "$root/Dockerfile" || \
    ! rg -Fq 'apt-get -o Acquire::Retries=3 update' "$root/Dockerfile" || \
    ! rg -q 'Debian package install failed.*retrying after backoff' "$root/Dockerfile"; then
   echo "Docker must use the current Debian recipe, runner DNS access, and retry transient package mirror failures." >&2

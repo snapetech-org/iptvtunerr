@@ -1,10 +1,18 @@
-# Current task: Remove obsolete local security audit tooling (2026-10-22)
+# Current task: Remediate 227 code-scanning findings and release (2026-10-22)
 
-- **Goal:** remove the retired local audit runners, reports, and references while retaining Semgrep and Trivy coverage.
-- **Scope:** remove dedicated scripts, analyzers, ledgers, generated reports, and stale references across the affected repositories; preserve ordinary app checks and scanner workflows.
-- **Status:** complete. Five default branches were updated directly on `main`.
-- **Verification:** whitespace checks, modified shell syntax, JSON/XML parsing, solution project structure, and repository-wide reference scans passed. Application tests were not run.
-- **Publication:** the five removal commits and this closeout are pushed to their default branches.
+- **Goal:** review and resolve the 227 open GitHub code-scanning alerts (225 Semgrep OSS, 2 CodeQL), verify the final exact head, and publish the next stable release.
+- **Scope:** inventory the live alerts under `/tmp/iptvtunerr-security-quality-20261022/`; trace each unique finding to source and rule; fix confirmed defects with regression coverage; document evidence-based false-positive dispositions; update release notes and required memory; push to the GitHub default branch and verify scanner, CI, release, and stable-ref outcomes.
+- **Out of scope:** unrelated product changes, GitLab publication, and weakening scanners or globally suppressing rules to lower the count.
+- **Assumptions:** all 227 captured alerts are attached to `refs/heads/main`; there are no open Dependabot alerts. GitHub currently lists `v0.1.93` as latest, and `v0.1.94` is the prepared but unpublished next release. The alert export reflects analysis at `f3b17c2`; reconcile it against the new exact-head analysis after push.
+- **Status:** source fixes and focused regressions now cover workflow pins/shell inputs, proxy rewrites and active-content MIME types, password-login CSRF, return-path validation, SQLite identifier quoting/pagination, support-script URL/TLS validation, all tracked runtime Dockerfiles, SRI, and network-bound WebDAV TLS/auth controls. The four newer GitHub `main` commits through `afae0b4` are now the base. Exact-head CI/scanner refresh and API dispositions, full verification, push, and release remain.
+- **Plan:** follow SECQ-001 through SECQ-006 in [work_breakdown.md](work_breakdown.md); keep the alert inventory and logs under the task-scoped scratch directory; run the full prescribed verification and container smoke on current `main`, push the verified head, reconcile exact-head scanner findings, regenerate the unpublished `v0.1.94` changelog section, then publish and verify the release and stable refs.
+- **Scratch outputs:** `/tmp/iptvtunerr-security-quality-20261022/alerts.json`, `/tmp/iptvtunerr-security-quality-20261022/alert-inventory.md`, `/tmp/iptvtunerr-security-quality-20261022/focused-tests.log`, `/tmp/iptvtunerr-security-quality-20261022/verify.log`, `/tmp/iptvtunerr-security-quality-20261022/security-scan.log`, `/tmp/iptvtunerr-security-quality-20261022/docker-build.log`, and `/tmp/iptvtunerr-security-quality-20261022/hls.js-1.5.7.min.js` (third-party asset used only to compute SRI for the exact pinned CDN version).
+- **Container smoke output:** task-owned image tag `iptv-tunerr:security-quality-20261022`; remove this image and any task-owned container after the non-root smoke, retaining the shared Docker build cache.
+
+## Completed prior task: Fix Control Deck CSRF bootstrap on Basic Auth page loads (2026-10-22)
+
+- **Status:** complete. Fix commit `a78e599` and closeout commit `d7f1229` are pushed to GitHub `main`; issue #59 has the fix details and verification results.
+- **Verification outputs retained:** `/tmp/iptvtunerr-issue59-csrf-20261022/` contains the full verification log and council evidence.
 
 ---
 

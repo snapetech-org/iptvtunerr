@@ -324,6 +324,41 @@ func TestProxy_DoesNotTrustHopByHopHeaderTokenForElevation(t *testing.T) {
 	}
 }
 
+func TestProxy_RewriteReplacesUntrustedForwardingHeaders(t *testing.T) {
+	var gotXFF, gotXFH, gotXFP, gotForwarded string
+	up := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotXFF = r.Header.Get("X-Forwarded-For")
+		gotXFH = r.Header.Get("X-Forwarded-Host")
+		gotXFP = r.Header.Get("X-Forwarded-Proto")
+		gotForwarded = r.Header.Get("Forwarded")
+		w.WriteHeader(http.StatusNoContent)
+	}))
+	defer up.Close()
+
+	proxy := newProxyForTest(t, up.URL, false)
+	req := httptest.NewRequest(http.MethodGet, "/library/sections", nil)
+	req.RemoteAddr = "192.0.2.77:1234"
+	req.Header.Set("Connection", "X-Forwarded-For, X-Forwarded-Host, X-Forwarded-Proto, Forwarded")
+	req.Header.Set("X-Forwarded-For", "203.0.113.99")
+	req.Header.Set("X-Forwarded-Host", "attacker.example")
+	req.Header.Set("X-Forwarded-Proto", "https")
+	req.Header.Set("Forwarded", "for=203.0.113.99;proto=https;host=attacker.example")
+	proxy.ServeHTTP(httptest.NewRecorder(), req)
+
+	if gotXFF != "192.0.2.77" {
+		t.Fatalf("X-Forwarded-For=%q, want direct client IP", gotXFF)
+	}
+	if gotXFH != "example.com" {
+		t.Fatalf("X-Forwarded-Host=%q, want the request host", gotXFH)
+	}
+	if gotXFP != "http" {
+		t.Fatalf("X-Forwarded-Proto=%q, want the direct request scheme", gotXFP)
+	}
+	if gotForwarded != "" {
+		t.Fatalf("untrusted Forwarded header leaked upstream: %q", gotForwarded)
+	}
+}
+
 func TestProxy_PreservesWebSocketUpgradeHeaders(t *testing.T) {
 	var gotConnection, gotUpgrade, gotToken string
 	up := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

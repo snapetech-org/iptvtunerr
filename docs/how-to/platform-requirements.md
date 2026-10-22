@@ -134,6 +134,8 @@ Notes:
 - Actual file reads still need `-cache` / `IPTV_TUNERR_CACHE` so the materializer has somewhere to place bytes.
 - The command logs a platform-specific mount hint when it starts.
 - The surface is intentionally read-only: `OPTIONS`, `PROPFIND`, `HEAD`, and `GET` are supported; mutation attempts are rejected cleanly with `405`.
+- The listener defaults to `127.0.0.1:58188` and plain HTTP for local mounts. A non-loopback bind requires `-tls-cert`, `-tls-key`, `IPTV_TUNERR_VOD_WEBDAV_USER`, and `IPTV_TUNERR_VOD_WEBDAV_PASSWORD`; the password must be at least 16 bytes. Credentials use HTTP Basic Auth and are never accepted without TLS.
+- Keep the private key and password in operator-managed secret storage. For a TLS-terminating reverse proxy, leave Tunerr bound to loopback and protect the proxy route with authentication.
 
 ---
 

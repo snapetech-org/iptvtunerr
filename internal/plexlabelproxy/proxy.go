@@ -261,80 +261,86 @@ func New(cfg Config) (*Proxy, error) {
 	}
 	p.loadAbuseState()
 
-	rp := httputil.NewSingleHostReverseProxy(u)
-	rp.FlushInterval = -1
-	if cfg.Transport != nil {
-		rp.Transport = cfg.Transport
-	}
-	rp.ModifyResponse = p.modifyResponse
-	rp.ErrorHandler = func(w http.ResponseWriter, r *http.Request, err error) {
-		logger.Printf("plexlabelproxy: upstream error %s %s: %v", r.Method, r.URL.Path, err)
-		http.Error(w, "upstream error", http.StatusBadGateway)
-	}
-	originalDirector := rp.Director
-	rp.Director = func(req *http.Request) {
-		connectionHeaders := connectionHeaderNames(req.Header)
-		preserveUpgrade := isWebSocketUpgrade(req)
-		// Capture the original client token before any modification.
-		// Both query-param and header locations are checked; query param wins
-		// because that is what Plex clients most consistently use.
-		originalToken := req.URL.Query().Get("X-Plex-Token")
-		if _, hopByHopToken := connectionHeaders["x-plex-token"]; originalToken == "" && !hopByHopToken {
-			originalToken = req.Header.Get("X-Plex-Token")
-		}
-
-		withUserToken(req, originalToken)
-
-		originalDirector(req)
-		// httputil's director does not strip hop-by-hop headers — do it here.
-		for name := range hopHeaders {
-			if preserveUpgrade && (name == "connection" || name == "upgrade") {
-				continue
+	rp := &httputil.ReverseProxy{
+		FlushInterval:  -1,
+		Transport:      cfg.Transport,
+		ModifyResponse: p.modifyResponse,
+		ErrorHandler: func(w http.ResponseWriter, r *http.Request, err error) {
+			logger.Printf("plexlabelproxy: upstream error %s %s: %v", r.Method, r.URL.Path, err)
+			http.Error(w, "upstream error", http.StatusBadGateway)
+		},
+		Rewrite: func(proxyReq *httputil.ProxyRequest) {
+			in := proxyReq.In
+			req := proxyReq.Out
+			connectionHeaders := connectionHeaderNames(in.Header)
+			preserveUpgrade := isWebSocketUpgrade(in)
+			// Capture the original client token before any modification.
+			// Both query-param and header locations are checked; query param wins
+			// because that is what Plex clients most consistently use.
+			originalToken := in.URL.Query().Get("X-Plex-Token")
+			if _, hopByHopToken := connectionHeaders["x-plex-token"]; originalToken == "" && !hopByHopToken {
+				originalToken = in.Header.Get("X-Plex-Token")
 			}
-			req.Header.Del(name)
-		}
-		for name := range connectionHeaders {
-			if preserveUpgrade && name == "upgrade" {
-				continue
-			}
-			req.Header.Del(name)
-		}
-		if preserveUpgrade {
-			req.Header.Set("Connection", "Upgrade")
-		}
-		// Drop client-supplied Accept-Encoding so we always get an uncompressed
-		// or gzip response we can rewrite. Plex servers honor gzip.
-		ae := req.Header.Get("Accept-Encoding")
-		if ae == "" || strings.Contains(strings.ToLower(ae), "br") || strings.Contains(strings.ToLower(ae), "deflate") {
-			req.Header.Set("Accept-Encoding", "gzip")
-		}
-		// Preserve the original Host so PMS sees its own hostname (some Plex
-		// clients use an IP+token connection where Host is irrelevant; this is
-		// the safer default for behind-ingress deployments).
-		req.Host = u.Host
 
-		if p.cfg.ElevateAll && strings.TrimSpace(p.cfg.OwnerToken) != "" && p.elevateAllEligible(req) && p.canElevate(req, originalToken) {
-			q := req.URL.Query()
-			q.Set("X-Plex-Token", p.cfg.OwnerToken)
-			req.URL.RawQuery = q.Encode()
-			req.Header.Set("X-Plex-Token", p.cfg.OwnerToken)
-			p.logger.Printf("plexlabelproxy: spoofed owner token on %s", req.URL.Path)
-			if p.cfg.NeutralizeOwnerHistory &&
-				originalToken != strings.TrimSpace(p.cfg.OwnerToken) {
-				p.trackSession(req, originalToken)
+			withUserToken(req, originalToken)
+			proxyReq.SetURL(u)
+			// Rewrite runs after ReverseProxy strips hop-by-hop and forwarded headers.
+			for name := range hopHeaders {
+				if preserveUpgrade && (name == "connection" || name == "upgrade") {
+					continue
+				}
+				req.Header.Del(name)
 			}
-		} else if p.cfg.ElevateLiveTV {
-			p.elevateLiveTVRequest(req, originalToken)
-		}
-		if p.cfg.NeutralizeOwnerHistory && p.cfg.ElevateLiveTV {
-			p.elevateTrackedPlaybackRequest(req)
-		}
-		// NeutralizeOwnerHistory side-effect: for timeline/scrobble calls that
-		// belong to elevated Live TV sessions, fire a background owner unscrobble.
-		// This runs regardless of whether the current request itself is elevated.
-		if p.cfg.NeutralizeOwnerHistory {
-			p.neutralizeOwnerScrobble(req)
-		}
+			for name := range connectionHeaders {
+				if preserveUpgrade && name == "upgrade" {
+					continue
+				}
+				req.Header.Del(name)
+			}
+			if preserveUpgrade {
+				req.Header.Set("Connection", "Upgrade")
+				req.Header.Set("Upgrade", "websocket")
+			}
+			if forwarded := trustedHeader(in, "X-Forwarded-For"); forwarded != "" {
+				req.Header.Set("X-Forwarded-For", forwarded)
+				if host := trustedHeader(in, "X-Forwarded-Host"); host != "" {
+					req.Header.Set("X-Forwarded-Host", host)
+				}
+				if proto := trustedHeader(in, "X-Forwarded-Proto"); proto != "" {
+					req.Header.Set("X-Forwarded-Proto", proto)
+				}
+			} else {
+				proxyReq.SetXForwarded()
+			}
+			// Drop client-supplied Accept-Encoding so we always get an uncompressed
+			// or gzip response we can rewrite. Plex servers honor gzip.
+			ae := req.Header.Get("Accept-Encoding")
+			if ae == "" || strings.Contains(strings.ToLower(ae), "br") || strings.Contains(strings.ToLower(ae), "deflate") {
+				req.Header.Set("Accept-Encoding", "gzip")
+			}
+			if p.cfg.ElevateAll && strings.TrimSpace(p.cfg.OwnerToken) != "" && p.elevateAllEligible(req) && p.canElevate(req, originalToken) {
+				q := req.URL.Query()
+				q.Set("X-Plex-Token", p.cfg.OwnerToken)
+				req.URL.RawQuery = q.Encode()
+				req.Header.Set("X-Plex-Token", p.cfg.OwnerToken)
+				p.logger.Printf("plexlabelproxy: spoofed owner token on %s", req.URL.Path)
+				if p.cfg.NeutralizeOwnerHistory &&
+					originalToken != strings.TrimSpace(p.cfg.OwnerToken) {
+					p.trackSession(req, originalToken)
+				}
+			} else if p.cfg.ElevateLiveTV {
+				p.elevateLiveTVRequest(req, originalToken)
+			}
+			if p.cfg.NeutralizeOwnerHistory && p.cfg.ElevateLiveTV {
+				p.elevateTrackedPlaybackRequest(req)
+			}
+			// NeutralizeOwnerHistory side-effect: for timeline/scrobble calls that
+			// belong to elevated Live TV sessions, fire a background owner unscrobble.
+			// This runs regardless of whether the current request itself is elevated.
+			if p.cfg.NeutralizeOwnerHistory {
+				p.neutralizeOwnerScrobble(req)
+			}
+		},
 	}
 	p.reverseProxy = rp
 	return p, nil

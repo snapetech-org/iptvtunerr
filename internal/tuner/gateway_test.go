@@ -4881,6 +4881,42 @@ func TestCopyStreamResponseHeaders_StripsSetCookie(t *testing.T) {
 	}
 }
 
+func TestStreamProxyResponsesCannotRenderUpstreamHTML(t *testing.T) {
+	for _, mediaType := range []string{
+		"text/html; charset=utf-8",
+		"application/xhtml+xml",
+		"image/svg+xml",
+		"application/javascript",
+		"text/xml",
+	} {
+		t.Run(mediaType, func(t *testing.T) {
+			resp := &http.Response{Header: http.Header{"Content-Type": []string{mediaType}}}
+			w := httptest.NewRecorder()
+			copyStreamResponseHeaders(w, resp)
+			if got := w.Header().Get("Content-Type"); got != "application/octet-stream" {
+				t.Fatalf("proxied active Content-Type=%q for %q", got, mediaType)
+			}
+			if got := w.Header().Get("X-Content-Type-Options"); got != "nosniff" {
+				t.Fatalf("X-Content-Type-Options=%q", got)
+			}
+		})
+	}
+
+	w := httptest.NewRecorder()
+	respondHLSMuxUpstreamHTTP(w, nil, http.StatusBadGateway, []byte("<!doctype html><script>alert(1)</script>"))
+	if got := w.Header().Get("Content-Type"); got != "text/plain; charset=utf-8" {
+		t.Fatalf("upstream error Content-Type=%q", got)
+	}
+	if got := w.Header().Get("X-Content-Type-Options"); got != "nosniff" {
+		t.Fatalf("upstream error X-Content-Type-Options=%q", got)
+	}
+	for _, mediaType := range []string{"video/mp2t", "application/vnd.apple.mpegurl", "application/dash+xml"} {
+		if got := safeStreamContentType(mediaType); got != mediaType {
+			t.Errorf("media Content-Type %q changed to %q", mediaType, got)
+		}
+	}
+}
+
 func TestGateway_relayHLSAsTS_survivesPlaylistConcurrencyRetry(t *testing.T) {
 	var playlistHits atomic.Int32
 	thirdPlaylistOK := make(chan struct{})

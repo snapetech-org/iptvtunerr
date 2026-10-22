@@ -1,5 +1,8 @@
 FROM busybox:latest
 COPY iptv-tunerr /usr/local/bin/iptv-tunerr
 EXPOSE 5004
+ENV HOME=/tmp
+WORKDIR /tmp
+USER 65532:65532
 ENTRYPOINT ["iptv-tunerr"]
 CMD ["run", "-addr", ":5004"]

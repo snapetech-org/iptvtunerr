@@ -4,6 +4,7 @@ import (
 	"errors"
 	"io"
 	"log"
+	"mime"
 	"net/http"
 	"os"
 	"strconv"
@@ -28,13 +29,36 @@ func normalizeStreamOutputMux(requestMux string, transcode bool) string {
 func copyStreamResponseHeaders(w http.ResponseWriter, resp *http.Response) {
 	for k, v := range resp.Header {
 		switch http.CanonicalHeaderKey(k) {
-		case "Content-Length", "Transfer-Encoding", "Set-Cookie":
+		case "Content-Length", "Transfer-Encoding", "Set-Cookie", "X-Content-Type-Options":
+			continue
+		case "Content-Type":
+			if len(v) > 0 {
+				w.Header().Set("Content-Type", safeStreamContentType(v[0]))
+			}
 			continue
 		}
 		for _, vv := range v {
 			w.Header().Add(k, vv)
 		}
 	}
+	w.Header().Set("X-Content-Type-Options", "nosniff")
+}
+
+// safeStreamContentType prevents upstream active documents and scripts from
+// being served under Tunerr's origin while retaining stream media types.
+func safeStreamContentType(raw string) string {
+	mediaType, _, err := mime.ParseMediaType(raw)
+	if err != nil {
+		return "application/octet-stream"
+	}
+	switch strings.ToLower(mediaType) {
+	case "text/html", "application/xhtml+xml", "image/svg+xml",
+		"application/javascript", "application/ecmascript", "text/javascript", "text/ecmascript",
+		"application/x-javascript", "application/x-ecmascript", "text/x-javascript", "text/x-ecmascript",
+		"text/xml", "application/xml":
+		return "application/octet-stream"
+	}
+	return raw
 }
 
 func streamEffectiveURL(fallback string, resp *http.Response) string {
@@ -186,8 +210,11 @@ func (g *Gateway) relaySuccessfulDASHUpstream(
 	w.Header().Set("Content-Type", resp.Header.Get("Content-Type"))
 	if w.Header().Get("Content-Type") == "" {
 		w.Header().Set("Content-Type", "application/dash+xml")
+	} else {
+		w.Header().Set("Content-Type", safeStreamContentType(w.Header().Get("Content-Type")))
 	}
 	w.Header().Set("Cache-Control", "no-store")
+	w.Header().Set("X-Content-Type-Options", "nosniff")
 	w.WriteHeader(http.StatusOK)
 	_, _ = w.Write(body)
 	return "ok", "dash_passthrough", effectiveURL, true

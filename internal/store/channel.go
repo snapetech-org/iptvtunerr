@@ -93,7 +93,8 @@ ORDER BY c.sort_order, c.id`
 		if page < 1 {
 			page = 1
 		}
-		query += fmt.Sprintf(" LIMIT %d OFFSET %d", opts.PerPage, (page-1)*opts.PerPage)
+		query += " LIMIT ? OFFSET ?"
+		args = append(args, opts.PerPage, safePageOffset(page, opts.PerPage))
 	}
 
 	rows, err := s.DB.Query(query, args...)
@@ -406,7 +407,8 @@ ORDER BY cs.id`
 		if page < 1 {
 			page = 1
 		}
-		query += fmt.Sprintf(" LIMIT %d OFFSET %d", opts.PerPage, (page-1)*opts.PerPage)
+		query += " LIMIT ? OFFSET ?"
+		args = append(args, opts.PerPage, safePageOffset(page, opts.PerPage))
 	}
 
 	rows, err := s.DB.Query(query, args...)
@@ -416,6 +418,19 @@ ORDER BY cs.id`
 	defer rows.Close()
 	streams, err := scanStreams(rows)
 	return streams, total, err
+}
+
+// safePageOffset prevents integer overflow from turning a large page number
+// into a negative SQLite OFFSET.
+func safePageOffset(page, perPage int) int {
+	if page <= 1 || perPage <= 0 {
+		return 0
+	}
+	maxInt := int(^uint(0) >> 1)
+	if page-1 > maxInt/perPage {
+		return maxInt
+	}
+	return (page - 1) * perPage
 }
 
 func (s *Store) CreateStream(st *Stream) error {

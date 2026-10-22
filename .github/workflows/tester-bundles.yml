@@ -18,13 +18,13 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
           persist-credentials: false
 
       - name: Set up Go
-        uses: actions/setup-go@v7
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version-file: go.mod
 
@@ -53,7 +53,7 @@ jobs:
           echo "Using $latest"
 
       - name: Upload tester bundle artifact
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: tester-bundle-${{ steps.out.outputs.release_name }}
           path: ${{ steps.out.outputs.release_dir }}
@@ -75,7 +75,7 @@ jobs:
 
       - name: Upload release ZIP assets to GitHub Release
         if: github.ref_type == 'tag'
-        uses: softprops/action-gh-release@v3
+        uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3
         with:
           files: |
             ${{ steps.assets.outputs.files }}

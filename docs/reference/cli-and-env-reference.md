@@ -126,11 +126,17 @@ Common flags:
 - `-addr`
 - `-catalog`
 - `-cache`
+- `-tls-cert` and `-tls-key` (required together for non-loopback listeners)
 
 Notes:
 - Cross-platform (`Linux`, `macOS`, `Windows`)
 - The WebDAV server is read-only.
 - Directory scans work without `-cache`, but actual file reads need a working materializer/cache path.
+- The default listener is loopback HTTP. Non-loopback listeners require TLS plus `IPTV_TUNERR_VOD_WEBDAV_USER` and `IPTV_TUNERR_VOD_WEBDAV_PASSWORD`; the password must be at least 16 bytes.
+
+Environment variables:
+- `IPTV_TUNERR_VOD_WEBDAV_USER`
+- `IPTV_TUNERR_VOD_WEBDAV_PASSWORD`
 
 ## `iptv-tunerr vod-webdav-mount-hint`
 
@@ -139,6 +145,7 @@ WebDAV surface.
 
 Common flags:
 - `-addr`
+- `-scheme` (`http` or `https`)
 - `-os`
 - `-target`
 
