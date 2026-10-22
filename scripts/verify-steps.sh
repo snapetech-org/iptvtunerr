@@ -17,8 +17,10 @@ fi
 
 # --- Format (fail if any file needs formatting; vendor/ is excluded) ---
 step "format (gofmt -s -l)"
-# Find all .go files excluding vendor/ and check formatting
-UNFORMATTED=$(find . -name '*.go' -not -path './vendor/*' -print0 \
+# Prune vendored trees and nested Git worktrees so local agent checkouts do not
+# become part of the repository's formatting gate.
+UNFORMATTED=$(find . -type d \( -name vendor -o -name worktrees -o -name .git \) -prune -o \
+  -type f -name '*.go' -print0 \
   | xargs -0 gofmt -s -l 2>/dev/null | grep -v '^$' || true)
 if [[ -n "$UNFORMATTED" ]]; then
   echo "The following files need 'gofmt -s -w':"

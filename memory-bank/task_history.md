@@ -667,3 +667,11 @@
 - Confirmed GitHub `main` contains the Vite 8.3.5 package and lockfile updates from commit `33c563ea`; closed redundant Dependabot PR #57.
 - `npm --prefix web audit --json` reported zero vulnerabilities; Dependabot reports zero open alerts.
 - Seven hosted checks were still queued and none had failed at final review. No application tests were run for this dependency-only remediation.
+
+
+## 2026-10-22 - Update the Go toolchain security baseline
+
+- Updated the Go module directive and container build image to Go 1.26.10 for the upstream `crypto/x509` security fix; added the change to the pending v0.1.94 release notes.
+- Fixed the full verification script to prune vendored trees and nested Git worktrees from its Go formatting walk, avoiding false failures from local agent checkouts.
+- Regenerated the council candidate inventory and counts as part of the prescribed verification.
+- Verification: `./scripts/verify` passed, including formatting, vet, council gates, all Go tests, build, ARMv7 compile, and binary smoke. `git diff --check` passed.

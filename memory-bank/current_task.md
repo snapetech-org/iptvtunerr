@@ -1,4 +1,12 @@
-# Current task: Prepare and publish IPTV Tunerr v0.1.94 (2026-10-21)
+# Current task: Cross-project CVE sweep, repository cleanup, and releases (2026-10-22)
+
+- **Goal:** finish the security sweep across QuestarrNG, ROMarrNG, slskR, slskdN, BookshelfNG, ChaptarrNG, SeerrNG, TorrentNG, and IPTV Tunerr; remediate confirmed exposure; review third-party changes for security; resolve repository work directly on each GitHub default branch; publish the requested releases except ChaptarrNG and SeerrNG.
+- **Scope:** inspect dependency/runtime advisories, PRs, issues, branches, stashes, and dirty worktrees for these nine repositories; preserve evidence and secrets; do not publish to GitLab.
+- **Status:** in progress. JavaScript and .NET dependency audits are clean. PHP is absent. QuestarrNG's `certifi` pin is already fixed on `main`; its Dependabot alert remains stale. IPTV Tunerr's Go module and build image now target Go 1.26.10. The verifier now prunes vendored and nested worktree directories; the full prescribed verification passed.
+- **Destructive-operation rollback:** before deleting any remote/local branch refs, make a repository Git bundle under `/tmp/cve-sweep-20261022/` and retain the branch-name/SHA map until the cleanup is verified; restore a deleted branch by pushing its saved SHA. Closed issues and PRs can be reopened. Do not rewrite published history or delete published releases/tags; correct release mistakes only with a successor release.
+- **Next steps:** finish current-advisory checks, review and resolve outstanding PR/issue/worktree state, then validate, commit, push, and release only exact verified heads.
+
+## Prior active release task: Prepare IPTV Tunerr v0.1.94 (2026-10-21)
 
 - **Goal:** release the current GitHub `main` head, including the patched Vite dependency and OIDC sign-in changes, through the repository's normal release and stable-ref workflows.
 - **Scope:** add a user-facing security note for the Vite toolchain update, generate the `v0.1.94` changelog section, push release preparation to GitHub `main`, wait for exact-head CI, and publish and verify the GitHub release. Do not push the GitLab mirror.
