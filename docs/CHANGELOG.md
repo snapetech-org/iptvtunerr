@@ -11,6 +11,32 @@ All notable changes to IPTV Tunerr are documented here. Repo: [github.com/snapet
 
 ---
 
+## [v0.1.95] - 2026-10-22
+
+### User-facing changes
+
+#### Added
+
+- **Authentication:** The Control Deck can now sign in through an OpenID Connect provider while keeping its existing cookie session and leaving tuner, stream, and media-server endpoints unchanged.
+
+#### Changed
+
+- **Authentication:** Control Deck OIDC guidance now covers exact callbacks, provider admission, recovery, and troubleshooting, while clarifying that tuner and media endpoints remain separate.
+
+#### Fixed
+
+- **Docker Compose:** The Docker Compose example now exposes the Control Deck on host loopback and persists its SQLite database. Missing database configuration and failed database opens also produce distinct messages to help diagnose channel-management errors.
+- **Control Deck:** The Control Deck now includes the session-bound CSRF token when a browser's first page load is authenticated through HTTP Basic. User and M3U account changes work in that flow without weakening CSRF checks.
+- **Authentication:** Concurrent Control Deck OIDC attempts now use separate short-lived state cookies, and logout clears outstanding transaction cookies.
+
+#### Security
+
+- **Security:** **Breaking:** Remote VOD WebDAV now requires TLS and authentication; plaintext remains loopback-only. The Control Deck enforces signed CSRF protection and always marks session and OIDC state cookies Secure. Local browser access uses loopback; remote or LAN login requires an HTTPS reverse proxy. Proxied active content is inert, and generated M3U fields reject control characters to prevent directive injection.
+  - **Action required:** For remote VOD WebDAV, configure a TLS certificate and key plus username and a password of at least 16 bytes; put remote or LAN Control Deck browser access behind an HTTPS reverse proxy.
+- **Runtime:** The Go toolchain is updated to 1.26.10, including the upstream `crypto/x509` security fix.
+- **Runtime:** CI and development use the patched Node.js 22.23.4 runtime for the web toolchain.
+- **Web Build:** IPTV Tunerr's web build now uses a patched Vite release, closing the reported vulnerability in its frontend toolchain.
+
 ## [v0.1.94] - 2026-10-22
 
 ### User-facing changes
