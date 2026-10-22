@@ -2,6 +2,7 @@ package webui
 
 import (
 	"bytes"
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"html/template"
@@ -1569,6 +1570,38 @@ func TestSessionAuthOnlyAllowsBasicAuthFallback(t *testing.T) {
 	}
 	if len(w.Result().Cookies()) == 0 {
 		t.Fatal("expected session cookie")
+	}
+}
+
+func TestRequestCookieSecureRecognizesTrustedHTTPS(t *testing.T) {
+	tests := []struct {
+		name       string
+		remoteAddr string
+		forwarded  string
+		tls        bool
+		want       bool
+	}{
+		{name: "direct TLS", remoteAddr: "192.0.2.10:1234", tls: true, want: true},
+		{name: "loopback proxy IPv4", remoteAddr: "127.0.0.1:1234", forwarded: "https", want: true},
+		{name: "loopback proxy IPv6", remoteAddr: "[::1]:1234", forwarded: "HTTPS", want: true},
+		{name: "plain HTTP", remoteAddr: "127.0.0.1:1234", forwarded: "http", want: false},
+		{name: "untrusted forwarded header", remoteAddr: "192.0.2.10:1234", forwarded: "https", want: false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			req := httptest.NewRequest(http.MethodGet, "/", nil)
+			req.RemoteAddr = tt.remoteAddr
+			if tt.forwarded != "" {
+				req.Header.Set("X-Forwarded-Proto", tt.forwarded)
+			}
+			if tt.tls {
+				req.TLS = &tls.ConnectionState{}
+			}
+			server := &Server{}
+			if got := server.secureCookie(req); got != tt.want {
+				t.Fatalf("secureCookie()=%t want %t", got, tt.want)
+			}
+		})
 	}
 }
 

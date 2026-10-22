@@ -460,7 +460,16 @@ func (s *Server) requireCSRFForToken(w http.ResponseWriter, r *http.Request, tok
 }
 
 func requestCookieSecure(r *http.Request) bool {
-	return r != nil && r.TLS != nil
+	if r == nil {
+		return false
+	}
+	if r.TLS != nil {
+		return true
+	}
+	// Only trust the forwarded scheme when the request came from the local
+	// reverse proxy. This matches the Control Deck origin check and prevents a
+	// remote client from setting X-Forwarded-Proto to bypass the TLS signal.
+	return isLoopback(remoteHost(r)) && strings.EqualFold(strings.TrimSpace(r.Header.Get("X-Forwarded-Proto")), "https")
 }
 
 func isScriptableDeckPath(path string) bool {
