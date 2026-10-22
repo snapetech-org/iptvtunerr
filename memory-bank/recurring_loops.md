@@ -1,5 +1,22 @@
 # Recurring loops and hard-to-solve problems
 
+### Loop: Identity leak checks must scan the submitted commit range
+
+**Symptom**
+- A trusted-ref identity scan fails on old commit trailers even when the current push contains no local identity terms.
+
+**Why it's tricky**
+- Scanning every commit since the latest release repeatedly re-reports already-published history. The repository must preserve published commit history, so rewriting those old trailers is not an acceptable fix.
+
+**What works**
+- On pushes, scan the exact `before..HEAD` range. On pull requests, scan the PR's reported commit count. For manual dispatch, scan the current commit. Keep scanning the current release-facing files in every mode, and fail closed for invalid ranges/counts.
+- Do not suppress the identity check or rewrite published commits to clear a historical match.
+
+**Where it's documented**
+- `scripts/check-local-identity-leaks.sh`
+- `.github/workflows/local-identity-leaks.yml`
+- `scripts/tests/test_local_identity_scan_range.py`
+
 ### Loop: OIDC concurrent login attempts must keep separate state
 
 **Symptom**

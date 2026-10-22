@@ -104,13 +104,40 @@ if [[ -f docs/CHANGELOG.md ]]; then
 fi
 
 if [[ "${LOCAL_IDENTITY_SCAN_COMMITS:-0}" == "1" ]]; then
-  latest_tag="$(git tag --sort=-creatordate --list 'build-main-*' | head -n 1 || true)"
-  if [[ -z "$latest_tag" ]]; then
-    latest_tag="$(git describe --tags --abbrev=0 2>/dev/null || true)"
+  scan_base="${LOCAL_IDENTITY_SCAN_BASE:-}"
+  scan_commit_count="${LOCAL_IDENTITY_SCAN_COMMIT_COUNT:-}"
+
+  if [[ "$scan_base" =~ ^0+$ ]]; then
+    scan_base=""
   fi
-  if [[ -n "$latest_tag" ]]; then
-    git log --format='%s%n%b' "${latest_tag}..HEAD" >"$tmp_commits"
+
+  if [[ -n "$scan_base" ]]; then
+    if ! git rev-parse --verify --quiet "${scan_base}^{commit}" >/dev/null; then
+      echo "check-local-identity-leaks: configured commit scan base is unavailable." >&2
+      exit 2
+    fi
+    range_base="$(git merge-base "$scan_base" HEAD)" || {
+      echo "check-local-identity-leaks: configured commit scan base has no common history with HEAD." >&2
+      exit 2
+    }
+    git log --format='%s%n%b' "${range_base}..HEAD" >"$tmp_commits"
     check_file "recent commit messages" "$tmp_commits" "git log"
+  elif [[ -n "$scan_commit_count" ]]; then
+    if [[ ! "$scan_commit_count" =~ ^[1-9][0-9]{0,4}$ ]] || (( scan_commit_count > 10000 )); then
+      echo "check-local-identity-leaks: commit scan count must be between 1 and 10000." >&2
+      exit 2
+    fi
+    git log --max-count="$scan_commit_count" --format='%s%n%b' HEAD >"$tmp_commits"
+    check_file "recent commit messages" "$tmp_commits" "git log"
+  else
+    latest_tag="$(git tag --sort=-creatordate --list 'build-main-*' | head -n 1 || true)"
+    if [[ -z "$latest_tag" ]]; then
+      latest_tag="$(git describe --tags --abbrev=0 2>/dev/null || true)"
+    fi
+    if [[ -n "$latest_tag" ]]; then
+      git log --format='%s%n%b' "${latest_tag}..HEAD" >"$tmp_commits"
+      check_file "recent commit messages" "$tmp_commits" "git log"
+    fi
   fi
 fi
 

@@ -40,6 +40,7 @@ jobs:
           LOCAL_IDENTITY_DENYLIST: ${{ secrets.LOCAL_IDENTITY_DENYLIST }}
           LOCAL_IDENTITY_SCAN_ROOT: ${{ github.workspace }}/source
           LOCAL_IDENTITY_SCAN_COMMITS: "1"
+          LOCAL_IDENTITY_SCAN_COMMIT_COUNT: ${{ github.event.pull_request.commits }}
         run: bash scanner/scripts/check-local-identity-leaks.sh
 
   trusted-ref-scan:
@@ -61,4 +62,6 @@ jobs:
         env:
           LOCAL_IDENTITY_DENYLIST: ${{ secrets.LOCAL_IDENTITY_DENYLIST }}
           LOCAL_IDENTITY_SCAN_COMMITS: "1"
+          LOCAL_IDENTITY_SCAN_BASE: ${{ github.event_name == 'push' && github.event.before || '' }}
+          LOCAL_IDENTITY_SCAN_COMMIT_COUNT: ${{ github.event_name == 'workflow_dispatch' && '1' || '' }}
         run: bash scripts/check-local-identity-leaks.sh
