@@ -27,13 +27,15 @@ All notable changes to IPTV Tunerr are documented here. Repo: [github.com/snapet
 
 - **Authentication:** Concurrent Control Deck OIDC attempts now use separate short-lived state cookies, and logout clears outstanding transaction cookies.
 - **Docker Compose:** The Docker Compose example now exposes the Control Deck on host loopback and persists its SQLite database. Missing database configuration and failed database opens also produce distinct messages to help diagnose channel-management errors.
-- **Control Deck:** Browser page loads authenticated through HTTP Basic now bootstrap the session-bound CSRF token, so user and M3U account changes work while CSRF checks remain enforced.
+- **Control Deck:** The Control Deck now includes the session-bound CSRF token when a browser's first page load is authenticated through HTTP Basic. User and M3U account changes work in that flow without weakening CSRF checks.
 
 #### Security
 
 - **Web Build:** IPTV Tunerr's web build now uses a patched Vite release, closing the reported vulnerability in its frontend toolchain.
-- **Runtime:** CI and development use the patched Node.js 22.23.4 runtime for the web toolchain.
+- **Security:** **Breaking:** VOD WebDAV now serves plaintext only on loopback; listeners on other interfaces require TLS and authentication. The Control Deck login form also requires its signed CSRF token, and proxied active content is returned as inert data.
+  - **Action required:** For remote VOD WebDAV, configure a TLS certificate and key plus username and a password of at least 16 bytes.
 - **Runtime:** The Go toolchain is updated to 1.26.10, including the upstream `crypto/x509` security fix.
+- **Runtime:** CI and development use the patched Node.js 22.23.4 runtime for the web toolchain.
 
 ## [v0.1.93] - 2026-10-19
 
