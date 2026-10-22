@@ -20,7 +20,14 @@ CHANNEL_TITLES = {
 
 
 class ReleaseChannelDispatcherTests(unittest.TestCase):
-    def run_dispatcher(self, skip_channels=None):
+    def run_dispatcher(
+        self,
+        skip_channels=None,
+        run_status="completed",
+        run_conclusion="success",
+        job_status="completed",
+        job_conclusion="success",
+    ):
         with tempfile.TemporaryDirectory(prefix="iptvtunerr-release-dispatch-") as temp_dir:
             temp = Path(temp_dir)
             fake_bin = temp / "bin"
@@ -57,7 +64,20 @@ class ReleaseChannelDispatcherTests(unittest.TestCase):
                             "event": "workflow_dispatch",
                         }]))
                     elif args and args[0] == "api":
-                        print("completed\\tsuccess", end="")
+                        if args[1].endswith("/jobs?per_page=100"):
+                            print(json.dumps({
+                                "total_count": 1,
+                                "jobs": [{
+                                    "status": os.environ["GH_TEST_JOB_STATUS"],
+                                    "conclusion": os.environ["GH_TEST_JOB_CONCLUSION"],
+                                }],
+                            }))
+                        else:
+                            print(
+                                os.environ["GH_TEST_RUN_STATUS"] + "\\t" +
+                                os.environ["GH_TEST_RUN_CONCLUSION"],
+                                end="",
+                            )
                     else:
                         print("unexpected gh invocation: " + repr(args), file=sys.stderr)
                         sys.exit(2)
@@ -70,6 +90,10 @@ class ReleaseChannelDispatcherTests(unittest.TestCase):
             env = os.environ.copy()
             env["PATH"] = os.pathsep.join((str(fake_bin), env.get("PATH", "")))
             env["GH_TEST_CALLS"] = str(calls_file)
+            env["GH_TEST_RUN_STATUS"] = run_status
+            env["GH_TEST_RUN_CONCLUSION"] = run_conclusion
+            env["GH_TEST_JOB_STATUS"] = job_status
+            env["GH_TEST_JOB_CONCLUSION"] = job_conclusion
             env.pop("SKIP_RELEASE_CHANNELS", None)
             if skip_channels is not None:
                 env["SKIP_RELEASE_CHANNELS"] = skip_channels
@@ -100,6 +124,20 @@ class ReleaseChannelDispatcherTests(unittest.TestCase):
         self.assertCountEqual(calls, set(CHANNEL_TITLES) - {"release-ppa.yml", "publish-snap.yml"})
         self.assertIn("Skipping deferred release channel release-ppa.yml", result.stdout)
         self.assertIn("Skipping deferred release channel publish-snap.yml", result.stdout)
+
+    def test_stale_run_summary_uses_completed_job_results(self):
+        result, calls = self.run_dispatcher(run_status="in_progress")
+
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertCountEqual(calls, CHANNEL_TITLES)
+        self.assertIn("all job results are terminal", result.stderr)
+
+    def test_stale_run_summary_does_not_hide_a_failed_job(self):
+        result, calls = self.run_dispatcher(run_status="in_progress", job_conclusion="failure")
+
+        self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+        self.assertCountEqual(calls, CHANNEL_TITLES)
+        self.assertIn("completed with conclusion 'failure'", result.stderr)
 
 
 if __name__ == "__main__":

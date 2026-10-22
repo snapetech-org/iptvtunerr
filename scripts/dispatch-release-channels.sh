@@ -112,8 +112,38 @@ while (( waited_seconds < max_wait_seconds )); do
     }
     IFS=$'\t' read -r status conclusion <<< "$state"
     if [[ "$status" != "completed" ]]; then
-      all_finished=0
-      continue
+      jobs_json="$(gh api "repos/${repo}/actions/runs/${run_id}/jobs?per_page=100")" || {
+        echo "WARNING: could not read job results for $workflow run $run_id; continuing to wait for its run summary" >&2
+        all_finished=0
+        continue
+      }
+      if jq -e '(.total_count // 0) > (.jobs | length)' <<< "$jobs_json" > /dev/null; then
+        echo "WARNING: $workflow run $run_id has more than 100 jobs; continuing to wait for its run summary" >&2
+        all_finished=0
+        continue
+      fi
+      if ! jobs_state="$(jq -r '
+        if (.jobs | length) == 0 or any(.jobs[]; .status != "completed") then
+          "pending\t"
+        elif all(.jobs[]; .conclusion == "success") then
+          "completed\tsuccess"
+        else
+          "completed\tfailure"
+        end
+      ' <<< "$jobs_json")"; then
+        echo "ERROR: could not parse job results for $workflow run $run_id" >&2
+        failed=1
+        all_finished=0
+        continue
+      fi
+      IFS=$'\t' read -r jobs_status jobs_conclusion <<< "$jobs_state"
+      if [[ "$jobs_status" != "completed" ]]; then
+        all_finished=0
+        continue
+      fi
+      echo "WARNING: $workflow run $run_id still reports '$status'; all job results are terminal, using their conclusions" >&2
+      status="$jobs_status"
+      conclusion="$jobs_conclusion"
     fi
     if [[ "$conclusion" != "success" ]]; then
       echo "ERROR: $workflow run $run_id completed with conclusion '$conclusion'" >&2
