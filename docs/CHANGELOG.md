@@ -32,7 +32,7 @@ All notable changes to IPTV Tunerr are documented here. Repo: [github.com/snapet
 #### Security
 
 - **Web Build:** IPTV Tunerr's web build now uses a patched Vite release, closing the reported vulnerability in its frontend toolchain.
-- **Security:** **Breaking:** VOD WebDAV now serves plaintext only on loopback; listeners on other interfaces require TLS and authentication. The Control Deck login form also requires its signed CSRF token, and proxied active content is returned as inert data.
+- **Security:** **Breaking:** VOD WebDAV now serves plaintext only on loopback; listeners on other interfaces require TLS and authentication. The Control Deck login form also requires its signed CSRF token, session cookies are marked Secure for direct HTTPS and trusted loopback HTTPS proxies, and proxied active content is returned as inert data.
   - **Action required:** For remote VOD WebDAV, configure a TLS certificate and key plus username and a password of at least 16 bytes.
 - **Runtime:** The Go toolchain is updated to 1.26.10, including the upstream `crypto/x509` security fix.
 - **Runtime:** CI and development use the patched Node.js 22.23.4 runtime for the web toolchain.
