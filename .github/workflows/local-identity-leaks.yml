@@ -6,6 +6,13 @@ on:
     branches: [main]
   workflow_dispatch:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
 jobs:
   pull-request-scan:
     if: ${{ github.event_name == 'pull_request' }}
@@ -30,7 +37,6 @@ jobs:
           sparse-checkout: |
             scripts/check-local-identity-leaks.sh
             scripts/install-ci-tools.sh
-            scripts/scan-local-identity-file.py
           persist-credentials: false
 
       - name: Install trusted scanner tools
@@ -55,6 +61,9 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
+
+      - name: Verify scanner runtime
+        run: command -v python3
 
       - name: Check release-facing text on trusted refs
         env:
