@@ -704,3 +704,9 @@
 - Removed the dedicated audit runners, generated reports, issue ledgers, stale documentation references, and the custom .NET analyzer and tests across five repositories. Semgrep and Trivy workflows remain.
 - Static verification passed: `git diff --check`, modified shell syntax, JSON and XML parsing, solution structure, and source reference scans. Application tests were not run.
 - Pushed directly to `main`: IPTV Tunerr `b5ed2fdde329f82e86cbc9ab4bb7df6a3eaa930f`, RedlibE `50926767ba36ceb25452ba253ef43e82bf11ba66`, SeerrNG `ffefc4c4ff963cd6c11b88ac65c80a5ea5c17475`, slskNet.Runtime `1cf394bc46c2ea0333c96e43a5c3ac5dbea3304b`, and slskR `a17ec9ea0bb160256908623f7e1455869ecd6bba`.
+
+## 2026-10-22 - Keep identity leak scans runnable on unprivileged workers
+
+- Replaced the jq/ripgrep matcher with a bounded Python standard-library scan that reports only file and line, preserves case-insensitive matching and commit-range selection, and fails closed for unreadable or oversized input.
+- Removed privileged package installation from both identity-scan workflow paths. Pull requests still use the trusted base revision's scanner, and trusted main scans stay on the shared per-run JIT worker.
+- Verification: the identity-scan suite passed with jq and ripgrep deliberately unavailable; `./scripts/verify` passed all Python and Node tests, Go tests, build, ARMv7 compile, and binary smoke. The failed hosted run was confirmed to stop at `sudo apt-get` before scanning; exact-head hosted checks must pass on the remediation PR before merge.

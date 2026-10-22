@@ -19,6 +19,8 @@ A weekly public GitHub Actions job runs the current official Semgrep CE image an
 
 The weekly Trivy filesystem job uses the current Trivy release and refreshes its vulnerability database.
 
+The local identity leak check uses Python's standard library for case-insensitive fixed-string matching. It needs no jq, ripgrep, or privileged package installation, so the same trusted scanner can run on the shared JIT workers. Files over 16 MiB fail closed. Pull-request checks still load the scanner from the trusted base revision and scan the proposed content.
+
 Scans report findings without failing by default so existing findings can be triaged. Set `SEMGREP_FAIL_ON_FINDINGS=1` or `TRIVY_EXIT_CODE=1` to make a local scan fail on findings. Trivy downloads its vulnerability and check databases automatically; use `TRIVY_OFFLINE=1` only after those databases are cached. The default timeout is 20 minutes for slow first downloads; set `TRIVY_TIMEOUT` to change it.
 
 Run `./scripts/update-security-tools.sh` to refresh the local Semgrep package cache, pull the current Semgrep fallback image, and refresh Trivy's database. Public scan workflows use weekly schedules to exercise current scanner releases and rules. Existing private runner workflows retain their current version and runner policy.

@@ -11,7 +11,7 @@ SCANNER = ROOT / "scripts" / "check-local-identity-leaks.sh"
 
 
 @unittest.skipUnless(
-    shutil.which("bash") and shutil.which("git") and shutil.which("rg") and shutil.which("jq"),
+    shutil.which("bash") and shutil.which("git") and shutil.which("python3"),
     "scanner dependencies unavailable",
 )
 class LocalIdentityScanRangeTests(unittest.TestCase):
@@ -88,6 +88,36 @@ class LocalIdentityScanRangeTests(unittest.TestCase):
 
         result = self.scan(LOCAL_IDENTITY_SCAN_COMMIT_COUNT="0")
         self.assertEqual(result.returncode, 2, result.stdout + result.stderr)
+
+    def test_release_files_are_scanned_case_insensitively_without_jq_or_rg(self):
+        blocked_tools = self.repo / "blocked-tools"
+        blocked_tools.mkdir()
+        for name in ("jq", "rg"):
+            tool = blocked_tools / name
+            tool.write_text("#!/bin/sh\nexit 127\n", encoding="utf-8")
+            tool.chmod(0o755)
+
+        release_note = self.repo / "release-notes" / "candidate.md"
+        release_note.parent.mkdir()
+        release_note.write_text("safe line\nsafe\vscanmarkerfixture\n", encoding="utf-8")
+
+        env = {"PATH": f"{blocked_tools}{os.pathsep}{os.environ['PATH']}"}
+        result = self.scan(**env)
+
+        self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+        self.assertIn("release-notes/candidate.md:2", result.stderr)
+        self.assertNotIn("scanmarkerfixture", result.stderr)
+
+    def test_oversized_release_file_fails_closed(self):
+        release_note = self.repo / "release-notes" / "oversized.md"
+        release_note.parent.mkdir()
+        with release_note.open("wb") as handle:
+            handle.truncate(16 * 1024 * 1024 + 1)
+
+        result = self.scan()
+
+        self.assertEqual(result.returncode, 2, result.stdout + result.stderr)
+        self.assertIn("16 MiB safety limit", result.stderr)
 
 
 if __name__ == "__main__":
