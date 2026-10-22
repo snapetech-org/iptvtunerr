@@ -29,8 +29,12 @@ jobs:
           path: scanner
           sparse-checkout: |
             scripts/check-local-identity-leaks.sh
+            scripts/install-ci-tools.sh
             scripts/scan-local-identity-file.py
           persist-credentials: false
+
+      - name: Install trusted scanner tools
+        run: bash scanner/scripts/install-ci-tools.sh jq ripgrep
 
       - name: Check pull request content with trusted scanner
         env:
