@@ -780,10 +780,35 @@ assert_header "http://127.0.0.1:$port_empty/discover.json" "X-IptvTunerr-Startup
 assert_header "http://127.0.0.1:$port_empty/lineup.json" "X-IptvTunerr-Startup-State" "loading"
 
 run_with_webui_ready "$TMP_DIR/catalog-full.json" port_webui_tuner port_webui "webui run"
+login_html="$(curl -sS "http://127.0.0.1:$port_webui/login")"
+login_csrf_token="$(LOGIN_HTML="$login_html" python3 - <<'PY'
+from html.parser import HTMLParser
+import os
+
+
+class LoginTokenParser(HTMLParser):
+    def __init__(self):
+        super().__init__()
+        self.token = ""
+
+    def handle_starttag(self, tag, attrs):
+        attributes = dict(attrs)
+        if tag == "input" and attributes.get("name") == "csrf_token":
+            self.token = attributes.get("value", "")
+
+
+parser = LoginTokenParser()
+parser.feed(os.environ["LOGIN_HTML"])
+print(parser.token)
+PY
+)"
+[[ -n "$login_csrf_token" ]] || fail "webui login form missing csrf token"
 login_headers="$TMP_DIR/webui-login.headers"
 login_code="$(curl -sS -D "$login_headers" -o /dev/null -w '%{http_code}' -X POST \
   -H 'Content-Type: application/x-www-form-urlencoded' \
-  --data 'username=deck&password=secret' \
+  --data-urlencode "csrf_token=$login_csrf_token" \
+  --data-urlencode 'username=deck' \
+  --data-urlencode 'password=secret' \
   "http://127.0.0.1:$port_webui/login" || true)"
 [[ "$login_code" == "303" ]] || fail "webui login status=$login_code"
 cookie="$(awk '/^Set-Cookie:/ { sub(/\r$/, "", $0); split($2, parts, ";"); print parts[1]; exit }' "$login_headers")"
