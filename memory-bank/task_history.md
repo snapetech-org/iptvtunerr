@@ -1,3 +1,9 @@
+# 2026-10-22 - Make scanner tool setup work on unprivileged JIT guests
+
+- Fixed `scripts/install-ci-tools.sh` so trusted main-branch scanner jobs can install missing `jq` and `ripgrep` under `RUNNER_TEMP` without host-level sudo. Downloaded binaries are version-pinned and SHA-256 checked; package-manager installs now require root or non-interactive `sudo -n`, so CI never prompts for a password.
+- Root cause was confirmed in `iptvtunerr` main job `120129720500`: `Install scanner dependencies` failed when `sudo` requested a password inside the ephemeral guest.
+- Verification: `bash -n`, `git diff --check`, and a restricted-PATH no-sudo integration simulation passed using the real upstream release artifacts; `jq` parsed JSON, `rg` matched stdin, and the installer registered its private tool directory through `GITHUB_PATH`. Exact-head GitHub CI is the remaining verification.
+
 # 2026-10-01 - Fix Unraid license discovery
 
 - The Community Applications submission portal did not recognize the Unraid package repo's copied dual-license `LICENSE`; GitHub classified it as `Other`.
