@@ -1,4 +1,16 @@
-# Current task: Cross-project CVE sweep, repository cleanup, and releases (2026-10-22)
+# Current task: Fix Control Deck CSRF bootstrap on Basic Auth page loads (2026-10-22)
+
+- **Goal:** fix issue #59's follow-up where creating a Control Deck user or M3U account returns `403 missing csrf token`, while preserving the Compose database initialization and persistence fix.
+- **Scope:** propagate the server-validated session into the current request when HTTP Basic authentication creates a browser session; use it to render the SPA CSRF bootstrap; add an end-to-end regression for first-load authentication, user creation, M3U creation, and database-backed API behavior; update release notes and durable troubleshooting guidance; keep the council inventory count aligned with the new regression's filesystem-path match.
+- **Out of scope:** loosening CSRF checks, changing scriptable HTTP Basic behavior, or redesigning authentication.
+- **Assumptions:** the report is consistent with the first-page HTTP Basic flow: the session is created on the same request that renders the SPA, so no incoming session cookie is available to the bootstrap. The regression test will confirm this code path directly.
+- **Status:** implementation and end-to-end regression are complete; the council gates, full Go suite, build, ARMv7 compile, binary smoke, Compose config check, and final diff review pass. The fix commit is local; push and the issue update remain.
+- **Plan:** reproduce with a test that starts at `/` using HTTP Basic, extracts the emitted CSRF token, then submits the reported `/api/v2/users` and `/api/v2/m3u-accounts` mutations through the authenticated handler; preserve a negative no-token request; run focused and prescribed verification; commit and push to GitHub `main`; comment with the final commit and checks.
+- **Verification outputs:** use the newly created `/tmp/iptvtunerr-issue59-csrf-20261022/worktree`; write council reports under `/tmp/iptvtunerr-issue59-csrf-20261022/council`, temporary files under `/tmp/iptvtunerr-issue59-csrf-20261022/tmp`, and smoke evidence under that worktree's `.diag/evidence/smoke-case/`.
+
+---
+
+## Deferred prior task: Cross-project CVE sweep, repository cleanup, and releases (2026-10-22)
 
 - **Goal:** finish the security sweep across QuestarrNG, ROMarrNG, slskR, slskdN, BookshelfNG, ChaptarrNG, SeerrNG, TorrentNG, and IPTV Tunerr; remediate confirmed exposure; review third-party changes for security; resolve repository work directly on each GitHub default branch; publish the requested releases except ChaptarrNG and SeerrNG.
 - **Scope:** inspect dependency/runtime advisories, PRs, issues, branches, stashes, and dirty worktrees for these nine repositories; preserve evidence and secrets; do not publish to GitLab.

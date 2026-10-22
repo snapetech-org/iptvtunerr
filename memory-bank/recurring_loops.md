@@ -404,3 +404,20 @@
 **Where it's documented**
 - `scripts/security-scan-local.sh`
 - `docs/security-scanning.md`
+
+### Loop: First Basic-authenticated Control Deck page has no CSRF bootstrap
+
+**Symptom**
+- A browser opens the Control Deck through HTTP Basic auth, but creating a user or M3U account returns `403 missing csrf token`.
+
+**Why it's tricky**
+- The authentication middleware creates the session and sets its cookie on the page response. The request that renders the SPA cannot read that response cookie, so a bootstrap that only looks at request cookies omits the token even though the UI has just been authenticated.
+
+**What works**
+- After validating HTTP Basic credentials, carry the server-created session token through a private request-context key while rendering that same page. Resolve it through the in-memory session table and keep the existing session-bound CSRF check on every mutation.
+- Cover the first page load, user and M3U account writes, a rejected missing-token request, and database persistence after reopening the SQLite file.
+
+**Where it's documented**
+- `internal/webui/webui_auth.go`
+- `internal/webui/spa.go`
+- `internal/webui/webui_test.go`

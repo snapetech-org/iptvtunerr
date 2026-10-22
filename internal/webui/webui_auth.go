@@ -1,6 +1,7 @@
 package webui
 
 import (
+	"context"
 	"crypto/rand"
 	"crypto/subtle"
 	"encoding/hex"
@@ -43,7 +44,7 @@ func (s *Server) login(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		s.clearFailedLogins(r)
-		if err := s.startSession(w, r); err != nil {
+		if _, err := s.startSession(w, r); err != nil {
 			http.Error(w, "unable to create session", http.StatusInternalServerError)
 			return
 		}
@@ -121,7 +122,7 @@ func (s *Server) sessionAuthOnly(h http.Handler) http.Handler {
 			if requiresCSRF(r.Method) && !s.requireCSRFForToken(w, r, token) {
 				return
 			}
-			h.ServeHTTP(w, r)
+			h.ServeHTTP(w, withDeckSessionToken(r, token))
 			return
 		}
 		user, pass, ok := r.BasicAuth()
@@ -131,10 +132,15 @@ func (s *Server) sessionAuthOnly(h http.Handler) http.Handler {
 				return
 			}
 			if !isScriptableDeckPath(r.URL.Path) {
-				if err := s.startSession(w, r); err != nil {
+				token, err := s.startSession(w, r)
+				if err != nil {
 					http.Error(w, "unable to create session", http.StatusInternalServerError)
 					return
 				}
+				// The response cookie is not visible to this request. Carry the new,
+				// server-created session into page rendering so its CSRF bootstrap is
+				// available on the very first Basic-authenticated browser navigation.
+				r = withDeckSessionToken(r, token)
 				s.recordActivity("auth", "basic_auth", "Deck session opened via HTTP Basic auth.", map[string]interface{}{"username": user})
 			}
 			h.ServeHTTP(w, r)
@@ -252,11 +258,18 @@ func (s *Server) hasValidSession(r *http.Request) bool {
 }
 
 func (s *Server) validSessionToken(r *http.Request) (string, bool) {
-	cookie, err := r.Cookie(sessionCookieName)
-	if err != nil || strings.TrimSpace(cookie.Value) == "" {
+	token, _ := r.Context().Value(deckSessionTokenContextKey{}).(string)
+	if strings.TrimSpace(token) == "" {
+		cookie, err := r.Cookie(sessionCookieName)
+		if err != nil {
+			return "", false
+		}
+		token = cookie.Value
+	}
+	token = strings.TrimSpace(token)
+	if token == "" {
 		return "", false
 	}
-	token := strings.TrimSpace(cookie.Value)
 	s.sessionMu.Lock()
 	defer s.sessionMu.Unlock()
 	s.pruneSessionsLocked()
@@ -270,14 +283,14 @@ func (s *Server) validSessionToken(r *http.Request) (string, bool) {
 	return token, true
 }
 
-func (s *Server) startSession(w http.ResponseWriter, r *http.Request) error {
+func (s *Server) startSession(w http.ResponseWriter, r *http.Request) (string, error) {
 	token, err := newSessionToken()
 	if err != nil {
-		return fmt.Errorf("create session token: %w", err)
+		return "", fmt.Errorf("create session token: %w", err)
 	}
 	csrfToken, err := newSessionToken()
 	if err != nil {
-		return fmt.Errorf("create CSRF token: %w", err)
+		return "", fmt.Errorf("create CSRF token: %w", err)
 	}
 	s.sessionMu.Lock()
 	s.ensureStateMaps()
@@ -296,7 +309,13 @@ func (s *Server) startSession(w http.ResponseWriter, r *http.Request) error {
 		MaxAge:   int(sessionTTL.Seconds()),
 		Secure:   s.secureCookie(r),
 	})
-	return nil
+	return token, nil
+}
+
+type deckSessionTokenContextKey struct{}
+
+func withDeckSessionToken(r *http.Request, token string) *http.Request {
+	return r.WithContext(context.WithValue(r.Context(), deckSessionTokenContextKey{}, token))
 }
 
 func (s *Server) pruneSessionsLocked() {

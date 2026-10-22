@@ -682,3 +682,10 @@
 - Updated `.node-version`, CI, and release workflows to Node.js 22.23.4 for the October 21 Node security releases.
 - Added the runtime change to the pending v0.1.94 changelog and release notes.
 - Full `./scripts/verify` will be rerun before publishing the exact release head.
+
+## 2026-10-22 - Fix CSRF bootstrap for Basic-authenticated Control Deck pages
+
+- Fixed the first browser page load authenticated through HTTP Basic: the middleware-created session now travels in a private request context so the SPA can bootstrap that session's CSRF token before the browser sends its cookie on later requests.
+- Kept CSRF mutation checks intact and added an end-to-end regression covering user and M3U account creation, rejection when the token is absent, and persistence after reopening the SQLite database.
+- Confirmed the existing Compose database path, named-volume mount, and loopback-only dashboard binding remain configured; updated the operator reference, v0.1.94 changelog, release note, and recurring-loop guidance.
+- Verification: the first council run exposed a stale scanner count from the new test's filesystem-path match; updated the active backlog from 988 to 989. The final `./scripts/verify` then passed all council gates, all Go tests, build, ARMv7 compile, and binary smoke. `docker compose config` confirmed the persistent DB and loopback settings.

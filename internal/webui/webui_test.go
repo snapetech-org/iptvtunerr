@@ -1546,6 +1546,102 @@ func TestSessionAuthOnlyAllowsBasicAuthFallback(t *testing.T) {
 	}
 }
 
+func TestBasicAuthSPAFirstLoadProvidesCSRFForStoreMutations(t *testing.T) {
+	dbPath := filepath.Join(t.TempDir(), "tunerr.db")
+	st, err := store.Open(dbPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		if err := st.Close(); err != nil {
+			t.Fatalf("close store: %v", err)
+		}
+	})
+
+	s := &Server{
+		DBPath: dbPath,
+		store:  st,
+		settings: DeckSettings{
+			AuthUser: "admin",
+			AuthPass: "secret",
+		},
+		sessions: map[string]deckSession{},
+	}
+	mux := http.NewServeMux()
+	s.registerV2(mux)
+	mux.Handle("/", s.spaHandler())
+	handler := s.sessionAuthOnly(mux)
+
+	pageReq := httptest.NewRequest(http.MethodGet, "/", nil)
+	pageReq.SetBasicAuth("admin", "secret")
+	pageW := httptest.NewRecorder()
+	handler.ServeHTTP(pageW, pageReq)
+	if pageW.Code != http.StatusOK {
+		t.Fatalf("first page status=%d body=%s", pageW.Code, pageW.Body.String())
+	}
+	cookies := pageW.Result().Cookies()
+	if len(cookies) == 0 || cookies[0].Name != sessionCookieName {
+		t.Fatalf("first page cookies=%v, want %s session", cookies, sessionCookieName)
+	}
+	const bootMarker = `<script>window.__TUNERR_BOOT__=`
+	bootStart := strings.Index(pageW.Body.String(), bootMarker)
+	if bootStart < 0 {
+		t.Fatalf("SPA bootstrap not found in first page: %s", pageW.Body.String())
+	}
+	bootStart += len(bootMarker)
+	bootEnd := strings.Index(pageW.Body.String()[bootStart:], `</script>`)
+	if bootEnd < 0 {
+		t.Fatalf("SPA bootstrap script is not closed: %s", pageW.Body.String())
+	}
+	var boot spaBootstrap
+	if err := json.Unmarshal([]byte(pageW.Body.String()[bootStart:bootStart+bootEnd]), &boot); err != nil {
+		t.Fatalf("decode SPA bootstrap: %v", err)
+	}
+	if boot.CSRF == "" {
+		t.Fatal("first page bootstrap has no CSRF token")
+	}
+
+	newUser := func(csrf string) *httptest.ResponseRecorder {
+		req := httptest.NewRequest(http.MethodPost, "/api/v2/users", strings.NewReader(`{"username":"deck-user","password":"secret"}`))
+		req.AddCookie(cookies[0])
+		if csrf != "" {
+			req.Header.Set(csrfHeaderName, csrf)
+		}
+		w := httptest.NewRecorder()
+		handler.ServeHTTP(w, req)
+		return w
+	}
+	if got := newUser(""); got.Code != http.StatusForbidden || !strings.Contains(got.Body.String(), "missing csrf token") {
+		t.Fatalf("mutation without CSRF status=%d body=%s, want 403 missing token", got.Code, got.Body.String())
+	}
+	if got := newUser(boot.CSRF); got.Code != http.StatusCreated {
+		t.Fatalf("user create status=%d body=%s", got.Code, got.Body.String())
+	}
+
+	m3uReq := httptest.NewRequest(http.MethodPost, "/api/v2/m3u-accounts", strings.NewReader(`{"name":"test-account","account_type":"standard","url":"https://example.test/playlist.m3u"}`))
+	m3uReq.AddCookie(cookies[0])
+	m3uReq.Header.Set(csrfHeaderName, boot.CSRF)
+	m3uW := httptest.NewRecorder()
+	handler.ServeHTTP(m3uW, m3uReq)
+	if m3uW.Code != http.StatusCreated {
+		t.Fatalf("M3U account create status=%d body=%s", m3uW.Code, m3uW.Body.String())
+	}
+
+	reopened, err := store.Open(dbPath)
+	if err != nil {
+		t.Fatalf("reopen database: %v", err)
+	}
+	defer reopened.Close()
+	users, err := reopened.ListUsers()
+	if err != nil || len(users) != 1 || users[0].Username != "deck-user" {
+		t.Fatalf("persisted users=%#v err=%v", users, err)
+	}
+	accounts, err := reopened.ListM3UAccounts()
+	if err != nil || len(accounts) != 1 || accounts[0].Name != "test-account" {
+		t.Fatalf("persisted M3U accounts=%#v err=%v", accounts, err)
+	}
+}
+
 func TestSessionAuthOnlyAllowsScriptableBasicAuthWithoutSession(t *testing.T) {
 	s := &Server{
 		settings: DeckSettings{AuthUser: "admin", AuthPass: "admin"},

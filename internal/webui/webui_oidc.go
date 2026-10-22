@@ -306,7 +306,7 @@ func (s *Server) oidcCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := s.startSession(w, r); err != nil {
+	if _, err := s.startSession(w, r); err != nil {
 		s.failOIDC(w, r, state, "session_failed")
 		return
 	}

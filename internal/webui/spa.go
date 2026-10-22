@@ -92,17 +92,8 @@ func (s *Server) serveSPAIndex(w http.ResponseWriter, r *http.Request) {
 
 // csrfForRequest returns the CSRF token for the authenticated session, if any.
 func (s *Server) csrfForRequest(r *http.Request) (string, bool) {
-	cookie, err := r.Cookie(sessionCookieName)
-	if err != nil {
-		return "", false
-	}
-	s.sessionMu.Lock()
-	defer s.sessionMu.Unlock()
-	sess, ok := s.sessions[cookie.Value]
-	if !ok {
-		return "", false
-	}
-	return sess.CSRFToken, true
+	token := s.csrfTokenForRequest(r)
+	return token, token != ""
 }
 
 // sessionUser returns the username from the active session, or empty string.
