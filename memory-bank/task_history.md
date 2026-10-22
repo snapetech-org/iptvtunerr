@@ -691,3 +691,9 @@
 - Verification: the first council run exposed a stale scanner count from the new test's filesystem-path match; updated the active backlog from 988 to 989. The final `./scripts/verify` then passed all council gates, all Go tests, build, ARMv7 compile, and binary smoke. `docker compose config` confirmed the persistent DB and loopback settings.
 - Pushed fix commit `a78e599` to GitHub `main` and posted the diagnosis, fix, and verification summary on [issue #59](https://github.com/snapetech-org/iptvtunerr/issues/59#issuecomment-6345719064).
 - Retained the 788 KB verification log and council diagnostics under `/tmp/iptvtunerr-issue59-csrf-20261022/`; removed the isolated worktree and temporary test files.
+
+
+## 2026-10-22 - Remove the council verification gate
+
+- Removed the Bug Council phase from `scripts/verify-steps.sh` and its command from `memory-bank/commands.yml`; retained normal verification steps and the separate Semgrep and Trivy workflows.
+- Verification: `bash -n scripts/verify-steps.sh` and `git diff --check` passed. Tests were not run. Hosted checks will run after the direct push to `main`.

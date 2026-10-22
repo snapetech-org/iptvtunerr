@@ -1,12 +1,10 @@
-# Current task: Fix Control Deck CSRF bootstrap on Basic Auth page loads (2026-10-22)
+# Current task: Remove the council verification gate (2026-10-22)
 
-- **Goal:** fix issue #59's follow-up where creating a Control Deck user or M3U account returns `403 missing csrf token`, while preserving the Compose database initialization and persistence fix.
-- **Scope:** propagate the server-validated session into the current request when HTTP Basic authentication creates a browser session; use it to render the SPA CSRF bootstrap; add an end-to-end regression for first-load authentication, user creation, M3U creation, and database-backed API behavior; update release notes and durable troubleshooting guidance; keep the council inventory count aligned with the new regression's filesystem-path match.
-- **Out of scope:** loosening CSRF checks, changing scriptable HTTP Basic behavior, or redesigning authentication.
-- **Assumptions:** the report is consistent with the first-page HTTP Basic flow: the session is created on the same request that renders the SPA, so no incoming session cookie is available to the bootstrap. The regression test will confirm this code path directly.
-- **Status:** complete. Fix commit `a78e599` is pushed to GitHub `main`; issue #59 has the fix details and verification results.
-- **Plan:** none. The end-to-end regression, full prescribed verification, Compose configuration check, commit, push, and issue update are complete.
-- **Verification outputs:** use the newly created `/tmp/iptvtunerr-issue59-csrf-20261022/worktree`; write council reports under `/tmp/iptvtunerr-issue59-csrf-20261022/council`, temporary files under `/tmp/iptvtunerr-issue59-csrf-20261022/tmp`, and smoke evidence under that worktree's `.diag/evidence/smoke-case/`.
+- **Goal:** remove the Bug Council phase from automated verification now that Semgrep and Trivy scans are maintained for this repository.
+- **Scope:** remove the council entry from `scripts/verify-steps.sh` and `memory-bank/commands.yml`; keep translations, normal tests, and the separate Semgrep/Trivy workflows.
+- **Out of scope:** deleting historical council records or changing the scanners.
+- **Status:** implementation and diff review are complete in the isolated `main` checkout; focused shell syntax and diff checks passed. The direct push is next, followed by hosted verification.
+- **Plan:** push the reviewed change to `main` and inspect the hosted workflow results.
 
 ---
 
