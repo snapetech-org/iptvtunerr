@@ -26,7 +26,8 @@ declare -a queued_workflows=() queued_titles=() queued_times=() queued_ids=()
 while IFS=' ' read -r workflow input_name run_title; do
   [[ -n "$workflow" ]] || continue
 
-  skip_channels=",${SKIP_RELEASE_CHANNELS//[[:space:]]/},"
+  skip_channels=",${SKIP_RELEASE_CHANNELS:-},"
+  skip_channels="${skip_channels//[[:space:]]/}"
   if [[ "$skip_channels" == *",$workflow,"* ]]; then
     echo "Skipping deferred release channel $workflow for $tag"
     continue

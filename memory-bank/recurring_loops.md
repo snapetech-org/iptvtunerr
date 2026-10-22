@@ -270,9 +270,11 @@
 - Some workflows stop at upload or PR creation. Launchpad source acceptance precedes amd64 binary publication, and Chocolatey, Winget, and Snap may have separate store review after submission.
 - Launchpad's source query can briefly omit an already-seen record while publication progresses. A cumulative missing-record counter can therefore report a false rejection after many intermittent misses; a successful build record also does not prove that its binary reached the apt archive.
 - AUR/PPA/COPR workflows can be triggered both by GitHub Release events and by a release dispatcher, causing duplicate writes for the same tag.
+- The dispatcher runs with Bash nounset enabled, but its deferred-channel environment variable is optional. Reading `SKIP_RELEASE_CHANNELS` without a default stops the release workflow before any publisher is dispatched.
 
 **What works**
 - Dispatch all release publishers once from the GitHub Release workflow and wait for every publisher workflow to finish.
+- Expand the optional skip list with `${SKIP_RELEASE_CHANNELS:-}` and test both the unset case and a configured skip list through a fake GitHub CLI; this keeps the recovery path deterministic without touching live channels.
 - Check that a submitted tag is the latest stable tag on `main`; serialize each channel so newer release work supersedes older work.
 - For PPA, wait for the exact source version and its amd64 binary publication. Audit registries and store review separately from workflow completion.
 - Reset the Launchpad missing-source counter whenever the exact source record reappears, inspect that source record's amd64 build state, and query its own binary publications before reporting success.
