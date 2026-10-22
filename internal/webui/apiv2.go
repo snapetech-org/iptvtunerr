@@ -126,8 +126,11 @@ func qInt(r *http.Request, key string, def int) int {
 
 func (s *Server) requireStore(w http.ResponseWriter) bool {
 	if s.store == nil {
-		writeError(w, http.StatusServiceUnavailable,
-			"store not initialised — set IPTV_TUNERR_DB_PATH")
+		message := "Control Deck database is disabled; set IPTV_TUNERR_DB_PATH to enable channel and account management"
+		if strings.TrimSpace(s.DBPath) != "" {
+			message = "Control Deck database is unavailable; check that IPTV_TUNERR_DB_PATH points to a writable path"
+		}
+		writeError(w, http.StatusServiceUnavailable, message)
 		return false
 	}
 	return true

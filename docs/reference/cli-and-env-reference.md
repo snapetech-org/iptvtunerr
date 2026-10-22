@@ -1614,6 +1614,7 @@ Merge semantics for HDHR + IPTV catalogs: [adr/0002-hdhr-hardware-iptv-merge.md]
 | `IPTV_TUNERR_WEBUI_DISABLED` | If `1`, disable the dedicated dashboard on port `48879` (`0xBEEF`). |
 | `IPTV_TUNERR_WEBUI_PORT` | Dedicated dashboard port (default `48879`). |
 | `IPTV_TUNERR_WEBUI_ALLOW_LAN` | If `1`, allow non-loopback clients to open the dedicated dashboard (default: **localhost only**). |
+| `IPTV_TUNERR_DB_PATH` | Optional path to the Control Deck SQLite database. Required for channel and account management APIs; mount its parent directory for persistent container storage. |
 | `IPTV_TUNERR_WEBUI_STATE_FILE` | Optional JSON state file for server-derived deck activity plus non-secret deck preferences across process restarts. |
 | `IPTV_TUNERR_WEBUI_USER` | Dedicated deck HTTP Basic auth username (defaults to `admin` only when unset at startup). |
 | `IPTV_TUNERR_WEBUI_PASS` | Dedicated deck HTTP Basic auth password. When unset, Tunerr generates a one-time startup password instead of using `admin/admin`. That generated password is logged once at startup and shown on the localhost login page until you pin a real password. |

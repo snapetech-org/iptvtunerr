@@ -35,6 +35,39 @@ func newTestWebUIServerWithStore(t *testing.T, root string) *Server {
 	return &Server{store: st}
 }
 
+func TestRequireStoreExplainsDatabaseConfiguration(t *testing.T) {
+	tests := []struct {
+		name    string
+		server  *Server
+		message string
+	}{
+		{
+			name:    "database disabled",
+			server:  &Server{},
+			message: "database is disabled",
+		},
+		{
+			name:    "database path failed to open",
+			server:  &Server{DBPath: "/data/tunerr.db"},
+			message: "database is unavailable",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			response := httptest.NewRecorder()
+			if tt.server.requireStore(response) {
+				t.Fatal("requireStore() = true, want false")
+			}
+			if response.Code != http.StatusServiceUnavailable {
+				t.Fatalf("status = %d, want %d", response.Code, http.StatusServiceUnavailable)
+			}
+			if !strings.Contains(response.Body.String(), tt.message) {
+				t.Fatalf("response %q does not contain %q", response.Body.String(), tt.message)
+			}
+		})
+	}
+}
+
 func TestProxyBase(t *testing.T) {
 	tests := []struct {
 		addr string
