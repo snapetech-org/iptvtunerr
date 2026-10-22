@@ -33,6 +33,24 @@
 - `internal/webui/webui_oidc.go`
 - `docs/how-to/oidc-control-deck.md`
 
+### Loop: Control Deck auth cookies must not depend on request-derived HTTPS
+
+**Symptom**
+- Static analysis reports session and OIDC state cookies without `Secure` when the dashboard receives plain HTTP.
+- A request-dependent cookie flag can make cleartext LAN browser sessions vulnerable to network capture, even if HTTPS reverse-proxy requests were recognized safely.
+
+**Why it's tricky**
+- The built-in listener serves HTTP, while the default dashboard is loopback-only and deployments may terminate HTTPS at a reverse proxy. Trusting forwarded scheme headers requires a proxy boundary; allowing HTTP for LAN login weakens credential/session confidentiality.
+
+**What works**
+- Always set `Secure` on Control Deck session and OIDC state cookies. Modern Chrome accepts and returns the cookie on the default loopback `127.0.0.1` HTTP origin; remote/LAN browser access must use HTTPS. Keep scriptable Basic auth behavior and CSRF checks covered by the existing tests.
+
+**Where it's documented**
+- `internal/webui/webui_auth.go`
+- `internal/webui/webui_oidc.go`
+- `docs/reference/cli-and-env-reference.md`
+- `docs/how-to/oidc-control-deck.md`
+
 ### Loop: Recreating the removed cluster fallback after it caused split-brain DVR churn
 
 **Symptom**

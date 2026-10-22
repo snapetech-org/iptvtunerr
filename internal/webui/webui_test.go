@@ -2,7 +2,6 @@ package webui
 
 import (
 	"bytes"
-	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"html/template"
@@ -1573,35 +1572,24 @@ func TestSessionAuthOnlyAllowsBasicAuthFallback(t *testing.T) {
 	}
 }
 
-func TestRequestCookieSecureRecognizesTrustedHTTPS(t *testing.T) {
-	tests := []struct {
-		name       string
-		remoteAddr string
-		forwarded  string
-		tls        bool
-		want       bool
-	}{
-		{name: "direct TLS", remoteAddr: "192.0.2.10:1234", tls: true, want: true},
-		{name: "loopback proxy IPv4", remoteAddr: "127.0.0.1:1234", forwarded: "https", want: true},
-		{name: "loopback proxy IPv6", remoteAddr: "[::1]:1234", forwarded: "HTTPS", want: true},
-		{name: "plain HTTP", remoteAddr: "127.0.0.1:1234", forwarded: "http", want: false},
-		{name: "untrusted forwarded header", remoteAddr: "192.0.2.10:1234", forwarded: "https", want: false},
+func TestSessionCookiesAreAlwaysSecure(t *testing.T) {
+	server := &Server{sessions: map[string]deckSession{}}
+	request := httptest.NewRequest(http.MethodPost, "http://127.0.0.1/logout", nil)
+
+	created := httptest.NewRecorder()
+	if _, err := server.startSession(created, request); err != nil {
+		t.Fatal(err)
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			req := httptest.NewRequest(http.MethodGet, "/", nil)
-			req.RemoteAddr = tt.remoteAddr
-			if tt.forwarded != "" {
-				req.Header.Set("X-Forwarded-Proto", tt.forwarded)
-			}
-			if tt.tls {
-				req.TLS = &tls.ConnectionState{}
-			}
-			server := &Server{}
-			if got := server.secureCookie(req); got != tt.want {
-				t.Fatalf("secureCookie()=%t want %t", got, tt.want)
-			}
-		})
+	createdCookies := created.Result().Cookies()
+	if len(createdCookies) != 1 || createdCookies[0].Name != sessionCookieName || !createdCookies[0].Secure {
+		t.Fatalf("created session cookie=%v; want one Secure %s cookie", createdCookies, sessionCookieName)
+	}
+
+	cleared := httptest.NewRecorder()
+	server.logout(cleared, request)
+	clearedCookies := cleared.Result().Cookies()
+	if len(clearedCookies) != 1 || clearedCookies[0].Name != sessionCookieName || !clearedCookies[0].Secure {
+		t.Fatalf("cleared session cookie=%v; want one Secure %s cookie", clearedCookies, sessionCookieName)
 	}
 }
 
@@ -2136,6 +2124,43 @@ func TestOIDCStateCookiesAreIsolatedPerTransaction(t *testing.T) {
 	}
 }
 
+func TestOIDCLoginSetsSecureStateCookieOverHTTP(t *testing.T) {
+	issuer := ""
+	provider := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/.well-known/openid-configuration" {
+			http.NotFound(w, r)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]string{
+			"issuer":                 issuer,
+			"authorization_endpoint": issuer + "/authorize",
+			"token_endpoint":         issuer + "/token",
+			"jwks_uri":               issuer + "/keys",
+		})
+	}))
+	defer provider.Close()
+	issuer = provider.URL
+
+	server := &Server{oidcSettings: OIDCSettings{
+		IssuerURL:          issuer,
+		ClientID:           "test-client",
+		ClientSecret:       "test-secret",
+		RedirectURI:        "https://deck.example.test/auth/oidc/callback",
+		AllowPrivateIssuer: true,
+	}}
+	request := httptest.NewRequest(http.MethodGet, "http://127.0.0.1/auth/oidc/login", nil)
+	response := httptest.NewRecorder()
+	server.oidcLogin(response, request)
+	if response.Code != http.StatusFound {
+		t.Fatalf("OIDC login status=%d body=%s", response.Code, response.Body.String())
+	}
+	cookies := response.Result().Cookies()
+	if len(cookies) != 1 || !strings.HasPrefix(cookies[0].Name, oidcStateCookiePrefix) || !cookies[0].Secure {
+		t.Fatalf("OIDC login state cookies=%v; want one Secure state cookie", cookies)
+	}
+}
+
 func TestOIDCTransactionLimitRejectsAdditionalAttemptsWithoutEviction(t *testing.T) {
 	server := &Server{}
 	for i := 0; i < maxOIDCTransactions; i++ {
@@ -2169,6 +2194,9 @@ func TestLogoutClearsPendingOIDCStateCookies(t *testing.T) {
 	for _, cookie := range cookies {
 		if !strings.HasPrefix(cookie.Name, oidcStateCookiePrefix) || cookie.Path != "/auth/oidc/" || cookie.MaxAge >= 0 {
 			t.Fatalf("unexpected state-cookie clearing directive: %#v", cookie)
+		}
+		if !cookie.Secure {
+			t.Fatalf("cleared OIDC state cookie is not Secure: %#v", cookie)
 		}
 	}
 	if len(server.oidc.transactions) != 0 {

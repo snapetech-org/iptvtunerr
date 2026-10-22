@@ -179,7 +179,7 @@ func (s *Server) oidcLogin(w http.ResponseWriter, r *http.Request) {
 		Expires:  transaction.ExpiresAt,
 		MaxAge:   int(oidcTransactionTTL.Seconds()),
 		HttpOnly: true,
-		Secure:   s.secureCookie(r),
+		Secure:   true,
 		SameSite: oidcCookieSameSite(s.oidcSettings.IssuerURL),
 	})
 
@@ -337,7 +337,7 @@ func (s *Server) clearOIDCStateCookie(w http.ResponseWriter, r *http.Request, st
 		Expires:  time.Unix(1, 0),
 		MaxAge:   -1,
 		HttpOnly: true,
-		Secure:   s.secureCookie(r),
+		Secure:   true,
 		SameSite: oidcCookieSameSite(s.oidcSettings.IssuerURL),
 	})
 }
@@ -352,12 +352,6 @@ func (s *Server) clearAllOIDCStateCookies(w http.ResponseWriter, r *http.Request
 		s.clearOIDCStateCookie(w, r, state)
 		delete(runtime.transactions, state)
 	}
-}
-
-// A configured HTTPS callback URL is the operator-owned public URL hint for
-// deployments where TLS terminates at a reverse proxy before this listener.
-func (s *Server) secureCookie(r *http.Request) bool {
-	return requestCookieSecure(r) || strings.HasPrefix(strings.ToLower(strings.TrimSpace(s.oidcSettings.RedirectURI)), "https://")
 }
 
 func (s *Server) storeOIDCTransaction(state string, transaction oidcTransaction) bool {

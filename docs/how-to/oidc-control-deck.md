@@ -14,6 +14,7 @@ The dedicated Control Deck can use an OpenID Connect provider for browser sign-i
 ## Preconditions
 
 - Publish the Control Deck behind HTTPS and know its external base URL.
+- The Control Deck marks browser session and OIDC state cookies Secure for every request. Default local access is through loopback; remote or LAN browser access must use an HTTPS reverse proxy.
 - Create a confidential web client in the identity provider.
 - Decide which verified email addresses or domains may sign in. The default
   policy denies users who are not explicitly admitted.
