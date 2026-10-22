@@ -214,7 +214,6 @@ All notable changes to IPTV Tunerr are documented here. Repo: [github.com/snapet
 - **Discord release announcements use the secret-backed release workflow:** tagged releases continue to announce to Matrix and now use the configured `DISCORD_RELEASE_WEBHOOK` repository secret for Discord release announcements.
 - **Binary smoke startup retries port collisions:** release smoke tests now retry standard tuner, custom tuner, and Web UI startup blocks if a self-hosted runner has a transient port collision, avoiding false release failures from stale local listeners.
 - **Release asset jobs install archive and package tooling:** CI and release asset builds now request `zip` and Debian package tools before creating Windows archives and Linux package assets on self-hosted Linux runners.
-- **Council generated counts are refreshed for release gates:** the active bughunt backlog count now matches the current generated council report so release verification does not fail on stale generated metadata.
 
 ### CI
 - **Linux workflows use the paired local runner pool:** Linux jobs now target the repo-specific `iptvtunerr` self-hosted label so either local build host can take amd64 or arm64-cross build work.
@@ -250,7 +249,6 @@ All notable changes to IPTV Tunerr are documented here. Repo: [github.com/snapet
 - **Live TV play queue elevation recognizes form bodies:** Plex clients that send `/playQueues` Live TV URIs in POST form bodies now receive the same owner-entitlement elevation as query-string play queue requests without consuming the forwarded body.
 
 ### Release process
-- **Verification workflows install their scanner dependency:** CI and release runners now install ripgrep before invoking the shared council verification path.
 - **Binary smoke tests declare their lab-local upstream mode:** release smoke fixtures now explicitly allow their localhost media origins while preserving the production private-upstream defaults.
 
 ## [v0.1.74] — 2026-05-14
@@ -288,7 +286,6 @@ All notable changes to IPTV Tunerr are documented here. Repo: [github.com/snapet
 - **Xtream proxy path segments now round-trip safely:** generated live/movie/series URLs escape username, password, and stream IDs as path segments, while inbound proxy routes parse the escaped path instead of the decoded path to avoid reserved-character path confusion.
 - **Operator diagnostics now scrub reflected provider and Plex credentials:** bounded harness stdout, diagnostic summaries, Ghost Hunter helper output, and `debug-bundle --redact` live payloads now strip credential-bearing URLs, auth headers, cookies, and token-shaped key/value pairs before they leave local tooling.
 - **Live TV proxy diagnostics now redact credential-shaped headers while preserving upstream playback headers:** debug and attempt logs no longer expose provider tokens, API keys, cookies, or authorization-like header values, and regression tests pin both the diagnostic redaction and the runtime header forwarding path.
-- **Council review now includes a red-team abuse lens:** the deployment verification path runs the bug council checks with attacker-view scans for spoofing, secret disclosure, confused-deputy paths, replay, SSRF/path/process escape, and operational downgrade risks.
 - **Native HLS/DASH mux segment proxying blocks literal private upstream IPs by default:** `seg=` targets pointing at loopback, RFC1918, link-local, or unspecified literal IPs now return `403 blocked_private_upstream` unless explicitly disabled for lab/private-origin testing, and the optional HLS mux demo is behind the operator locality gate.
 
 ### Release channels

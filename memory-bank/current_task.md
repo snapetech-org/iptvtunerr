@@ -1,10 +1,10 @@
-# Current task: Remove the council verification gate (2026-10-22)
+# Current task: Retire custom security audit tooling (2026-10-22)
 
-- **Goal:** remove the Bug Council phase from automated verification now that Semgrep and Trivy scans are maintained for this repository.
-- **Scope:** remove the council entry from `scripts/verify-steps.sh` and `memory-bank/commands.yml`; keep translations, normal tests, and the separate Semgrep/Trivy workflows.
-- **Out of scope:** deleting historical council records or changing the scanners.
-- **Status:** the removal is pushed to `main` in commit `fbec513`; focused shell syntax and diff checks passed. Hosted verification for that commit is queued. Tests were not run locally.
-- **Plan:** none.
+- **Goal:** remove the obsolete local audit harness, reports, and references now that Semgrep and Trivy scanning are maintained for this repository.
+- **Scope:** delete the dedicated tooling and records, remove references from shared docs and history, and keep the normal verification and separate scanner workflows.
+- **Out of scope:** changing Semgrep, Trivy, or application behavior.
+- **Status:** working in an isolated snapshot of `main`; review and focused static checks are underway.
+- **Plan:** remove the remaining references, review the diff, commit, and push directly to `main`.
 
 ---
 

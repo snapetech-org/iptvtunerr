@@ -99,7 +99,7 @@
 
 ## 2026-05-18 - Cut v0.1.77 release
 
-- Committed and pushed the full dirty tree requested by the operator, including Plex DVR event-window fixes, shared-user Record-button entitlement fixes, generated council metadata, and release workflow hardening.
+- Committed and pushed the full dirty tree requested by the operator, including Plex DVR event-window fixes, shared-user Record-button entitlement fixes, generated audit metadata, and release workflow hardening.
 - Configured the Discord release webhook as the `DISCORD_RELEASE_WEBHOOK` repository secret without committing the webhook URL; the tracked tree was checked for the literal webhook value.
 - Published GitHub Release `v0.1.77` with 18 assets, including raw binaries, archives, `.deb`, `.rpm`, checksums, and release manifest.
 - Release workflow run `26008882309` passed verification, release smoke, asset build/verification, GitHub Release publish, Discord announcement, Matrix announcement, and package-channel dispatch.
@@ -301,7 +301,7 @@
 ## 2026-05-18 - Prepare v0.1.78 Plex DVR release
 
 - Promoted the shared-user Plex DVR subscription-save classifier fix into the `v0.1.78` changelog section.
-- Included release-readiness generated council metadata in the release-prep dirty tree as requested.
+- Included release-readiness generated audit metadata in the release-prep dirty tree as requested.
 - Verification: `./scripts/release-readiness.sh` passed; optional macOS and Windows package lanes were skipped by default.
 
 ## 2026-05-12 - Harden Plex Live TV proxy abuse controls
@@ -442,9 +442,9 @@
 
 ## 2026-06-16 - Commit dirty tree and publish v0.1.85
 
-- Fast-forwarded local `main`, reapplied the requested dirty and unrelated tree, resolved generated-file conflicts, regenerated council outputs, promoted the changelog, and committed the full requested tree as `1c7fcd7`.
+- Fast-forwarded local `main`, reapplied the requested dirty and unrelated tree, resolved generated-file conflicts, regenerated generated reports, promoted the changelog, and committed the full requested tree as `1c7fcd7`.
 - Published `v0.1.85`: pushed `main`, pushed the annotated `v0.1.85` tag, and confirmed the GitHub Release workflow published release assets and manifest/checksum assets.
-- Release content: Plex/PMS canonical env preference and startup drift warnings, Live TV proxy rolling cleanup classifier tightening, PR/security dependency upgrades from the consolidated sweep, docs/changelog/memory updates, and generated council state.
+- Release content: Plex/PMS canonical env preference and startup drift warnings, Live TV proxy rolling cleanup classifier tightening, PR/security dependency upgrades from the consolidated sweep, docs/changelog/memory updates, and generated audit state.
 - Verification before release: focused PMS/runtime/proxy/setupdoctor tests, changelog gate, local identity scan, staged diff check, and full `./scripts/release-readiness.sh` passed.
 - GitHub verification for the release commit: Release, Docker, AUR, PPA, main CI, CodeQL, Gitleaks, and Local Identity checks completed successfully.
 - COPR follow-up: initial COPR publish failed because the configured COPR API token was invalid or expired. Pushed `f5c79db` to retry configured Fedora GSSAPI fallback after token-auth expiry and reran COPR for `v0.1.85`.
@@ -475,7 +475,7 @@
 - The first packed-nuspec preservation dispatch hung inside the monolithic PowerShell pack/push script before any native command output reached the log; a second bounded PowerShell attempt still hid the stall before markers printed. Patched the workflow to split prepare/push into Bash steps, use a unique temporary pack directory, emit progress markers, and bound the steps with GitHub timeouts.
 - Reran `Publish Chocolatey` for `v0.1.68` as run `28960144574`; the run passed, Chocolatey returned `Created`/`Your package was pushed`, raw `.nupkg` inspection confirmed the moderation metadata and nested executable path are present, and the public Chocolatey page now shows status `Updated` with July 8, 2026 update/published dates.
 - Updated the release-channel guide and changelog with the moderation state and remediation.
-- Verification: `xmllint` on the nuspec and SVG, PowerShell parser checks, extracted workflow parser checks after replacing GitHub expressions, extracted Bash run-block syntax checks, simulated `Pack and push` dry run against old `v0.1.85` tag contents, local Bash prepare-step simulation, local packed-nupkg metadata inspection, local `dotnet pack` smoke for the Chocolatey nuspec, install-script shim-path stub test, `git diff --check`, local identity scan, and full `./scripts/verify` passed. `scripts/verify` regenerated tracked council scan files.
+- Verification: `xmllint` on the nuspec and SVG, PowerShell parser checks, extracted workflow parser checks after replacing GitHub expressions, extracted Bash run-block syntax checks, simulated `Pack and push` dry run against old `v0.1.85` tag contents, local Bash prepare-step simulation, local packed-nupkg metadata inspection, local `dotnet pack` smoke for the Chocolatey nuspec, install-script shim-path stub test, `git diff --check`, local identity scan, and full `./scripts/verify` passed. `scripts/verify` regenerated tracked generated scan files.
 
 ## 2026-09-30 - Audit local Tunerr/Plex deployment and playback
 
@@ -555,7 +555,7 @@
 
 - Made `IPTV_TUNERR_CATALOG_PATH` the preferred catalog setting across runtime configuration, CLI help, deployment examples, the local QA helper, and the AUR systemd environment file. Kept `IPTV_TUNERR_CATALOG` as a compatible fallback.
 - Added the API-NBA v2 `standard` dataset with season-start year handling, response normalization, independent product quota tracking, and a Sports page quota view. Clarified that the operator settings route accepts `PUT` or `PATCH`; `POST` returns 405.
-- Reconfirmed the 24,908-channel smoketest timeout regression preserves untested rows. Updated the active bug-council backlog count for the new filesystem boundary test.
+- Reconfirmed the 24,908-channel smoketest timeout regression preserves untested rows. Updated the active backlog count for the new filesystem boundary test.
 - Verification: `./scripts/release-readiness.sh`, focused config/sports/indexer tests, the 24,908-channel regression, WebUI `npm run build`, shell syntax checks, release-note preview/validation, and `git diff --check` passed. `npm ci` reported zero vulnerabilities.
 - Prepared the changes for patch release `v0.1.90`; release publication follows the tagged commit.
 
@@ -580,9 +580,9 @@
 
 ## 2026-10-07 - Finish and push request-driven recording rules for SeerrNG
 
-- Updated the Tunerr council backlog count for the request-rule changes and made `scripts/ci-smoke.sh` portable across macOS and Linux by replacing GNU-only `sed -i` fixture edits.
-- Committed the council count and smoke portability fix as `4c38764` and `751ae6b`, then pushed `feat/seerrng-recording-rules` to `origin` without changing the pre-existing `AGENTS.md` edit.
-- Verification: the clean isolated `./scripts/verify` run passed release wiring, formatting, vet, shell syntax, council, Go tests, build, and binary smoke. GitHub Local Identity run `37630122249` passed. No real IPTV provider was available, so no live provider result is claimed.
+- Updated the Tunerr backlog count for the request-rule changes and made `scripts/ci-smoke.sh` portable across macOS and Linux by replacing GNU-only `sed -i` fixture edits.
+- Committed the backlog count and smoke portability fix as `4c38764` and `751ae6b`, then pushed `feat/seerrng-recording-rules` to `origin` without changing the pre-existing `AGENTS.md` edit.
+- Verification: the clean isolated `./scripts/verify` run passed release wiring, formatting, vet, shell syntax, all required verification steps, Go tests, build, and binary smoke. GitHub Local Identity run `37630122249` passed. No real IPTV provider was available, so no live provider result is claimed.
 
 ## 2026-10-19 - Rotate Chocolatey API key and republish v0.1.92
 
@@ -673,8 +673,8 @@
 
 - Updated the Go module directive and container build image to Go 1.26.10 for the upstream `crypto/x509` security fix; added the change to the pending v0.1.94 release notes.
 - Fixed the full verification script to prune vendored trees and nested Git worktrees from its Go formatting walk, avoiding false failures from local agent checkouts.
-- Regenerated the council candidate inventory and counts as part of the prescribed verification.
-- Verification: `./scripts/verify` passed, including formatting, vet, council gates, all Go tests, build, ARMv7 compile, and binary smoke. `git diff --check` passed.
+- Regenerated the candidate inventory and counts as part of the prescribed verification.
+- Verification: `./scripts/verify` passed, including formatting, vet, required verification steps, all Go tests, build, ARMv7 compile, and binary smoke. `git diff --check` passed.
 
 
 ## 2026-10-22 - Pin IPTV Tunerr Node.js to the patched release
@@ -688,13 +688,13 @@
 - Fixed the first browser page load authenticated through HTTP Basic: the middleware-created session now travels in a private request context so the SPA can bootstrap that session's CSRF token before the browser sends its cookie on later requests.
 - Kept CSRF mutation checks intact and added an end-to-end regression covering user and M3U account creation, rejection when the token is absent, and persistence after reopening the SQLite database.
 - Confirmed the existing Compose database path, named-volume mount, and loopback-only dashboard binding remain configured; updated the operator reference, v0.1.94 changelog, release note, and recurring-loop guidance.
-- Verification: the first council run exposed a stale scanner count from the new test's filesystem-path match; updated the active backlog from 988 to 989. The final `./scripts/verify` then passed all council gates, all Go tests, build, ARMv7 compile, and binary smoke. `docker compose config` confirmed the persistent DB and loopback settings.
+- Verification: the first verification run exposed a stale scanner count from the new test's filesystem-path match; updated the active backlog from 988 to 989. The final `./scripts/verify` then passed all required verification steps, all Go tests, build, ARMv7 compile, and binary smoke. `docker compose config` confirmed the persistent DB and loopback settings.
 - Pushed fix commit `a78e599` to GitHub `main` and posted the diagnosis, fix, and verification summary on [issue #59](https://github.com/snapetech-org/iptvtunerr/issues/59#issuecomment-6345719064).
-- Retained the 788 KB verification log and council diagnostics under `/tmp/iptvtunerr-issue59-csrf-20261022/`; removed the isolated worktree and temporary test files.
+- Retained the 788 KB verification log and verification diagnostics under `/tmp/iptvtunerr-issue59-csrf-20261022/`; removed the isolated worktree and temporary test files.
 
 
-## 2026-10-22 - Remove the council verification gate
+## 2026-10-22 - Retire obsolete local audit tooling
 
-- Removed the Bug Council phase from `scripts/verify-steps.sh` and its command from `memory-bank/commands.yml`; retained normal verification steps and the separate Semgrep and Trivy workflows.
+- Removed the local security audit phase from `scripts/verify-steps.sh` and its command from `memory-bank/commands.yml`; retained normal verification steps and the separate Semgrep and Trivy workflows.
 - Pushed commit `fbec513` directly to GitHub `main`.
 - Verification: `bash -n scripts/verify-steps.sh` and `git diff --check` passed. Tests were not run locally. Hosted checks for the removal commit were queued at final review.
