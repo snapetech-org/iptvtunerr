@@ -30,6 +30,7 @@ All notable changes to IPTV Tunerr are documented here. Repo: [github.com/snapet
 #### Security
 
 - **Web Build:** IPTV Tunerr's web build now uses a patched Vite release, closing the reported vulnerability in its frontend toolchain.
+- **Runtime:** CI and development use the patched Node.js 22.23.4 runtime for the web toolchain.
 - **Runtime:** The Go toolchain is updated to 1.26.10, including the upstream `crypto/x509` security fix.
 
 ## [v0.1.93] - 2026-10-19

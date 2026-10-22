@@ -675,3 +675,10 @@
 - Fixed the full verification script to prune vendored trees and nested Git worktrees from its Go formatting walk, avoiding false failures from local agent checkouts.
 - Regenerated the council candidate inventory and counts as part of the prescribed verification.
 - Verification: `./scripts/verify` passed, including formatting, vet, council gates, all Go tests, build, ARMv7 compile, and binary smoke. `git diff --check` passed.
+
+
+## 2026-10-22 - Pin IPTV Tunerr Node.js to the patched release
+
+- Updated `.node-version`, CI, and release workflows to Node.js 22.23.4 for the October 21 Node security releases.
+- Added the runtime change to the pending v0.1.94 changelog and release notes.
+- Full `./scripts/verify` will be rerun before publishing the exact release head.
