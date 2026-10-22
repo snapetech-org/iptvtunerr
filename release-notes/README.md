@@ -55,6 +55,17 @@ commit message because the user-facing changes were already captured by their
 fragments. The tag workflow checks that the section still matches the
 fragments. Never rewrite or move a published tag or its changelog section.
 
+If a tag workflow fails before publishing a GitHub Release, keep the tag
+immutable and use the next patch version for the eventual public release. Since
+release-note fragments become tag-bound, copy the user-facing fragments into
+new successor files so the first public release still describes the complete
+change set. A failed candidate can also contain accidental edits to older
+changelog sections; restore those sections byte-for-byte from the last
+published tag and record a narrowly scoped, tested exception in
+`scripts/changelog-history-exceptions.json`. The exception may permit only the
+listed sections and only their exact restoration from the named source tag.
+Never use it to approve new or arbitrary edits to published changelog history.
+
 For internal-only pull requests, check the internal-only option in the pull
 request template or add `release-note: none` to the description. Do not use the
 opt-out for user-visible behavior, security, operations, or documentation

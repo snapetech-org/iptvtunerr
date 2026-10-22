@@ -491,4 +491,26 @@
 - `internal/tuner/server_sports.go`
 - `internal/tuner/server_virtual_channels.go`
 - `internal/tuner/server_xtream.go`
+
+### Loop: Failed release tags can leave changelog history ahead of the last public release
+
+**Symptom**
+- A stable-looking tag exists, but its Release workflow stops before publishing assets because the candidate changed sections belonging to earlier releases.
+- A retry against the same tag is blocked by the immutable changelog/tag contract, and the original release-note fragments are now considered consumed by that tag.
+
+**Why it's tricky**
+- The release-note generator builds the new section, while historical changelog sections are maintained across many commits. A release candidate can therefore contain a correct new section and still remove older published entries.
+- Once pushed, the tag must stay put even when the workflow fails before the GitHub Release exists. Reusing the consumed fragments or force-moving the tag would make the release record ambiguous.
+
+**What works**
+- Keep the failed tag immutable and verify that no GitHub Release was published.
+- Use the next patch version for the first public release; copy forward the complete user-facing fragment set under new filenames.
+- Restore only the affected historical sections byte-for-byte from the last published tag. If necessary, add a tag-specific exception that accepts only those exact source sections, with regression tests for both the allowed restoration and arbitrary edits.
+- Keep future release generation append-only and run the tag-history check before pushing a tag.
+
+**Where it's documented**
+- `release-notes/README.md`
+- `scripts/changelog-history-exceptions.json`
+- `scripts/check-changelog-tags.mjs`
+- `scripts/check-changelog-tags.test.mjs`
 - `internal/tuner/m3u_test.go`

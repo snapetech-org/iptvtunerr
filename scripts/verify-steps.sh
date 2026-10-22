@@ -62,6 +62,8 @@ for f in "$ROOT"/scripts/*.mjs; do
 done
 step "Python support-script tests"
 python3 -m unittest discover -s "$ROOT/scripts/tests" -p 'test_*.py' || err "Python support-script tests failed"
+step "Node release-script tests"
+node --test "$ROOT/scripts/check-changelog-tags.test.mjs" || err "Node release-script tests failed"
 
 # --- Test ---
 step "test (go test ./...)"

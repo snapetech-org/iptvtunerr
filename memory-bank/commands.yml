@@ -22,6 +22,7 @@ verify_steps:
   - vet
   - script_syntax  # bash -n scripts/*.sh .githooks/* packaging/scripts/*.sh; python3 -m py_compile scripts/*.py; node --check scripts/*.mjs
   - python_test  # python3 -m unittest discover -s scripts/tests -p 'test_*.py'
+  - node_test  # node --test scripts/check-changelog-tags.test.mjs
   - test
   - build
   - armv7_compile  # cross-compile the vendored go-fuse splice package for Linux ARMv7
@@ -30,6 +31,7 @@ verify_steps:
 release_channel_wiring: "bash scripts/check-release-channel-wiring.sh  # required channel map, latest stable tag guard, publisher completion wait, and container alias contract"
 action_pin_check: "python3 scripts/check-workflow-action-pins.py  # require every remote GitHub Action to use a full commit SHA with a version comment"
 python_test: "python3 -m unittest discover -s scripts/tests -p 'test_*.py'  # URL scheme/redirect and TLS validation for support scripts"
+node_test: "node --test scripts/check-changelog-tags.test.mjs  # historical changelog restore exception and append-only guard regression tests"
 security_scan: "./scripts/security-scan-local.sh  # Semgrep CE plus applicable Trivy secret, dependency, and IaC checks; findings are report-only by default"
 update_security_tools: "./scripts/update-security-tools.sh  # refresh local Semgrep package and Trivy vulnerability database"
 install_git_hooks: "./scripts/install-git-hooks.sh  # enable .githooks/pre-commit staged Semgrep scan and release-note checks"

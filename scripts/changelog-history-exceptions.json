@@ -1,0 +1,7 @@
+{
+  "v0.1.94": {
+    "source_tag": "v0.1.93",
+    "sections": ["v0.1.74", "v0.1.75", "v0.1.77"],
+    "reason": "The v0.1.94 release workflow failed before publishing after its changelog accidentally removed three historical bullets. The successor v0.1.95 restores only those sections byte-for-byte from the previous published release; the pushed v0.1.94 tag remains unchanged."
+  }
+}
