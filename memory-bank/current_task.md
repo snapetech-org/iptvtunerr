@@ -1,10 +1,10 @@
-# Current task: Retire custom security audit tooling (2026-10-22)
+# Current task: Remove obsolete local security audit tooling (2026-10-22)
 
-- **Goal:** remove the obsolete local audit harness, reports, and references now that Semgrep and Trivy scanning are maintained for this repository.
-- **Scope:** delete the dedicated tooling and records, remove references from shared docs and history, and keep the normal verification and separate scanner workflows.
-- **Out of scope:** changing Semgrep, Trivy, or application behavior.
-- **Status:** working in an isolated snapshot of `main`; review and focused static checks are underway.
-- **Plan:** remove the remaining references, review the diff, commit, and push directly to `main`.
+- **Goal:** remove the retired local audit runners, reports, and references while retaining Semgrep and Trivy coverage.
+- **Scope:** remove dedicated scripts, analyzers, ledgers, generated reports, and stale references across the affected repositories; preserve ordinary app checks and scanner workflows.
+- **Status:** complete. Five default branches were updated directly on `main`.
+- **Verification:** whitespace checks, modified shell syntax, JSON/XML parsing, solution project structure, and repository-wide reference scans passed. Application tests were not run.
+- **Publication:** the five removal commits and this closeout are pushed to their default branches.
 
 ---
 

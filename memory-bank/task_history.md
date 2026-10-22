@@ -698,3 +698,9 @@
 - Removed the local security audit phase from `scripts/verify-steps.sh` and its command from `memory-bank/commands.yml`; retained normal verification steps and the separate Semgrep and Trivy workflows.
 - Pushed commit `fbec513` directly to GitHub `main`.
 - Verification: `bash -n scripts/verify-steps.sh` and `git diff --check` passed. Tests were not run locally. Hosted checks for the removal commit were queued at final review.
+
+## 2026-10-22 - Remove obsolete local security audit tooling
+
+- Removed the dedicated audit runners, generated reports, issue ledgers, stale documentation references, and the custom .NET analyzer and tests across five repositories. Semgrep and Trivy workflows remain.
+- Static verification passed: `git diff --check`, modified shell syntax, JSON and XML parsing, solution structure, and source reference scans. Application tests were not run.
+- Pushed directly to `main`: IPTV Tunerr `b5ed2fdde329f82e86cbc9ab4bb7df6a3eaa930f`, RedlibE `50926767ba36ceb25452ba253ef43e82bf11ba66`, SeerrNG `ffefc4c4ff963cd6c11b88ac65c80a5ea5c17475`, slskNet.Runtime `1cf394bc46c2ea0333c96e43a5c3ac5dbea3304b`, and slskR `a17ec9ea0bb160256908623f7e1455869ecd6bba`.
