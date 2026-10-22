@@ -29,6 +29,7 @@ Dense and factual. Add CLI reference, env vars, API docs as needed.
 | [vpn-access-patterns](vpn-access-patterns.md) | Tailscale, WireGuard, OpenVPN, Gluetun, NAT-PMP/static-forward, and fail-closed routing patterns for Tunerr and the Plex Live TV proxy. |
 | [epg-linking-pipeline](epg-linking-pipeline.md) | Multi-provider channel/EPG linking pipeline: normalization, alias/override DB, confidence scoring, and rollout strategy for large unlinked channel sets. |
 | [testing-and-supervisor-config](testing-and-supervisor-config.md) | Supervisor mode and recent test/lab env vars (guide offsets, reaper, HDHR shaping, XMLTV normalization). |
+| [ci-runner-routing](ci-runner-routing.md) | Which trusted main-branch jobs use the shared JIT group and which jobs stay on GitHub-hosted runners. |
 | [memory-bank/commands.yml](../../memory-bank/commands.yml) | Verification commands. |
 
 See also
