@@ -512,7 +512,7 @@ func (s *Server) xtreamM3U(principal xtreamPrincipal) string {
 	guideURL := base + "/xmltv.php?username=" + url.QueryEscape(principal.Username) + "&password=" + url.QueryEscape(s.xtreamPasswordForPrincipal(principal))
 	var b strings.Builder
 	b.WriteString("#EXTM3U url-tvg=\"")
-	b.WriteString(guideURL)
+	b.WriteString(safeM3UAttr(guideURL))
 	b.WriteString("\"\n")
 	for _, ch := range s.xtreamLiveChannelsFor(principal) {
 		channelID := strings.TrimSpace(ch.ChannelID)
@@ -527,15 +527,15 @@ func (s *Server) xtreamM3U(principal xtreamPrincipal) string {
 		if name == "" {
 			name = "Channel " + firstNonEmptyString(ch.GuideNumber, channelID)
 		}
-		displayName := strings.ReplaceAll(name, ",", " ")
+		displayName := sanitizeM3UDisplayText(name)
 		b.WriteString("#EXTINF:-1 tvg-id=\"")
-		b.WriteString(tvgID)
+		b.WriteString(escapeM3UAttr(tvgID))
 		b.WriteString("\" tvg-name=\"")
 		b.WriteString(escapeM3UAttr(displayName))
 		b.WriteString("\",")
 		b.WriteString(displayName)
 		b.WriteByte('\n')
-		b.WriteString(s.xtreamLiveDirectSource(principal, channelID))
+		b.WriteString(sanitizeM3UText(s.xtreamLiveDirectSource(principal, channelID)))
 		b.WriteByte('\n')
 	}
 	return b.String()

@@ -5,6 +5,7 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"unicode"
 
 	"github.com/snapetech/iptvtunerr/internal/catalog"
 )
@@ -45,35 +46,63 @@ func (m *M3UServe) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if base == "" {
 		base = "http://localhost:5004"
 	}
-	base = strings.TrimRight(strings.TrimSpace(base), "/")
+	base = strings.TrimRight(strings.TrimSpace(sanitizeM3UText(base)), "/")
 	guideURL := base + "/guide.xml"
 	w.Header().Set("Content-Type", "audio/x-mpegurl; charset=utf-8")
 	w.Header().Set("Cache-Control", "no-store")
-	w.Write([]byte("#EXTM3U url-tvg=\"" + guideURL + "\"\n"))
+	w.Write([]byte("#EXTM3U url-tvg=\"" + safeM3UAttr(guideURL) + "\"\n"))
 	for _, e := range entries {
 		c := e.c
-		channelID := strings.TrimSpace(c.ChannelID)
+		channelID := strings.TrimSpace(sanitizeM3UText(c.ChannelID))
 		if channelID == "" {
-			channelID = c.GuideNumber
+			channelID = sanitizeM3UText(c.GuideNumber)
 		}
 		if channelID == "" {
 			channelID = strconv.Itoa(e.idx)
 		}
 		streamURL := base + "/stream/" + channelID
-		tvgID := strings.TrimSpace(c.TVGID)
+		tvgID := strings.TrimSpace(sanitizeM3UText(c.TVGID))
 		if tvgID == "" {
-			tvgID = c.GuideNumber
+			tvgID = sanitizeM3UText(c.GuideNumber)
 		}
 		name := c.GuideName
 		if name == "" {
 			name = "Channel " + c.GuideNumber
 		}
-		name = strings.ReplaceAll(name, ",", " ")
-		w.Write([]byte("#EXTINF:-1 tvg-id=\"" + tvgID + "\" tvg-name=\"" + escapeM3UAttr(name) + "\"," + name + "\n"))
-		w.Write([]byte(streamURL + "\n"))
+		name = sanitizeM3UDisplayText(name)
+		w.Write([]byte("#EXTINF:-1 tvg-id=\"" + escapeM3UAttr(tvgID) + "\" tvg-name=\"" + escapeM3UAttr(name) + "\"," + name + "\n"))
+		w.Write([]byte(sanitizeM3UText(streamURL) + "\n"))
 	}
 }
 
 func escapeM3UAttr(s string) string {
-	return strings.ReplaceAll(url.QueryEscape(s), "+", " ")
+	return strings.ReplaceAll(url.QueryEscape(sanitizeM3UText(s)), "+", " ")
+}
+
+func sanitizeM3UText(s string) string {
+	var out strings.Builder
+	out.Grow(len(s))
+	lastWasControl := false
+	for _, r := range s {
+		if unicode.IsControl(r) {
+			if !lastWasControl {
+				out.WriteByte(' ')
+			}
+			lastWasControl = true
+			continue
+		}
+		out.WriteRune(r)
+		lastWasControl = false
+	}
+	return out.String()
+}
+
+func sanitizeM3UDisplayText(s string) string {
+	return strings.ReplaceAll(strings.TrimSpace(sanitizeM3UText(s)), ",", " ")
+}
+
+func safeM3UAttr(s string) string {
+	s = strings.TrimSpace(sanitizeM3UText(s))
+	s = strings.ReplaceAll(s, `"`, "'")
+	return strings.ReplaceAll(s, ",", " ")
 }

@@ -684,20 +684,20 @@ func (s *Server) serveVirtualChannelM3U() http.Handler {
 		_, _ = io.WriteString(w, "#EXTM3U\n")
 		for _, ch := range s.virtualChannelLiveRows() {
 			attrParts := []string{
-				fmt.Sprintf("tvg-id=\"%s\"", strings.TrimSpace(ch.TVGID)),
-				fmt.Sprintf("tvg-name=\"%s\"", strings.TrimSpace(ch.GuideName)),
-				fmt.Sprintf("group-title=\"%s\"", strings.TrimSpace(ch.GroupTitle)),
+				fmt.Sprintf("tvg-id=\"%s\"", safeM3UAttr(ch.TVGID)),
+				fmt.Sprintf("tvg-name=\"%s\"", safeM3UAttr(ch.GuideName)),
+				fmt.Sprintf("group-title=\"%s\"", safeM3UAttr(ch.GroupTitle)),
 			}
 			virtualID := strings.TrimPrefix(strings.TrimSpace(ch.ChannelID), "virtual-")
 			if station, ok := virtualChannelByID(set, virtualID); ok {
 				if artworkURL := strings.TrimSpace(station.Branding.LogoURL); artworkURL != "" {
-					attrParts = append(attrParts, fmt.Sprintf("tvg-logo=\"%s\"", artworkURL))
+					attrParts = append(attrParts, fmt.Sprintf("tvg-logo=\"%s\"", safeM3UAttr(artworkURL)))
 				}
 			}
 			_, _ = io.WriteString(w, fmt.Sprintf("#EXTINF:-1 %s,%s\n%s\n",
 				strings.Join(attrParts, " "),
-				strings.TrimSpace(ch.GuideName),
-				strings.TrimSpace(ch.StreamURL),
+				sanitizeM3UDisplayText(ch.GuideName),
+				sanitizeM3UText(ch.StreamURL),
 			))
 		}
 	})

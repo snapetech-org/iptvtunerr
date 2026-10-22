@@ -454,3 +454,23 @@
 - `internal/tuner/gateway_stream_response.go`
 - `internal/webui/`
 - `scripts/security-scan-local.sh`
+
+### Loop: M3U metadata must be safe for the playlist grammar
+
+**Symptom**
+- Channel metadata containing carriage returns, line feeds, quotes, or commas can break generated M3U fields or insert additional playlist directives.
+- Broad response-writer XSS rules flag these handlers even though M3U is not HTML, which can obscure the separate playlist-injection risk.
+
+**Why it's tricky**
+- HTML escaping does not protect M3U syntax. Several endpoints build playlists from provider catalog values or operator-managed virtual-channel fields, and their quoting and line rules differ from HTML.
+
+**What works**
+- Sanitize control characters before writing any M3U line; normalize display names and quotes/commas for attributes. Keep URL attributes readable and preserve each export's existing MIME and URL layout.
+- Apply the shared helpers to regular, sports, virtual-channel, and Xtream exports, with a regression asserting injected metadata cannot create a new directive line.
+
+**Where it's documented**
+- `internal/tuner/m3u.go`
+- `internal/tuner/server_sports.go`
+- `internal/tuner/server_virtual_channels.go`
+- `internal/tuner/server_xtream.go`
+- `internal/tuner/m3u_test.go`

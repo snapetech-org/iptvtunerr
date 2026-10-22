@@ -1472,6 +1472,31 @@ func TestServer_virtualChannelExportsRequireGetOrHead(t *testing.T) {
 	}
 }
 
+func TestServer_virtualChannelM3USanitizesMetadata(t *testing.T) {
+	s := &Server{VirtualChannels: virtualchannels.Ruleset{Version: virtualchannels.RulesVersion, Channels: []virtualchannels.Channel{{
+		ID: "vc-news", Name: "News\r\n#EXT-X-INJECTED", GuideNumber: "1", GroupTitle: "Group\tName",
+		Enabled: true, Branding: virtualchannels.Branding{LogoURL: "https://img.example/news.png\"\r\n#EXT-X-INJECTED"},
+	}}}}
+	req := httptest.NewRequest(http.MethodGet, "/virtual-channels/live.m3u", nil)
+	w := httptest.NewRecorder()
+	s.serveVirtualChannelM3U().ServeHTTP(w, req)
+	if w.Code != http.StatusOK {
+		t.Fatalf("virtual m3u status=%d body=%s", w.Code, w.Body.String())
+	}
+	body := w.Body.String()
+	if strings.ContainsAny(body, "\r\t") {
+		t.Fatalf("virtual playlist contains control characters: %q", body)
+	}
+	for _, line := range strings.Split(body, "\n") {
+		if strings.HasPrefix(line, "#EXT-X-INJECTED") {
+			t.Fatalf("virtual metadata injected an M3U directive: %q", body)
+		}
+	}
+	if !strings.Contains(body, `tvg-name="News #EXT-X-INJECTED"`) || !strings.Contains(body, `tvg-logo="https://img.example/news.png' #EXT-X-INJECTED"`) {
+		t.Fatalf("virtual playlist metadata was not safely serialized: %q", body)
+	}
+}
+
 func TestServer_virtualChannelStreamMissingSourceStaysJSON(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "virtual-channels.json")
 	s := &Server{

@@ -53,6 +53,68 @@ func TestM3UServe_NormalizesWhitespaceAndTrailingSlashes(t *testing.T) {
 	}
 }
 
+func TestM3UServe_SanitizesPlaylistLineBreaks(t *testing.T) {
+	m := &M3UServe{
+		BaseURL: "https://deck.example\r\n#EXT-X-INJECTED",
+		Channels: []catalog.LiveChannel{{
+			ChannelID:   "one\r\n#EXT-X-INJECTED",
+			GuideNumber: "1",
+			GuideName:   "News\r\n#EXT-X-INJECTED",
+			TVGID:       "news\r\n#EXT-X-INJECTED",
+		}},
+	}
+	req := httptest.NewRequest(http.MethodGet, "/live.m3u", nil)
+	w := httptest.NewRecorder()
+	m.ServeHTTP(w, req)
+	if w.Code != http.StatusOK {
+		t.Fatalf("code: %d", w.Code)
+	}
+	body := w.Body.String()
+	if strings.ContainsAny(body, "\r\t") {
+		t.Fatalf("playlist contains control characters: %q", body)
+	}
+	for _, line := range strings.Split(body, "\n") {
+		if strings.HasPrefix(line, "#EXT-X-INJECTED") {
+			t.Fatalf("metadata injected an M3U directive: %q", body)
+		}
+	}
+	if !strings.Contains(body, `tvg-name="News %23EXT-X-INJECTED",News #EXT-X-INJECTED`) {
+		t.Fatalf("expected metadata to remain on the channel line: %q", body)
+	}
+}
+
+func TestSanitizeM3UFieldsStripsControlsAndHeaderDelimiters(t *testing.T) {
+	if got := sanitizeM3UDisplayText(" News\r\n#EXT-X-INJECTED,One\t"); got != "News #EXT-X-INJECTED One" {
+		t.Fatalf("sanitizeM3UDisplayText() = %q", got)
+	}
+	if got := safeM3UAttr("https://img.example/a\"b,c\r\n#EXT-X-INJECTED"); got != "https://img.example/a'b c #EXT-X-INJECTED" {
+		t.Fatalf("safeM3UAttr() = %q", got)
+	}
+}
+
+func TestXtreamM3USanitizesPlaylistLineBreaks(t *testing.T) {
+	s := &Server{
+		BaseURL: "https://deck.example\r\n#EXT-X-INJECTED",
+		Channels: []catalog.LiveChannel{{
+			ChannelID: "channel-1",
+			GuideName: "News\r\n#EXT-X-INJECTED",
+			TVGID:     "news\r\n#EXT-X-INJECTED",
+		}},
+	}
+	body := s.xtreamM3U(xtreamPrincipal{FullAccess: true, Username: "viewer"})
+	if strings.ContainsAny(body, "\r\t") {
+		t.Fatalf("Xtream playlist contains control characters: %q", body)
+	}
+	for _, line := range strings.Split(body, "\n") {
+		if strings.HasPrefix(line, "#EXT-X-INJECTED") {
+			t.Fatalf("channel metadata injected an Xtream M3U directive: %q", body)
+		}
+	}
+	if !strings.Contains(body, `tvg-name="News %23EXT-X-INJECTED",News #EXT-X-INJECTED`) {
+		t.Fatalf("expected metadata to remain on the Xtream channel line: %q", body)
+	}
+}
+
 func TestM3UServe_epgPruneUnlinked(t *testing.T) {
 	channels := []catalog.LiveChannel{
 		{GuideNumber: "1", GuideName: "With TVG", TVGID: "bbc1", StreamURL: "http://a/1"},

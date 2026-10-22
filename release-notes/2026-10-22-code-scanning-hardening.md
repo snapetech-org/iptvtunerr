@@ -5,4 +5,4 @@ area: security
 action: For remote VOD WebDAV, configure a TLS certificate and key plus username and a password of at least 16 bytes.
 breaking: true
 ---
-VOD WebDAV now serves plaintext only on loopback; listeners on other interfaces require TLS and authentication. The Control Deck login form also requires its signed CSRF token, session cookies are marked Secure for direct HTTPS and trusted loopback HTTPS proxies, and proxied active content is returned as inert data.
+Remote VOD WebDAV now requires TLS and authentication; plaintext stays loopback-only. The Control Deck login requires a signed CSRF token and sends Secure session cookies over direct or trusted loopback-proxied HTTPS. Proxied active content is inert, and generated M3U fields strip control characters to prevent directive injection.

@@ -692,10 +692,10 @@ func (s *Server) serveSportsEventM3U() http.Handler {
 		if r.Method == http.MethodHead {
 			return
 		}
-		_, _ = fmt.Fprintf(w, "#EXTM3U url-tvg=\"%s/sports/guide.xml\"\n", base)
+		_, _ = fmt.Fprintf(w, "#EXTM3U url-tvg=\"%s/sports/guide.xml\"\n", safeM3UAttr(base))
 		for _, channel := range view.Report.Channels {
 			_, _ = fmt.Fprintf(w, "#EXTINF:-1 tvg-id=\"%s\" tvg-name=\"%s\" tvg-chno=\"%s\" group-title=\"Sports | %s\",%s\n%s\n",
-				sportsM3UAttr(channel.GuideID), sportsM3UAttr(channel.Name), sportsM3UAttr(channel.GuideNumber), sportsM3UAttr(datasetName(channel.Dataset)), sportsM3UAttr(channel.Name), base+channel.PlayURL)
+				safeM3UAttr(channel.GuideID), safeM3UAttr(channel.Name), safeM3UAttr(channel.GuideNumber), safeM3UAttr(datasetName(channel.Dataset)), sanitizeM3UDisplayText(channel.Name), sanitizeM3UText(base+channel.PlayURL))
 		}
 	})
 }
@@ -737,11 +737,6 @@ func datasetName(id string) string {
 		return "Sports"
 	}
 	return dataset.Name
-}
-
-func sportsM3UAttr(value string) string {
-	value = strings.NewReplacer("\r", " ", "\n", " ", "\t", " ", `"`, "'").Replace(strings.TrimSpace(value))
-	return strings.ReplaceAll(value, ",", " ")
 }
 
 func writeSportsJSON(w http.ResponseWriter, status int, value any) {
