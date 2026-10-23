@@ -734,3 +734,10 @@ coordinated nine-application runner repair. Shared policy tests cover verified t
 exact workflow access, unstarted hosted recovery, and reusable-workflow prerequisites.
 Host deployment, socket-based checks, and live artifact/release canaries remain open.
 Application source and package-channel gates were not changed.
+
+## 2026-10-23 — Review release-tag and runner-policy PRs
+
+- Confirmed the application release convention is pushed `v<version>` tags, with PR/main validation separate and legacy recovery retained.
+- Fixed stale routing assertions in IPTV Tunerr's CI tests after trusted Linux main/tag jobs gained the shared JIT route with hosted fallback. The focused runner-routing tests pass locally; push and exact-head CI remain pending.
+- Packer PR #2's CI failure was GitHub's billing/spending-limit rejection before the job started, not a source-test failure. TorrentNG PR #231 was merged by another agent while its replacement checks were still queued; its release changes are not considered end-to-end verified.
+- No runner host was changed, no release was created, and no other PR was merged by this task.

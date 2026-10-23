@@ -1,10 +1,10 @@
-# Current task: Build and release runner fallback (2026-10-23)
+# Current task: Standardize release tags and review runner PRs (2026-10-23)
 
-- **Goal:** allow this application's Linux x64 CI, release assets, containers, and GitHub releases to use hosted and shared JIT runners, including trusted release tags.
-- **Scope:** three workflow selectors, CI packaging bootstrap in the shared broker, and routing documentation. Preserve application code, release inputs, credentials, publish gates, and platform requirements.
-- **Status:** source changes prepared for review; no host deployment, runner-group update, or live release completion is claimed.
-- **Verification:** workflow YAML and routing contracts, existing release-channel/action-pin checks, and shared broker policy tests. Unix-socket tests require a capable runner host.
-- **Next step:** install and verify the coordinated broker/catalog/access update before merging the application selectors; canary hosted and JIT execution, then enable hosted-first. Existing tags retain their old workflow source on retry.
+- **Goal:** use one pushed `v<version>` tag convention for release builds across all runner-using application repositories, while keeping PR/main validation separate and retaining recovery for existing tags.
+- **Scope:** review the nine application PRs plus Packer, fix release-trigger and runner-policy regressions, and preserve application behavior, credentials, publication gates, and platform requirements.
+- **Status:** IPTV Tunerr PR #61 remains draft. Review found three stale test assertions after runner selectors gained trusted-tag JIT routing; the test updates pass locally and await their push. No host deployment, runner-group update, release, or live artifact completion is claimed.
+- **Verification:** hosted CI has confirmed the three IPTV failures were limited to stale assertions; the updated routing tests pass locally. Full cross-repository check state is tracked in [work_breakdown.md](work_breakdown.md).
+- **Next step:** commit and push the IPTV test correction, inspect exact-head checks, and keep the coordinated broker deployment and live canaries as separate outstanding work.
 - **Limits:** public PRs, native non-x64/Linux platforms, SSH-based package channels, and partially executed workflows retain their existing execution/recovery requirements.
 - **Rollback:** revert these workflow selectors before removing shared routes; preserve the broker's retry journal.
 
