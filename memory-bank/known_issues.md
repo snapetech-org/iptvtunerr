@@ -1,3 +1,11 @@
+## Runner rollout follow-up (2026-10-23)
+
+The current broker source had lost hosted queue recovery while application YAML
+still relied on `github.run_attempt > 1`. Release tags also bypassed main-only
+selectors. The coordinated repair restores recovery, verifies main-history tags,
+and synchronizes exact workflow refs. Deployment and live canaries remain open;
+do not mark builds or releases successful from source checks alone.
+
 # Known issues
 
 ## CI / runner operations
@@ -44,4 +52,3 @@
 - **Pre-release Local Identity Leak Check matched existing dependency-update co-author trailers.** Five commit-message lines matched the private identity denylist before `v0.1.86` was tagged. Post-release main checks pass because the latest-tag scan baseline advanced; the historical lines remain in their original commits. Preserve history as directed and do not weaken the scanner.
 - **GitLab mirror ref listing currently fails, and its cached `main` contains an extra donation-links commit.** The GitLab SSH service reports a multi-pack-index signature error during ref listing and rejected a normal push of verified merge candidate `4b5d293` with an index-pack error. The candidate retains the GitLab-only commit; no remote ref changed. Repair the server-side repository index, read current refs, and retry only as a normal fast-forward. Never force-push this branch.
 - **The pushed `v0.1.94` tag has no GitHub Release.** Its Release workflow stopped at the changelog-history gate before verification or asset generation because the candidate removed entries from published sections `v0.1.74`, `.75`, and `.77`. Keep the tag immutable; `v0.1.95` is the published successor after restoring those sections exactly from `v0.1.93`. See the release-history recovery loop in [recurring_loops.md](recurring_loops.md).
-

@@ -1,12 +1,12 @@
-# Current task: Runner queue starvation and staged hosted-first routing (2026-10-23)
+# Current task: Build and release runner fallback (2026-10-23)
 
-- **Goal:** diagnose queue delays across the nine applications, fix broker starvation, reduce duplicate scans, and prepare hosted-first Linux execution with a bounded JIT retry.
-- **Scope:** workflow concurrency/routing and runner infrastructure in the private Packer repository. Preserve scans, permissions, resource limits, and public-PR/credentialed-publisher boundaries.
-- **Findings:** the checked-in broker rejects older main commits and repeatedly probes the same two runs; its fairness ignores active assignments. Concrete guest failures include a denied package mirror, an unavailable Linux shell, and mismatched database client/service versions. These fixes are tracked in the private infrastructure audit.
-- **Changes:** staged `NG_HOSTED_FIRST`/`NG_FORCE_JIT` routing, superseded-scan/PR cancellation, and retained release-publisher queues. The hosted-first switch defaults off until the updated broker is deployed. No application source or scan failure policy changed.
-- **Verification:** focused runner-policy tests and workflow YAML/diff checks. Broker queue tests pass; nine existing socket tests are blocked by this workspace's socket permissions and remain required before deployment. No live host deployment or full application release was performed here.
-- **Next step:** publish the validated repository changes, then use authenticated infrastructure access for drain/install/canary/activation. Ordinary PRs, tag publishers, non-Linux jobs, and partially executed workflows still lack general automatic fallback; do not mark the overall runner rollout complete.
-- **Rollback:** leave `NG_HOSTED_FIRST` unset/false to preserve prior JIT routing. Host rollback requires the infrastructure guide's natural drain and hash-recorded backups, preserving the recovery journal.
+- **Goal:** allow this application's Linux x64 CI, release assets, containers, and GitHub releases to use hosted and shared JIT runners, including trusted release tags.
+- **Scope:** three workflow selectors, CI packaging bootstrap in the shared broker, and routing documentation. Preserve application code, release inputs, credentials, publish gates, and platform requirements.
+- **Status:** source changes prepared for review; no host deployment, runner-group update, or live release completion is claimed.
+- **Verification:** workflow YAML and routing contracts, existing release-channel/action-pin checks, and shared broker policy tests. Unix-socket tests require a capable runner host.
+- **Next step:** install and verify the coordinated broker/catalog/access update before merging the application selectors; canary hosted and JIT execution, then enable hosted-first. Existing tags retain their old workflow source on retry.
+- **Limits:** public PRs, native non-x64/Linux platforms, SSH-based package channels, and partially executed workflows retain their existing execution/recovery requirements.
+- **Rollback:** revert these workflow selectors before removing shared routes; preserve the broker's retry journal.
 
 ---
 
@@ -121,4 +121,3 @@
 ## Completed one-off update (2026-10-02)
 
 - Rotated the Discord release announcement endpoint in the GitHub Actions `DISCORD_RELEASE_WEBHOOK` secret for `snapetech/iptvtunerr`. Verified the secret name is listed and its endpoint ID is absent from tracked files.
-

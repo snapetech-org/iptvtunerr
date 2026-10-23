@@ -1,3 +1,17 @@
+## Loop: Workflow selection and installed broker drift
+
+**Symptom:** CI has a JIT selector but release/tag jobs wait indefinitely on hosted runners.
+
+**Cause:** runner selection, broker discovery, exact workflow/group access, guest tools,
+and publisher egress are separate contracts. A retry keeps the original tag/SHA;
+changing main does not update old tag workflows. A merge can remove broker recovery
+without removing the YAML retry expression.
+
+**Resolution:** review and test those contracts together, preserve the retry journal,
+verify main ancestry and exact tag refs, and install before enabling hosted-first.
+Keep unsupported platform/package routes explicit. A successful queue scan is not
+proof that artifacts or package publications completed. Live activation remains open.
+
 # Recurring loops and hard-to-solve problems
 
 ### Loop: A new main push makes an older queued build permanently ineligible
@@ -643,4 +657,3 @@
 - `scripts/check-changelog-tags.mjs`
 - `scripts/check-changelog-tags.test.mjs`
 - `internal/tuner/m3u_test.go`
-

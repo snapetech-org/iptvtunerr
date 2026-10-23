@@ -725,3 +725,12 @@
 - IPTV Tunerr stages hosted-first routing behind `NG_HOSTED_FIRST`, deduplicates superseded scans/PR checks, and keeps release publishers queued instead of cancelling older releases. Scan enforcement and credential boundaries are preserved.
 - Validation: focused routing tests and YAML/diff checks. Infrastructure policy tests pass except nine existing socket integration cases that this workspace cannot run (EPERM); those tests remain enabled for CI/host validation.
 - Host installation, canary validation, switch activation, and seven-release end-to-end proof remain outstanding. Repository publication is not host deployment.
+
+
+## 2026-10-23 — Prepare Linux build/release runner routing
+
+Prepared CI, release, and Docker selectors plus routing documentation for the
+coordinated nine-application runner repair. Shared policy tests cover verified tags,
+exact workflow access, unstarted hosted recovery, and reusable-workflow prerequisites.
+Host deployment, socket-based checks, and live artifact/release canaries remain open.
+Application source and package-channel gates were not changed.
