@@ -1,5 +1,17 @@
 # Work breakdown
 
+## 2026-10-23 - Cross-repository shared JIT pool reliability
+
+Objective: keep the eight requested applications on the trusted-main JIT route, fix shared-pool defects at their source, and confirm exact-head CI progresses without weakening resource or trust boundaries.
+
+| Story ID | Scope | Status |
+| --- | --- | --- |
+| JIT-POOL-001 | Land trusted-main JIT routing for SeerrNG, SlskR, slskdN, ROMarrNG, QuestarrNG, BookshelfNG, ChaptarrNG, and TorrentNG; keep PR and credentialed release jobs hosted. | Route commits are ancestors of all eight current `main` heads. Exact-head validation is in progress. |
+| JIT-POOL-002 | Make bootstrap package requirements match every job GitHub can assign to the same runner-label set, while preserving isolation for distinct job-scoped labels. | Packer `80c536d`, `9254455`, and `488cd14` are pushed; 92 policy tests cover display names, matrix jobs, package union/deduplication, Docker, Python alias, and job-scoped isolation. |
+| JIT-POOL-003 | Recheck capacity immediately before guest launch, validate and deploy broker/helper/proxy revisions with rollback copies, resume admission, and rerun exact-head failures. | Updated broker/helper/proxy are installed with verified hashes on their workers; marker-based drain is cleared. Packer exact-head CI passed; app retries and current-head workflows are progressing under unchanged resource gates. |
+
+Guardrail: keep the broker alive while guests run. Verify the active broker loaded marker-aware capacity code; replacing an imported helper on disk does not refresh the running process. Preserve CPU/memory/disk/PSI gates and never cancel active or current-head jobs.
+
 ## 2026-10-22 - GitHub code-scanning remediation and release
 
 Objective: resolve or substantiate all 227 open code-scanning alerts on `main` (225 Semgrep OSS, 2 CodeQL), then publish one verified stable release.

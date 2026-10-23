@@ -19,6 +19,25 @@
 - `scripts/shared-jit-runner-pool/gha-runner-broker.py` and `test_policy.py` in the Packer repository
 - `docs/linux-runner-pool.md` in the Packer repository
 
+### Loop: Run-scoped runner labels require a union of bootstrap packages
+
+**Symptom**
+- A trusted-main JIT runner starts for one queued workflow job, but GitHub assigns it to another queued job in the same run and that job fails because a tool such as Docker is missing.
+
+**Why it's tricky**
+- The broker chooses a candidate job, while the repo/run-scoped runner labels allow GitHub to assign any eligible job in that workflow run. Per-job package selection therefore does not describe the runtime requirements of the runner identity. Job-scoped labels have a different contract and must remain isolated.
+- GitHub's Jobs API returns display names, not YAML job IDs; matrix entries include their expanded display names. A package map can look correct in the workflow source yet miss the broker lookup key and silently omit tools.
+
+**What works**
+- Group candidates by their exact `runner_labels` and provide each candidate the ordered, deduplicated union of packages needed by all matching queued eligible jobs. Distinct job-scoped label sets keep distinct package requirements.
+- Key package maps by the exact Actions API display names, including expanded matrix names. Build regression fixtures from API-shaped job objects and check tools called by workflow scripts, including direct `python` calls that need `python-is-python3` on the minimal guest.
+- Recheck capacity immediately before starting the guest. If an operator drain begins while GitHub API calls are in flight, leave the job queued and remove the unused JIT registration.
+- Keep the broker alive during a drain; already-admitted tasks can still finish API work. A pause marker only affects a broker process that loaded marker-aware capacity code: replacing its imported Python helper on disk does not update the running process. Verify the active process generation and repeat idle checks; a stale broker may keep scanning and refilling slots until the safe restart point.
+
+**Where it's documented**
+- Packer `scripts/shared-jit-runner-pool/gha-runner-broker.py` and `test_policy.py`
+- Packer `docs/linux-runner-pool.md`
+
 ### Loop: Package-bootstrap guests can miss the runner-registration deadline
 
 **Symptom**
@@ -39,18 +58,39 @@
 - Packer `scripts/shared-jit-runner-pool/gha-jit-vm.py`
 - Packer `docs/linux-runner-pool.md`
 
+### Loop: JIT jobs must provision the tools hosted runners include by default
+
+**Symptom**
+- A job registers and checks out successfully, then fails because an SDK is missing or its installer targets a system directory the unprivileged runner cannot write.
+- Package-asset validation fails when it tries to install RPM or Debian tools through the system package manager.
+
+**Why it's tricky**
+- GitHub-hosted images include broad SDK and package-tool sets. The shared JIT image is intentionally smaller and jobs do not run as root, so a valid hosted workflow can fail only after it reaches the JIT worker.
+- These failures look like repository build defects even though the runner was selected and started correctly.
+
+**What works**
+- Provision each required SDK in the workflow before its first use, pin the version, and set install paths to a writable workspace directory such as `${{ github.workspace }}/.dotnet`.
+- Keep native package-asset checks on the hosted Ubuntu image used by the tagged release workflow; keep verification, smoke, and security jobs on the shared JIT pool.
+- Add regression checks for tool setup, install paths, and step order so the workflow remains self-contained on the minimal image.
+
+**Where it's documented**
+- IPTV Tunerr `.github/workflows/ci.yml` and `docs/reference/ci-runner-routing.md`
+- SlskR `.github/workflows/ci.yml` and `scripts/check-workflow-release-policy.sh`
+- slskdN `.github/workflows/codeql.yml` and `scripts/check-codeql-dotnet-version.sh`
+
 ### Loop: Trusted-main builds can reach JIT runners but fail on package registries
 
 **Symptom**
-- A trusted-main job registers and checks out its repository, then Rust or Go dependency installation fails with HTTP 403 from the restricted egress proxy.
+- A trusted-main job registers and checks out its repository, then dependency restore fails with HTTP 403 from the restricted egress proxy. Cargo, Go, and NuGet feeds can each use distinct hosts.
 
 **Why it's tricky**
 - Runner routing, App access, and proxy host policy are separate controls. The job looks correctly assigned, so the failure can be misdiagnosed as a repository or toolchain regression.
-- Cargo's sparse index, crate downloads, Go's module proxy, and Go's checksum database use distinct exact hosts. A broad parent-domain exception would weaken the egress boundary.
+- Cargo's sparse index, crate downloads, Go's module proxy and checksum database, and Azure Artifacts feeds use distinct hosts. NuGet feed downloads can redirect to Azure Blob storage. A broad parent-domain exception would weaken the egress boundary.
 
 **What works**
-- Add only the exact package endpoints to the proxy allowlist, and use an existing exact artifact redirect host where applicable. Keep default-deny behavior for subdomains and lookalike suffixes.
+- Add only the exact package endpoints to the proxy allowlist, and reuse narrowly scoped artifact redirect suffixes only when the package service demonstrably uses them. Keep default-deny behavior for subdomains and lookalike suffixes.
 - Test allowed hosts and rejected lookalikes, run a live CONNECT smoke check, then rerun the exact failed workflow on the unchanged current head.
+- For Azure Artifacts, allow the canonical `pkgs.dev.azure.com` host; package content redirects to the already allowed `.blob.core.windows.net` suffix. Do not allow all of `*.dev.azure.com` or `*.visualstudio.com` to fix a modern feed that uses the canonical host.
 - Keep resource admission gates intact; a correct proxy does not make a memory- or disk-gated worker available.
 
 **Where it's documented**
