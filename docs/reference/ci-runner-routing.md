@@ -19,6 +19,12 @@ and package-publishing jobs also stay on GitHub-hosted runners. The broker and
 runner group separately allowlist this repository and the exact workflow
 files, and the broker accepts only the current `main` commit.
 
+Runner-group selection and GitHub App installation are separate controls.
+Keep this repository in both: the broker can discover queued workflows only
+in repositories its App installation can access. A selected workflow without
+App repository access is silently absent from queue discovery, so the broker
+now requires every trusted-main route to be installed before it starts.
+
 When adding a trusted-main workflow, keep the branch/event condition and both
 labels in its `runs-on` expression, then update the broker policy and runner
 group workflow selection together. `./scripts/verify` remains the local

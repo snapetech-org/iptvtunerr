@@ -1,5 +1,79 @@
 # Recurring loops and hard-to-solve problems
 
+### Loop: Shared JIT jobs can be selected but invisible to the broker
+
+**Symptom**
+- Trusted-main workflow runs remain queued even though their runner group includes the repository and workflow.
+- Other repositories continue dispatching, so the pool looks healthy while the affected repository never reaches a worker.
+
+**Why it's tricky**
+- Organization runner-group selection and the broker GitHub App installation are independent access controls. Queue discovery only lists repositories visible to the App, so an omitted repository can be silently skipped without any capacity or worker-host failure.
+
+**What works**
+- Check the broker App installation's repository list as well as the runner group's repository and selected-workflow lists.
+- Require every trusted-main route in the broker's expected App repository scope and keep a regression test for that invariant.
+- Apply App access changes only with explicit action-time approval. Deploy broker changes after active JIT jobs drain naturally; do not freeze the broker cgroup because guests require its heartbeat.
+
+**Where it's documented**
+- `docs/reference/ci-runner-routing.md`
+- `scripts/shared-jit-runner-pool/gha-runner-broker.py` and `test_policy.py` in the Packer repository
+- `docs/linux-runner-pool.md` in the Packer repository
+
+### Loop: Package-bootstrap guests can miss the runner-registration deadline
+
+**Symptom**
+- The broker dispatches a trusted-main job, but GitHub never reports the JIT runner online; after seven minutes the broker stops the guest and retries the still-queued job.
+- This repeats for package-bootstrap workflows while jobs that need no bootstrap packages can start normally.
+
+**Why it's tricky**
+- Guest bootstrap waits for first-boot APT work, and `unattended-upgrades.service` can remain `active` as a systemd shutdown waiter after the package transaction has stopped. The wait then consumes most of the five-minute APT bound, leaving no time for package installation before the broker's seven-minute runner-registration deadline.
+- Increasing the broker timeout alone would hide the false readiness signal and hold scarce JIT slots longer.
+
+**What works**
+- Treat only `apt-daily.service` and `apt-daily-upgrade.service` as active package transactions; do not wait on the shutdown-only `unattended-upgrades.service` state.
+- Keep the guest APT wait bounded, preserve the broker registration deadline, and inspect the guest serial log when registration still does not occur.
+- Keep the guest helper and broker source/test hashes aligned; atomically stage the tested helper and broker files with exact rollback snapshots.
+- Do not restart the broker until local and remote JIT units are absent and GitHub has no online busy JIT runners, because guests need broker heartbeats.
+
+**Where it's documented**
+- Packer `scripts/shared-jit-runner-pool/gha-jit-vm.py`
+- Packer `docs/linux-runner-pool.md`
+
+### Loop: Trusted-main builds can reach JIT runners but fail on package registries
+
+**Symptom**
+- A trusted-main job registers and checks out its repository, then Rust or Go dependency installation fails with HTTP 403 from the restricted egress proxy.
+
+**Why it's tricky**
+- Runner routing, App access, and proxy host policy are separate controls. The job looks correctly assigned, so the failure can be misdiagnosed as a repository or toolchain regression.
+- Cargo's sparse index, crate downloads, Go's module proxy, and Go's checksum database use distinct exact hosts. A broad parent-domain exception would weaken the egress boundary.
+
+**What works**
+- Add only the exact package endpoints to the proxy allowlist, and use an existing exact artifact redirect host where applicable. Keep default-deny behavior for subdomains and lookalike suffixes.
+- Test allowed hosts and rejected lookalikes, run a live CONNECT smoke check, then rerun the exact failed workflow on the unchanged current head.
+- Keep resource admission gates intact; a correct proxy does not make a memory- or disk-gated worker available.
+
+**Where it's documented**
+- Packer `scripts/shared-jit-runner-pool/gha-egress-proxy` and `test_policy.py`
+- Packer `docs/linux-runner-pool.md`
+
+### Loop: QEMU can abort without leaving useful job diagnostics
+
+**Symptom**
+- A JIT workflow job remains in progress after its VM disappears, then fails when GitHub declares the runner lost. The guest step may be the last visible activity even though the host QEMU process aborted.
+
+**Why it's tricky**
+- The encrypted guest workspace is correctly destroyed after the VM exits, but the launcher previously sent QEMU stderr to `/dev/null`. Kernel logs may show no OOM, and core dumps may be disabled, leaving no evidence to distinguish an emulator fault from host pressure or a guest-triggered shutdown.
+
+**What works**
+- Capture QEMU stderr continuously so a full pipe cannot block the VM; sanitize it and retain only a small in-memory tail; write the tail to the local service log only on an unsuccessful exit.
+- Preserve the failed job and host journal until diagnosis. Do not infer an OOM from a guest disappearing, cancel active current-head work, or weaken admission gates.
+- Deploy the helper only after local and remote JIT units and online busy registrations are gone; preserve and verify an exact rollback copy before atomic replacement.
+
+**Where it's documented**
+- Packer `scripts/shared-jit-runner-pool/gha-jit-vm.py` and `test_policy.py`
+- Packer `docs/linux-runner-pool.md`
+
 ### Loop: Identity leak checks must scan the submitted commit range
 
 **Symptom**
@@ -105,7 +179,7 @@
 - Keep visual/probe cache changes out of emergency recovery unless the provider health issue is already understood.
 
 **Where it's documented**
-- `/etc/iptvtunerr/sports.env` on `kspls0`
+- `/etc/iptvtunerr/sports.env` on the scratch worker
 
 ### Loop: Event-only sports rows need real DVR-sized guide windows
 
