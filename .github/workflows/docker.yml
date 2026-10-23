@@ -14,6 +14,13 @@ on:
         required: false
         type: boolean
         default: false
+    secrets:
+      GHCR_TOKEN:
+        required: false
+      DOCKERHUB_USERNAME:
+        required: false
+      DOCKERHUB_TOKEN:
+        required: false
 
 concurrency:
   group: release-docker

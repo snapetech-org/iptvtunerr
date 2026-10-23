@@ -148,6 +148,8 @@ class VersionTagReleaseWorkflowTests(unittest.TestCase):
         self.assertIn("tags: ['v*']", release)
         self.assertIn("uses: ./.github/workflows/tester-bundles.yml", release)
         self.assertIn("needs: [release]", release)
+        self.assertNotIn("secrets: inherit", release)
+        self.assertIn("GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}", release)
         self.assertIn("workflow_call:", tester)
         self.assertNotIn("\n  workflow_dispatch:", tester)
         self.assertIn('[[ "$GITHUB_EVENT_NAME" == push', tester)

@@ -109,7 +109,10 @@ jobs:
     with:
       tag: ${{ github.ref_name }}
       publish_dockerhub: false
-    secrets: inherit
+    secrets:
+      GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
+      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+      DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
 
   announce-discord:
     name: Announce Release to Discord
