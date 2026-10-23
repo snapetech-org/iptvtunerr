@@ -14,7 +14,8 @@ permissions:
 
 concurrency:
   group: release-snap
-  cancel-in-progress: true
+  queue: max
+  cancel-in-progress: false
 
 jobs:
   publish:
@@ -92,3 +93,4 @@ jobs:
         with:
           snap: ${{ steps.snap.outputs.snap }}
           release: stable
+

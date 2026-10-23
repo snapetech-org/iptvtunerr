@@ -13,7 +13,8 @@ permissions:
 
 concurrency:
   group: release-copr
-  cancel-in-progress: true
+  queue: max
+  cancel-in-progress: false
 
 jobs:
   publish-copr:
@@ -286,3 +287,4 @@ jobs:
             --chroot fedora-rawhide-x86_64 \
             --nowait \
             iptvtunerr "$srpm"
+

@@ -1,5 +1,16 @@
 # Recurring loops and hard-to-solve problems
 
+### Loop: A new main push makes an older queued build permanently ineligible
+
+**Symptom:** builds remain queued despite apparently spare pool slots; repeatedly retrying or pushing produces more waiting runs.
+
+**Cause:** exact-current-head checks reject legitimate prior main commits, while repeatedly probing only the two oldest runs can hide later ready jobs. Scheduling without active-assignment counts also lets one matrix dominate newly freed slots.
+
+**Resolution:** in the infrastructure broker, verify main ancestry at discovery and dispatch, rotate bounded probes, paginate API results, and count each repository's active jobs. A hosted-first workflow needs an external recovery process; a static `runs-on` expression does not time out into another group. Deploy and verify that process before enabling `NG_HOSTED_FIRST`. Do not retry application failures or replay a partially executed publisher automatically.
+
+**Reference:** private infrastructure [audit and rollout guide](https://github.com/snapetech-org/packer/blob/main/docs/runner-queue-audit-20261023.md). Live deployment remains open for this session.
+
+
 ### Loop: Shared JIT jobs can be selected but invisible to the broker
 
 **Symptom**
@@ -632,3 +643,4 @@
 - `scripts/check-changelog-tags.mjs`
 - `scripts/check-changelog-tags.test.mjs`
 - `internal/tuner/m3u_test.go`
+

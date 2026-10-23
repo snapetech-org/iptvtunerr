@@ -1,4 +1,16 @@
-# Current task: Cross-repository shared JIT pool reliability and validation (2026-10-23)
+# Current task: Runner queue starvation and staged hosted-first routing (2026-10-23)
+
+- **Goal:** diagnose queue delays across the nine applications, fix broker starvation, reduce duplicate scans, and prepare hosted-first Linux execution with a bounded JIT retry.
+- **Scope:** workflow concurrency/routing and runner infrastructure in the private Packer repository. Preserve scans, permissions, resource limits, and public-PR/credentialed-publisher boundaries.
+- **Findings:** the checked-in broker rejects older main commits and repeatedly probes the same two runs; its fairness ignores active assignments. Concrete guest failures include a denied package mirror, an unavailable Linux shell, and mismatched database client/service versions. These fixes are tracked in the private infrastructure audit.
+- **Changes:** staged `NG_HOSTED_FIRST`/`NG_FORCE_JIT` routing, superseded-scan/PR cancellation, and retained release-publisher queues. The hosted-first switch defaults off until the updated broker is deployed. No application source or scan failure policy changed.
+- **Verification:** focused runner-policy tests and workflow YAML/diff checks. Broker queue tests pass; nine existing socket tests are blocked by this workspace's socket permissions and remain required before deployment. No live host deployment or full application release was performed here.
+- **Next step:** publish the validated repository changes, then use authenticated infrastructure access for drain/install/canary/activation. Ordinary PRs, tag publishers, non-Linux jobs, and partially executed workflows still lack general automatic fallback; do not mark the overall runner rollout complete.
+- **Rollback:** leave `NG_HOSTED_FIRST` unset/false to preserve prior JIT routing. Host rollback requires the infrastructure guide's natural drain and hash-recorded backups, preserving the recovery journal.
+
+---
+
+## Prior runner deployment session (historical; live state not reverified)
 
 - **Goal:** verify that SeerrNG, SlskR, slskdN, ROMarrNG, QuestarrNG, BookshelfNG, ChaptarrNG, and TorrentNG run their trusted-main checks on the shared JIT pool, fix pool-wide failures, and land every repo change on its GitHub default branch.
 - **Scope:** keep PR and credentialed release jobs hosted; preserve broker allowlists and CPU, memory, disk, and job caps; fix common broker/bootstrap behavior; safely deploy tested broker, guest helper, and egress-proxy sources; rerun failed or unverified exact-head jobs and record results.
@@ -109,3 +121,4 @@
 ## Completed one-off update (2026-10-02)
 
 - Rotated the Discord release announcement endpoint in the GitHub Actions `DISCORD_RELEASE_WEBHOOK` secret for `snapetech/iptvtunerr`. Verified the secret name is listed and its endpoint ID is absent from tracked files.
+

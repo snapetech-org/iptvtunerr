@@ -13,7 +13,8 @@ permissions:
 
 concurrency:
   group: release-aur
-  cancel-in-progress: true
+  queue: max
+  cancel-in-progress: false
 
 jobs:
   publish-aur:
@@ -171,3 +172,4 @@ jobs:
           bash packaging/scripts/generate-aur-srcinfo.sh aur-iptvtunerr/PKGBUILD > aur-iptvtunerr/.SRCINFO
           (cd aur-iptvtunerr && git add -A)
           bash packaging/scripts/push-aur-repo.sh aur-iptvtunerr iptvtunerr "Update to ${TAG}"
+

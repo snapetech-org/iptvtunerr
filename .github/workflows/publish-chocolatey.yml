@@ -14,7 +14,8 @@ permissions:
 
 concurrency:
   group: release-chocolatey
-  cancel-in-progress: true
+  queue: max
+  cancel-in-progress: false
 
 jobs:
   publish:
@@ -204,3 +205,4 @@ jobs:
           echo "[publish-chocolatey] Pushing $(basename "${nupkg}") to Chocolatey"
           timeout 300 dotnet nuget push "${nupkg}" --source https://push.chocolatey.org/ --api-key "${CHOCO_API_KEY}" --timeout 300 --skip-duplicate
           echo "[publish-chocolatey] Chocolatey push completed"
+

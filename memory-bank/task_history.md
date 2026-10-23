@@ -716,3 +716,12 @@
 - Replaced the jq/ripgrep matcher with a bounded Python standard-library scan that reports only file and line, preserves case-insensitive matching and commit-range selection, and fails closed for unreadable or oversized input.
 - Removed privileged package installation from both identity-scan workflow paths. Pull requests still use the trusted base revision's scanner, and trusted main scans stay on the shared per-run JIT worker.
 - Verification: the identity-scan suite passed with jq and ripgrep deliberately unavailable; `./scripts/verify` passed all Python and Node tests, Go tests, build, ARMv7 compile, and binary smoke. The failed hosted run was confirmed to stop at `sudo apt-get` before scanning; exact-head hosted checks must pass on the remediation PR before merge.
+
+
+
+## 2026-10-23 - Diagnose runner queue starvation and stage safe hosted-first routing
+
+- Audited workflow routing and job evidence across all nine applications and the shared infrastructure repository. Prepared broker fixes for main-history eligibility, rotating discovery, fair slot allocation, and one-time recovery of unstarted hosted jobs.
+- IPTV Tunerr stages hosted-first routing behind `NG_HOSTED_FIRST`, deduplicates superseded scans/PR checks, and keeps release publishers queued instead of cancelling older releases. Scan enforcement and credential boundaries are preserved.
+- Validation: focused routing tests and YAML/diff checks. Infrastructure policy tests pass except nine existing socket integration cases that this workspace cannot run (EPERM); those tests remain enabled for CI/host validation.
+- Host installation, canary validation, switch activation, and seven-release end-to-end proof remain outstanding. Repository publication is not host deployment.

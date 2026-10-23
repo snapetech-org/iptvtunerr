@@ -14,7 +14,8 @@ permissions:
 
 concurrency:
   group: release-winget
-  cancel-in-progress: true
+  queue: max
+  cancel-in-progress: false
 
 jobs:
   submit:
@@ -119,3 +120,4 @@ jobs:
         run: |
           .\wingetcreate.exe submit $env:WINGET_SUBMIT_PATH `
             -t $env:WINGETCREATE_GITHUB_TOKEN
+
