@@ -1,30 +1,49 @@
 name: Tester Bundles
 
 on:
-  workflow_dispatch:
+  workflow_call:
     inputs:
-      version:
-        description: "Override bundle version label (optional)"
-        required: false
+      tag:
+        description: Pushed version tag for this tester package build
+        required: true
         type: string
-      platforms:
-        description: "Platform matrix (space-separated, optional)"
-        required: false
-        type: string
+
+permissions:
+  actions: read
+  contents: read
 
 jobs:
   build-tester-bundle:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
+    outputs:
+      release_name: ${{ steps.out.outputs.release_name }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          ref: ${{ inputs.tag }}
           fetch-depth: 0
           persist-credentials: false
 
-      - name: Set up Go
-        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+      - name: Require the matching pushed version tag on main
+        env:
+          TAG: ${{ inputs.tag }}
+        run: |
+          set -euo pipefail
+          [[ "$GITHUB_EVENT_NAME" == push && "$GITHUB_REF_TYPE" == tag && "$GITHUB_REF_NAME" == "$TAG" ]] || {
+            echo 'Tester release packages can only be built by the matching pushed tag workflow.' >&2
+            exit 1
+          }
+          [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+([.-][0-9A-Za-z.-]+)?$ ]] || {
+            echo "Invalid tester release tag: $TAG" >&2
+            exit 1
+          }
+          git fetch --no-tags origin '+refs/heads/main:refs/remotes/origin/main'
+          git merge-base --is-ancestor "$TAG^{commit}" refs/remotes/origin/main || {
+            echo "Tester release tag $TAG is not reachable from main." >&2
+            exit 1
+          }
+
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version-file: go.mod
 
@@ -33,24 +52,22 @@ jobs:
 
       - name: Build tester release bundle
         env:
-          VERSION: ${{ github.event.inputs.version }}
-          PLATFORMS: ${{ github.event.inputs.platforms }}
+          VERSION: ${{ inputs.tag }}
         run: |
           set -euo pipefail
-          if [ -z "${VERSION:-}" ] && [ "${GITHUB_REF_TYPE:-}" = "tag" ]; then
-            VERSION="${GITHUB_REF_NAME}"
-          fi
           chmod +x ./scripts/build-test-packages.sh ./scripts/build-tester-release.sh
           ./scripts/build-tester-release.sh
 
-      - name: Resolve release dir
+      - name: Resolve release directory
         id: out
+        env:
+          TAG: ${{ inputs.tag }}
         run: |
           set -euo pipefail
-          latest="$(ls -1dt dist/test-releases/* | head -n1)"
-          echo "release_dir=$latest" >> "$GITHUB_OUTPUT"
-          echo "release_name=$(basename "$latest")" >> "$GITHUB_OUTPUT"
-          echo "Using $latest"
+          release_dir="dist/test-releases/$TAG"
+          test -d "$release_dir"
+          echo "release_dir=$release_dir" >> "$GITHUB_OUTPUT"
+          echo "release_name=$(basename "$release_dir")" >> "$GITHUB_OUTPUT"
 
       - name: Upload tester bundle artifact
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -59,26 +76,52 @@ jobs:
           path: ${{ steps.out.outputs.release_dir }}
           if-no-files-found: error
 
-      - name: Resolve release asset files
-        if: github.ref_type == 'tag'
-        id: assets
+  attach-release-assets:
+    name: Attach tester ZIPs to the published release
+    needs: [build-tester-bundle]
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: write
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: tester-bundle-${{ needs.build-tester-bundle.outputs.release_name }}
+          path: ${{ runner.temp }}/tester-release
+
+      - name: Require the already-published release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.tag }}
         run: |
           set -euo pipefail
-          pkg_dir="${{ steps.out.outputs.release_dir }}/packages"
-          ls -lah "$pkg_dir"
-          {
-            echo "files<<EOF"
-            find "$pkg_dir" -maxdepth 1 -type f \( -name '*.zip' -o -name 'SHA256SUMS.txt' \) | sort
-            echo "EOF"
-          } >> "$GITHUB_OUTPUT"
-          sha256sum "$pkg_dir"/* || true
+          release_json="$(gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json tagName,isDraft)"
+          jq -e --arg tag "$TAG" '.tagName == $tag and .isDraft == false' <<<"$release_json" >/dev/null || {
+            echo "Tester asset upload requires the already-published release $TAG." >&2
+            exit 1
+          }
 
-      - name: Upload release ZIP assets to GitHub Release
-        if: github.ref_type == 'tag'
+      - name: Resolve release asset files
+        id: assets
+        env:
+          RELEASE_DIR: ${{ runner.temp }}/tester-release
+        run: |
+          set -euo pipefail
+          package_dir="$RELEASE_DIR/packages"
+          test -d "$package_dir"
+          {
+            echo 'files<<EOF'
+            find "$package_dir" -maxdepth 1 -type f \
+              \( -name '*.zip' -o -name 'SHA256SUMS.txt' \) -print | sort
+            echo EOF
+          } >> "$GITHUB_OUTPUT"
+          grep -q '^.*\.zip$' "$GITHUB_OUTPUT"
+
+      - name: Upload tester release ZIP assets
         uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3
         with:
-          files: |
-            ${{ steps.assets.outputs.files }}
+          tag_name: ${{ inputs.tag }}
+          files: ${{ steps.assets.outputs.files }}
           append_body: true
           body: |
             Tester release assets generated by `tester-bundles.yml`.

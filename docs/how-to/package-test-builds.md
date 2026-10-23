@@ -90,13 +90,13 @@ Includes:
 GitHub Actions workflow:
 - `.github/workflows/tester-bundles.yml`
 
-Triggers:
-- manual (`workflow_dispatch`)
-- tag push (`v*`)
+Trigger:
+- called by `.github/workflows/release.yml` after a pushed `v*` tag creates the GitHub Release
 
 Behavior:
-- Always uploads the staged tester bundle as a workflow artifact (`tester-bundle-<version>`)
-- On tag pushes (`v*`), also packs the staged bundle directory and uploads it to the GitHub Release as a `.tar.gz` asset
+- Uploads the staged tester bundle as a workflow artifact (`tester-bundle-<version>`)
+- Attaches the per-platform ZIPs and `SHA256SUMS.txt` to the already-published GitHub Release
+- Has no standalone manual trigger, so it cannot build tester release packages from a branch or an existing tag
 
 Related release automation:
 - `.github/workflows/release.yml`
@@ -124,7 +124,7 @@ git push origin v0.1.0-test1
 ```
 
 Expected outputs after workflows finish:
-- GitHub Release `v0.1.0-test1` with tester bundle `.tar.gz` asset
+- GitHub Release `v0.1.0-test1` with per-platform tester ZIPs and `SHA256SUMS.txt`
 - Actions artifact `tester-bundle-v0.1.0-test1`
 - GHCR image tags including `v0.1.0-test1` and `sha-<commit>`
 

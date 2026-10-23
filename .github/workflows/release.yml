@@ -89,6 +89,28 @@ jobs:
             dist/release-manifest.json
             dist/SHA256SUMS.txt
 
+  publish-tester-bundles:
+    name: Publish tester packages from this release tag
+    needs: [release]
+    permissions:
+      actions: read
+      contents: write
+    uses: ./.github/workflows/tester-bundles.yml
+    with:
+      tag: ${{ github.ref_name }}
+
+  publish-docker:
+    name: Publish Docker image from this release tag
+    needs: [release]
+    permissions:
+      contents: read
+      packages: write
+    uses: ./.github/workflows/docker.yml
+    with:
+      tag: ${{ github.ref_name }}
+      publish_dockerhub: false
+    secrets: inherit
+
   announce-discord:
     name: Announce Release to Discord
     needs: [release]

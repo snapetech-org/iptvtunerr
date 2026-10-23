@@ -5,7 +5,6 @@ root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 dispatcher="$root/scripts/dispatch-release-channels.sh"
 
 expected_channels=$(cat <<'CHANNELS'
-docker.yml tag Publish Docker
 release-aur.yml tag Publish AUR
 release-ppa.yml tag Publish PPA
 release-copr.yml tag Publish COPR
@@ -90,7 +89,15 @@ if ! rg -Fq -- '--ref main' "$dispatcher" || \
   echo "Release dispatch must use main workflow definitions and wait for every publisher run." >&2
   exit 1
 fi
-if ! rg -Fq 'type=raw,value=latest' "$docker_workflow" || \
+if ! rg -q '^  workflow_call:$' "$docker_workflow" || \
+   rg -q '^  workflow_dispatch:' "$docker_workflow"; then
+  echo "Docker publishing must be callable only from the release-tag workflow." >&2
+  exit 1
+fi
+if ! rg -Fq 'uses: ./.github/workflows/docker.yml' "$release_workflow" || \
+   ! rg -Fq 'tag: ${{ github.ref_name }}' "$release_workflow" || \
+   ! rg -Fq 'publish_dockerhub: false' "$release_workflow" || \
+   ! rg -Fq 'type=raw,value=latest' "$docker_workflow" || \
    ! rg -Fq 'type=raw,value=${{ env.RELEASE_TAG }}' "$docker_workflow"; then
   echo "Docker must publish both the latest alias and the exact release tag." >&2
   exit 1
@@ -98,9 +105,8 @@ fi
 if ! rg -Fq 'ghcr.io/${{ github.repository }}' "$docker_workflow" || \
    ! rg -Fq "inputs.publish_dockerhub && 'snapetech/iptvtunerr'" "$docker_workflow" || \
    ! rg -Fq "inputs.publish_dockerhub && 'keefshape/iptvtunerr'" "$docker_workflow" || \
-   ! rg -Fq 'default: false' "$docker_workflow" || \
-   ! rg -Fq 'publish_dockerhub=false' "$dispatcher"; then
-  echo "GHCR must always receive latest and the release tag; Docker Hub must remain opt-in and disabled by release dispatch." >&2
+   ! rg -Fq 'default: false' "$docker_workflow"; then
+  echo "Release tags must call the Docker publisher; GHCR receives latest and the release tag, while Docker Hub stays disabled." >&2
   exit 1
 fi
 if ! rg -Fq 'build-args: VERSION=${{ env.RELEASE_TAG }}' "$docker_workflow"; then

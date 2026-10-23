@@ -1,12 +1,14 @@
-# Current task: Standardize release tags and review runner PRs (2026-10-23)
+# Current task: Standardize release tags and runner PRs (2026-10-23)
 
-- **Goal:** use one pushed `v<version>` tag convention for release builds across all runner-using application repositories, while keeping PR/main validation separate and retaining recovery for existing tags.
-- **Scope:** review the nine application PRs plus Packer, fix release-trigger and runner-policy regressions, and preserve application behavior, credentials, publication gates, and platform requirements.
-- **Status:** IPTV Tunerr PR #61 remains draft. Review found three stale test assertions after runner selectors gained trusted-tag JIT routing; the test updates pass locally and await their push. No host deployment, runner-group update, release, or live artifact completion is claimed.
-- **Verification:** hosted CI has confirmed the three IPTV failures were limited to stale assertions; the updated routing tests pass locally. Full cross-repository check state is tracked in [work_breakdown.md](work_breakdown.md).
-- **Next step:** commit and push the IPTV test correction, inspect exact-head checks, and keep the coordinated broker deployment and live canaries as separate outstanding work.
-- **Limits:** public PRs, native non-x64/Linux platforms, SSH-based package channels, and partially executed workflows retain their existing execution/recovery requirements.
-- **Rollback:** revert these workflow selectors before removing shared routes; preserve the broker's retry journal.
+- **Goal:** use one pushed `v<version>` tag convention to start new product-release builds across all nine runner-using applications; keep PR/main validation separate and limit manual recovery to already-published outputs.
+- **Story IDs:** RELEASE-TAG-001 and RELEASE-TAG-002 in [work_breakdown.md](work_breakdown.md).
+- **Scope:** review nine application repositories plus Packer, close manual release-build bypasses, retain existing release assets and channel recovery, and preserve runner trust and platform boundaries.
+- **Status:** focused workflow fixes are ready in BookshelfNG, SeerrNG, QuestarrNG, SlskR, IPTV Tunerr, and a new TorrentNG follow-up branch. All changed workflow YAML parses; repository-focused tests pass except for no result yet from remote PR checks. The six existing draft PRs remain drafts; no fix has been merged or deployed.
+- **Verification:** BookshelfNG 6 workflow-policy tests and release-readiness gate; SeerrNG 36 release-workflow tests plus Prettier; QuestarrNG manual-builder structure check; SlskR release-policy check; TorrentNG 7 runner-policy and 5 release-note tests; IPTV Tunerr 5 dispatcher/release-policy tests and release-channel wiring. `git diff --check` and YAML parsing pass for the changed workflows.
+- **Next step:** commit/push the focused changes to their matching draft PR branches, create a draft TorrentNG follow-up PR, and inspect exact-head checks. Leave host deployment and live release canaries outstanding.
+- **Assumptions:** IPTV Tunerr’s tester ZIPs are user-facing release assets, so the tester workflow now runs as a reusable job after the `v*` release is published; it has no standalone manual build trigger.
+- **Limits:** do not merge PRs, deploy/restart runners, or create a release tag. Preserve existing published tags and native platform requirements.
+- **Rollback:** revert the repository-specific workflow changes; preserve shared broker configuration and retry state.
 
 ---
 

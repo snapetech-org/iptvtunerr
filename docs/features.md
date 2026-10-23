@@ -240,7 +240,7 @@ Supplement or enrich the paid catalog with public M3U feeds fetched at index tim
 | **macOS bare-metal smoke** | `scripts/mac-baremetal-smoke.sh` cross-builds `darwin/arm64`, optionally sends Wake-on-LAN, stages a temp binary over SSH, and proves startup/web UI/Xtream/virtual-channel/WebDAV behavior on a real Mac host. |
 | **Windows bare-metal smoke package** | `scripts/windows-baremetal-package.sh` prepares the Windows package, and `scripts/windows-baremetal-smoke.ps1` is ready to prove the same startup/web UI/WebDAV contract once the host/VM is up. |
 | **Tester handoff docs** | Packaging and tester checklists are documented under `docs/how-to/`. |
-| **CI tester bundles** | GitHub Actions workflow builds tester bundles on demand/tag. |
+| **CI tester bundles** | The pushed `v*` release workflow builds tester bundles and attaches their packages to the GitHub Release. |
 | **Hidden Plex grab recovery** | `scripts/plex-hidden-grab-recover.sh` + runbook for Plex Live TV hidden active-grab wedges. |
 | **Plex stream override analysis helper** | `scripts/plex-generate-stream-overrides.py` for feed/profile override candidate generation. |
 | **Live TV provider label and entitlement proxy** | `iptv-tunerr plex-label-proxy` can rewrite `/media/providers` labels per DVR/provider and, when explicitly run with `-elevate-live-tv`, elevate only Plex Live TV requests to the PMS owner token so non-Home users keep their own library sessions while Live TV borrows owner tuner entitlement. See [plex-live-tv-entitlement-proxy](runbooks/plex-live-tv-entitlement-proxy.md). |
