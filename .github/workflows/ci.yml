@@ -74,7 +74,9 @@ jobs:
         run: bash ./scripts/ci-smoke.sh
 
   release-assets:
-    runs-on: ${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main' && fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","linux","x64","ng-shared-main-iptvtunerr","ng-main-run-{0}"]}}', github.run_id)) || 'ubuntu-latest' }}
+    # Match the tagged release workflow's hosted Linux environment for RPM and
+    # Debian package tools, which require system package installation.
+    runs-on: ubuntu-latest
     needs: verify
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1

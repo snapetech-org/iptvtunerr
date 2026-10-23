@@ -8,10 +8,15 @@ tags: [reference, ci, security]
 # CI runner routing
 
 IPTV Tunerr uses the organization shared JIT runner group for trusted
-main-branch verification and security scans: CI, CodeQL, Gitleaks, the trusted
-Local Identity scan, Semgrep, and Trivy. Each job carries a repository label
-and a workflow-run label so a runner can accept only work from its assigned
-run.
+main-branch verification and security scans. The `verify` and `smoke` jobs,
+CodeQL, Gitleaks, the trusted Local Identity scan, Semgrep, and Trivy use the
+pool. Each pool job carries a repository label and a workflow-run label so a
+runner can accept only work from its assigned run.
+
+The CI `release-assets` job uses GitHub-hosted Ubuntu, matching the tagged
+release workflow. It installs RPM and Debian packaging tools through the system
+package manager and creates contract artifacts without access to release
+credentials.
 
 Pull-request jobs continue to use GitHub-hosted runners. The shared group is
 selected only for pushes and manual dispatches on `main`; credentialed release
