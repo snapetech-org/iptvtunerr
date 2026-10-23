@@ -5,13 +5,8 @@ script_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 repo_root="$(cd "${LOCAL_IDENTITY_SCAN_ROOT:-$script_root}" && pwd)"
 cd "$repo_root"
 
-if ! command -v rg >/dev/null 2>&1; then
-  echo "check-local-identity-leaks: ripgrep (rg) is required." >&2
-  exit 127
-fi
-
-if ! command -v jq >/dev/null 2>&1; then
-  echo "check-local-identity-leaks: jq is required." >&2
+if ! command -v python3 >/dev/null 2>&1; then
+  echo "check-local-identity-leaks: python3 is required." >&2
   exit 127
 fi
 
@@ -77,18 +72,24 @@ check_file() {
   local label="$1"
   local path="$2"
   local display_path="${3:-$path}"
-  local matches=""
+  local status
 
   [[ -f "$path" ]] || return 0
-  matches="$(
-    rg --json --fixed-strings --ignore-case --file "$tmp_tokens" "$path" |
-      jq -r --arg label "$label" --arg display_path "$display_path" 'select(.type == "match") | "\($label): \($display_path):\(.data.line_number)"' |
-      sort -u || true
-  )"
 
-  if [[ -n "$matches" ]]; then
-    printf '%s\n' "$matches" >&2
+  if python3 "$script_root/scripts/scan-local-identity-file.py" \
+    --tokens-file "$tmp_tokens" \
+    --label "$label" \
+    --display-path "$display_path" \
+    "$path"; then
+    return 0
+  else
+    status=$?
+  fi
+
+  if [[ "$status" -eq 1 ]]; then
     failed=1
+  else
+    exit "$status"
   fi
 }
 

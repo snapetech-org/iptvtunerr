@@ -6,6 +6,13 @@ on:
     branches: [main]
   workflow_dispatch:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
 jobs:
   pull-request-scan:
     if: ${{ github.event_name == 'pull_request' }}
@@ -32,7 +39,7 @@ jobs:
             scripts/install-ci-tools.sh
           persist-credentials: false
 
-      - name: Install scanner dependencies
+      - name: Install trusted scanner tools
         run: bash scanner/scripts/install-ci-tools.sh jq ripgrep
 
       - name: Check pull request content with trusted scanner
@@ -55,8 +62,8 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      - name: Install scanner dependencies
-        run: bash scripts/install-ci-tools.sh jq ripgrep
+      - name: Verify scanner runtime
+        run: command -v python3
 
       - name: Check release-facing text on trusted refs
         env:
