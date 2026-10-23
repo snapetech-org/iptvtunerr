@@ -8,8 +8,9 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 DISPATCHER = ROOT / "scripts" / "dispatch-release-channels.sh"
+RELEASE_WORKFLOW = ROOT / ".github" / "workflows" / "release.yml"
+TESTER_BUNDLES_WORKFLOW = ROOT / ".github" / "workflows" / "tester-bundles.yml"
 CHANNEL_TITLES = {
-    "docker.yml": "Publish Docker",
     "release-aur.yml": "Publish AUR",
     "release-ppa.yml": "Publish PPA",
     "release-copr.yml": "Publish COPR",
@@ -49,7 +50,6 @@ class ReleaseChannelDispatcherTests(unittest.TestCase):
                     elif args[:2] == ["run", "list"]:
                         workflow = args[args.index("--workflow") + 1]
                         titles = {
-                            "docker.yml": "Publish Docker",
                             "release-aur.yml": "Publish AUR",
                             "release-ppa.yml": "Publish PPA",
                             "release-copr.yml": "Publish COPR",
@@ -138,6 +138,27 @@ class ReleaseChannelDispatcherTests(unittest.TestCase):
         self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
         self.assertCountEqual(calls, CHANNEL_TITLES)
         self.assertIn("completed with conclusion 'failure'", result.stderr)
+
+
+class VersionTagReleaseWorkflowTests(unittest.TestCase):
+    def test_tester_assets_are_built_only_by_the_pushed_tag_release(self):
+        release = RELEASE_WORKFLOW.read_text(encoding="utf-8")
+        tester = TESTER_BUNDLES_WORKFLOW.read_text(encoding="utf-8")
+
+        self.assertIn("tags: ['v*']", release)
+        self.assertIn("uses: ./.github/workflows/tester-bundles.yml", release)
+        self.assertIn("needs: [release]", release)
+        self.assertNotIn("secrets: inherit", release)
+        self.assertIn("GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}", release)
+        self.assertIn("workflow_call:", tester)
+        self.assertNotIn("\n  workflow_dispatch:", tester)
+        self.assertIn('[[ "$GITHUB_EVENT_NAME" == push', tester)
+        self.assertIn('"$GITHUB_REF_NAME" == "$TAG"', tester)
+        self.assertIn("git merge-base --is-ancestor", tester)
+        self.assertIn("actions/download-artifact@", tester)
+        self.assertIn("actions/upload-artifact@", tester)
+        self.assertIn("gh release view", tester)
+        self.assertIn("softprops/action-gh-release@", tester)
 
 
 if __name__ == "__main__":

@@ -23,8 +23,10 @@ class CIRunnerRoutingTests(unittest.TestCase):
             "ng-shared-main-jit",
             "ng-shared-main-iptvtunerr",
             "ng-main-run-{0}",
-            "github.event_name == 'push'",
+            "contains(fromJSON('[\"push\",\"workflow_dispatch\",\"schedule\",\"release\",\"repository_dispatch\"]'), github.event_name)",
             "github.ref == 'refs/heads/main'",
+            "github.ref_type == 'tag'",
+            "startsWith(github.ref_name, 'v')",
             "|| 'ubuntu-latest'",
         )
         for name in ("verify", "smoke"):
@@ -33,13 +35,19 @@ class CIRunnerRoutingTests(unittest.TestCase):
                 for token in expected:
                     self.assertIn(token, block)
 
-    def test_package_asset_contract_runs_on_hosted_linux(self):
+    def test_package_asset_contract_uses_trusted_runner_route_with_hosted_fallback(self):
         block = job_block("release-assets")
-        self.assertIn("runs-on: ubuntu-latest", block)
+        for token in (
+            "ng-shared-main-jit",
+            "ng-shared-main-iptvtunerr",
+            "ng-main-run-{0}",
+            "github.ref == 'refs/heads/main'",
+            "|| 'ubuntu-latest'",
+        ):
+            self.assertIn(token, block)
         self.assertIn(
             "bash scripts/install-ci-tools.sh rpm zip debian-packaging", block
         )
-        self.assertNotIn("ng-shared-main-jit", block)
 
 
 if __name__ == "__main__":

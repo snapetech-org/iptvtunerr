@@ -42,9 +42,6 @@ while IFS=' ' read -r workflow input_name run_title; do
   started_at="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
   echo "Dispatching $workflow for $tag"
   dispatch_args=(--repo "$repo" --ref main -f "${input_name}=$tag")
-  if [[ "$workflow" == "docker.yml" ]]; then
-    dispatch_args+=(-f "publish_dockerhub=false")
-  fi
   if gh workflow run "$workflow" "${dispatch_args[@]}"; then
     queued_workflows+=("$workflow")
     queued_titles+=("${run_title} ${tag}")
@@ -56,7 +53,6 @@ while IFS=' ' read -r workflow input_name run_title; do
     failed=1
   fi
 done <<CHANNELS
-docker.yml tag Publish Docker
 release-aur.yml tag Publish AUR
 release-ppa.yml tag Publish PPA
 release-copr.yml tag Publish COPR

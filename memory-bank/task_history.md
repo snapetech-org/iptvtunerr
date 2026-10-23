@@ -725,3 +725,28 @@
 - IPTV Tunerr stages hosted-first routing behind `NG_HOSTED_FIRST`, deduplicates superseded scans/PR checks, and keeps release publishers queued instead of cancelling older releases. Scan enforcement and credential boundaries are preserved.
 - Validation: focused routing tests and YAML/diff checks. Infrastructure policy tests pass except nine existing socket integration cases that this workspace cannot run (EPERM); those tests remain enabled for CI/host validation.
 - Host installation, canary validation, switch activation, and seven-release end-to-end proof remain outstanding. Repository publication is not host deployment.
+
+
+## 2026-10-23 — Prepare Linux build/release runner routing
+
+Prepared CI, release, and Docker selectors plus routing documentation for the
+coordinated nine-application runner repair. Shared policy tests cover verified tags,
+exact workflow access, unstarted hosted recovery, and reusable-workflow prerequisites.
+Host deployment, socket-based checks, and live artifact/release canaries remain open.
+Application source and package-channel gates were not changed.
+
+## 2026-10-23 — Review release-tag and runner-policy PRs
+
+- Confirmed the application release convention is pushed `v<version>` tags, with PR/main validation separate and legacy recovery retained.
+- Fixed stale routing assertions in IPTV Tunerr's CI tests after trusted Linux main/tag jobs gained the shared JIT route with hosted fallback. The focused runner-routing tests pass locally; push and exact-head CI remain pending.
+- Packer PR #2's CI failure was GitHub's billing/spending-limit rejection before the job started, not a source-test failure. TorrentNG PR #231 was merged by another agent while its replacement checks were still queued; its release changes are not considered end-to-end verified.
+- No runner host was changed, no release was created, and no other PR was merged by this task.
+
+## 2026-10-23 — Restrict release builds to pushed version tags
+
+- Audited the nine runner-using applications and pushed the tag-only release and recovery changes to draft PRs: BookshelfNG #193, ChaptarrNG #159, QuestarrNG #140, ROMarrNG #55, SeerrNG #395, slskR #194, slskdN #401, TorrentNG #232, and IPTV Tunerr #61. TorrentNG #232 is a follow-up to #231, which another agent merged before its checks completed.
+- Restricted SeerrNG, BookshelfNG, QuestarrNG, SlskR, TorrentNG, and IPTV Tunerr manual paths so they cannot start fresh product release builds from an existing tag. Existing package-channel recovery remains tied to published outputs.
+- Preserved IPTV Tunerr tester ZIP release assets by calling their builder after the pushed-tag release job; removed its standalone manual build trigger. Docker Hub stays disabled, and the reusable Docker workflow receives only its named secrets.
+- Focused checks passed: BookshelfNG 6 policy tests and readiness gate; SeerrNG 36 release tests and Prettier; SlskR release policy; TorrentNG 7 policy and 5 release-note tests; IPTV Tunerr 5 dispatcher/release tests, channel wiring, 58 action-pin checks, YAML parsing, and embedded Bash syntax. QuestarrNG's workflow structure check and all changed-workflow `git diff --check` runs passed.
+- Exact-head GitHub checks are pending on the application PRs. Packer #2 has a billing/spending-cap rejection before CI started. An additional IPTV Tunerr push to its GitLab mirror was rejected due to a multi-pack-index signature mismatch after the GitHub PR branch updated successfully; mirror repair is not part of this change.
+- No PR was merged, runner host deployed, or release tag created. Broker deployment and end-to-end live release canaries remain unverified.

@@ -1,5 +1,19 @@
 # Work breakdown
 
+## 2026-10-23 - Standardize release tags and review runner PRs
+
+Objective: make pushed `v<version>` tags the only source of new application
+release builds across the nine runner-using apps, keep validation independent,
+and preserve recovery for already-published legacy releases.
+
+| Story ID | Scope | Status |
+| --- | --- | --- |
+| RELEASE-TAG-001 | Audit release workflows and publishers across BookshelfNG, ChaptarrNG, QuestarrNG, ROMarrNG, SeerrNG, slskR, slskdN, TorrentNG, and IPTV Tunerr; ensure they use pushed version tags and retain only tag-bound recovery. | Release-policy updates are pushed to all nine open draft application PRs: BookshelfNG #193, ChaptarrNG #159, QuestarrNG #140, ROMarrNG #55, SeerrNG #395, slskR #194, slskdN #401, TorrentNG #232, and IPTV Tunerr #61. TorrentNG #231 was merged by another agent before checks completed; #232 is the current follow-up against main. |
+| RELEASE-TAG-002 | Fix regressions exposed by the runner routing changes and verify focused policy suites. | Focused local workflow checks pass for all new edits. Exact-head GitHub checks are pending on the application PRs; Packer #2 reports an organization billing/spending-limit rejection before CI started. |
+| RELEASE-TAG-003 | Confirm exact-head checks and complete safe live runner/release canaries after infrastructure readiness. | Open: application PR checks have not completed. Broker deployment, runner-group reconciliation, and end-to-end release canaries remain unverified; no release tag was created. |
+
+Guardrail: keep PRs in draft and do not deploy/restart runners; preserve published tags, legacy recovery inputs, and all validation gates.
+
 ## 2026-10-23 - Cross-repository shared JIT pool reliability
 
 Objective: keep the eight requested applications on the trusted-main JIT route, fix shared-pool defects at their source, and confirm exact-head CI progresses without weakening resource or trust boundaries.

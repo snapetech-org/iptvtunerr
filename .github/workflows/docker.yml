@@ -1,17 +1,26 @@
+# ng-runner-policy: hosted-first-v1
 name: Docker
 run-name: Publish Docker ${{ inputs.tag }}
 
 on:
-  workflow_dispatch:
+  workflow_call:
     inputs:
       tag:
-        description: "Release tag to (re)publish, for example v0.1.79"
+        description: Release tag started by the version-tag workflow
         required: true
+        type: string
       publish_dockerhub:
-        description: "Also publish to Docker Hub (currently paused)"
+        description: Also publish to Docker Hub
         required: false
         type: boolean
         default: false
+    secrets:
+      GHCR_TOKEN:
+        required: false
+      DOCKERHUB_USERNAME:
+        required: false
+      DOCKERHUB_TOKEN:
+        required: false
 
 concurrency:
   group: release-docker
@@ -20,16 +29,16 @@ concurrency:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ${{ (vars.NG_HOSTED_FIRST != 'true' || vars.NG_FORCE_JIT == 'true' || github.run_attempt > 1) && (contains(fromJSON('["push","workflow_dispatch","schedule","release","repository_dispatch"]'), github.event_name) && (github.ref == 'refs/heads/main' || (github.ref_type == 'tag' && startsWith(github.ref_name, 'v')))) && fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","linux","x64","ng-shared-main-iptvtunerr","ng-main-run-{0}"]}}', github.run_id)) || 'ubuntu-latest' }}
     permissions:
       contents: read
       packages: write
     env:
-      RELEASE_TAG: ${{ github.event.inputs.tag || github.ref_name }}
+      RELEASE_TAG: ${{ inputs.tag }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ github.event.inputs.tag || github.ref }}
+          ref: ${{ inputs.tag }}
           fetch-depth: 0
           persist-credentials: false
       - name: Require release tag on main
@@ -126,4 +135,3 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           build-args: VERSION=${{ env.RELEASE_TAG }}
-

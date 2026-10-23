@@ -40,9 +40,9 @@ ls dist/test-releases/<version>/packages/SHA256SUMS.txt
 
 After pushing `v*` tag, confirm all release outputs exist:
 
-1. GitHub Actions `tester-bundles` workflow succeeded
+1. GitHub Actions `Release` workflow and its `tester-bundles` job succeeded
 2. GitHub Actions `docker` workflow succeeded
-3. GitHub Release contains the tester bundle `.tar.gz` asset
+3. GitHub Release contains the per-platform tester ZIPs and `SHA256SUMS.txt`
 4. GHCR image has the expected version tag (`v*`)
 5. (Optional) GHCR image also has `sha-*` trace tag for the same commit
 
