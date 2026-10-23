@@ -8,9 +8,9 @@ and preserve recovery for already-published legacy releases.
 
 | Story ID | Scope | Status |
 | --- | --- | --- |
-| RELEASE-TAG-001 | Audit release workflows and publishers across BookshelfNG, ChaptarrNG, QuestarrNG, ROMarrNG, SeerrNG, slskR, slskdN, TorrentNG, and IPTV Tunerr; ensure they use pushed version tags and retain only tag-bound recovery. | Draft PRs updated. TorrentNG #231 was merged by another agent while replacement checks were still queued; do not treat its CI as verified. |
-| RELEASE-TAG-002 | Fix regressions exposed by the runner routing changes and verify focused policy suites. | BookshelfNG, ChaptarrNG, QuestarrNG, SeerrNG, slskR, and slskdN fixes are pushed. ROMarrNG and IPTV Tunerr stale-test fixes pass locally and are awaiting push. |
-| RELEASE-TAG-003 | Confirm exact-head checks and complete safe live runner/release canaries after infrastructure readiness. | Open: multiple checks remain queued; Packer CI reports GitHub billing/spending-limit rejection. Broker deployment and end-to-end release canaries remain unverified. |
+| RELEASE-TAG-001 | Audit release workflows and publishers across BookshelfNG, ChaptarrNG, QuestarrNG, ROMarrNG, SeerrNG, slskR, slskdN, TorrentNG, and IPTV Tunerr; ensure they use pushed version tags and retain only tag-bound recovery. | Release-policy updates are pushed to all nine open draft application PRs: BookshelfNG #193, ChaptarrNG #159, QuestarrNG #140, ROMarrNG #55, SeerrNG #395, slskR #194, slskdN #401, TorrentNG #232, and IPTV Tunerr #61. TorrentNG #231 was merged by another agent before checks completed; #232 is the current follow-up against main. |
+| RELEASE-TAG-002 | Fix regressions exposed by the runner routing changes and verify focused policy suites. | Focused local workflow checks pass for all new edits. Exact-head GitHub checks are pending on the application PRs; Packer #2 reports an organization billing/spending-limit rejection before CI started. |
+| RELEASE-TAG-003 | Confirm exact-head checks and complete safe live runner/release canaries after infrastructure readiness. | Open: application PR checks have not completed. Broker deployment, runner-group reconciliation, and end-to-end release canaries remain unverified; no release tag was created. |
 
 Guardrail: keep PRs in draft and do not deploy/restart runners; preserve published tags, legacy recovery inputs, and all validation gates.
 
