@@ -3,6 +3,9 @@
 # Go version from go.mod to avoid runner drift.
 
 name: CI
+run-name: >-
+  ${{ github.event_name == 'workflow_dispatch' && inputs.pr_number != '' &&
+      format('owner-pr:{0}:{1}:{2}', inputs.pr_number, inputs.pr_sha, inputs.target_run_id) || github.workflow }}
 
 on:
   push:
@@ -10,6 +13,23 @@ on:
   pull_request:
     branches: [main, master]
 
+  pull_request_target:
+    branches: [main]
+    types: [opened, reopened, synchronize, ready_for_review, edited]
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: Trusted owner PR number (set only by the metadata dispatcher)
+        required: false
+        type: string
+      pr_sha:
+        description: Exact owner PR head SHA
+        required: false
+        type: string
+      target_run_id:
+        description: Successful metadata-only pull_request_target run ID
+        required: false
+        type: string
 permissions:
   contents: read
 
@@ -19,34 +39,81 @@ concurrency:
 
 jobs:
   verify:
-    runs-on: ${{ (vars.NG_HOSTED_FIRST != 'true' || vars.NG_FORCE_JIT == 'true' || github.run_attempt > 1) && (contains(fromJSON('["push","workflow_dispatch","schedule","release","repository_dispatch"]'), github.event_name) && (github.ref == 'refs/heads/main' || (github.ref_type == 'tag' && startsWith(github.ref_name, 'v')))) && fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","linux","x64","ng-shared-main-iptvtunerr","ng-main-run-{0}"]}}', github.run_id)) || 'ubuntu-latest' }}
+    permissions:
+      contents: read
+      pull-requests: read
+    if: >-
+      ((github.event_name == 'workflow_dispatch' &&
+      (github.actor == 'snapetech' || github.actor == 'github-actions[bot]') &&
+      inputs.pr_number != '' && inputs.pr_sha != '' && inputs.target_run_id != '' &&
+      github.ref == 'refs/heads/main')) || ((github.event_name != 'pull_request_target' &&
+      (github.event_name != 'pull_request' || github.actor != 'snapetech' ||
+       github.event.pull_request.user.login != 'snapetech' ||
+       github.event.pull_request.head.repo.full_name != github.repository ||
+       github.event.pull_request.head.repo.id != github.repository_id ||
+       github.event.pull_request.base.ref != 'main') &&
+      (github.event_name != 'workflow_dispatch' ||
+       (inputs.pr_number == '' && inputs.pr_sha == '' && inputs.target_run_id == ''))))
+    runs-on: ${{ (github.event_name == 'workflow_dispatch' && (github.actor == 'snapetech' || github.actor == 'github-actions[bot]') && inputs.pr_number != '' && inputs.pr_sha != '' && inputs.target_run_id != '' && github.ref == 'refs/heads/main') && fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","linux","x64","ng-shared-main-iptvtunerr","ng-main-run-{0}","gha-{0}-verify"]}}', github.run_id)) || (!(github.event_name == 'workflow_dispatch' && (github.actor == 'snapetech' || github.actor == 'github-actions[bot]') && inputs.pr_number != '' && inputs.pr_sha != '' && inputs.target_run_id != '' && github.ref == 'refs/heads/main') && ((vars.NG_HOSTED_FIRST != 'true' || vars.NG_FORCE_JIT == 'true' || github.run_attempt > 1) && (contains(fromJSON('["push","workflow_dispatch","schedule","release","repository_dispatch"]'), github.event_name) && (github.ref == 'refs/heads/main' || (github.ref_type == 'tag' && startsWith(github.ref_name, 'v')))) && fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","linux","x64","ng-shared-main-iptvtunerr","ng-main-run-{0}"]}}', github.run_id)) || 'ubuntu-latest')) }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
           persist-credentials: false
 
+          ref: ${{ inputs.pr_sha != '' && inputs.pr_sha || (github.sha) }}
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
+          package-manager-cache: ${{ inputs.pr_number == '' }}
           node-version: '22.23.4'
 
       - name: Set up Go
         uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
+          cache: ${{ inputs.pr_number == '' }}
           go-version-file: go.mod
 
       - name: Install verification tools
         run: bash scripts/install-ci-tools.sh ripgrep
 
+      - name: Resolve current trusted PR metadata
+        id: owner-pr
+        if: inputs.pr_number != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ inputs.pr_number }}
+          PR_SHA: ${{ inputs.pr_sha }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          python3 - <<'PY'
+          import json,os,re
+          from pathlib import Path
+          from urllib.request import Request,urlopen
+          repo=os.environ['REPOSITORY'];number=os.environ['PR_NUMBER'];expected=os.environ['PR_SHA'].lower()
+          if repo.lower()!='snapetech-org/iptvtunerr' or not re.fullmatch(r'[1-9][0-9]*',number) or not re.fullmatch(r'[0-9a-f]{40}',expected):raise SystemExit('invalid trusted PR claim')
+          req=Request(f'https://api.github.com/repos/{repo}/pulls/{number}',headers={'Accept':'application/vnd.github+json','Authorization':f"Bearer {os.environ['GH_TOKEN']}",'X-GitHub-Api-Version':'2022-11-28'})
+          with urlopen(req,timeout=20) as response:pr=json.load(response)
+          base=pr.get('base') or {};head=pr.get('head') or {};br=base.get('repo') or {};hr=head.get('repo') or {};sha=(head.get('sha') or '').lower()
+          if pr.get('state')!='open' or ((pr.get('user') or {}).get('login') or '').lower()!='snapetech' or base.get('ref')!='main' or sha!=expected or (br.get('full_name') or '').lower()!=repo.lower() or (hr.get('full_name') or '').lower()!=repo.lower() or br.get('id')!=hr.get('id'):raise SystemExit('PR changed or is not trusted')
+          base_sha=(base.get('sha') or '').lower()
+          if not re.fullmatch(r'[0-9a-f]{40}',base_sha):raise SystemExit('invalid PR base')
+          body=Path(os.environ['RUNNER_TEMP'])/'release-note-context.md';body.write_text(pr.get('body') or '',encoding='utf-8')
+          with open(os.environ['GITHUB_OUTPUT'],'a') as out:out.write(f'base_sha={base_sha}\n');out.write(f'body_file={body}\n')
+          PY
       - name: Release-note gate
         env:
-          BASE_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
-          HEAD_SHA: ${{ github.sha }}
+          BODY_FILE: ${{ inputs.pr_number != '' && steps.owner-pr.outputs.body_file || '' }}
+          BASE_SHA: ${{ inputs.pr_number != '' && steps.owner-pr.outputs.base_sha || (github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before) }}
+          HEAD_SHA: ${{ inputs.pr_sha != '' && inputs.pr_sha || github.sha }}
           PR_BODY: ${{ github.event_name == 'pull_request' && github.event.pull_request.body || github.event.head_commit.message || '' }}
         run: |
           set -euo pipefail
-          body_file="$RUNNER_TEMP/release-note-context.md"
-          printf '%s' "$PR_BODY" > "$body_file"
+          if [[ -n "${BODY_FILE:-}" ]]; then
+            body_file="$BODY_FILE"
+          else
+            body_file="$RUNNER_TEMP/release-note-context.md"
+            printf '%s' "$PR_BODY" > "$body_file"
+          fi
           validation_args=()
           if [[ "$GITHUB_EVENT_NAME" == "push" ]]; then
             validation_args+=(--allow-mixed-push-batch)
@@ -63,34 +130,62 @@ jobs:
         run: ./scripts/verify
 
   smoke:
-    runs-on: ${{ (vars.NG_HOSTED_FIRST != 'true' || vars.NG_FORCE_JIT == 'true' || github.run_attempt > 1) && (contains(fromJSON('["push","workflow_dispatch","schedule","release","repository_dispatch"]'), github.event_name) && (github.ref == 'refs/heads/main' || (github.ref_type == 'tag' && startsWith(github.ref_name, 'v')))) && fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","linux","x64","ng-shared-main-iptvtunerr","ng-main-run-{0}"]}}', github.run_id)) || 'ubuntu-latest' }}
+    if: >-
+      ((github.event_name == 'workflow_dispatch' &&
+      (github.actor == 'snapetech' || github.actor == 'github-actions[bot]') &&
+      inputs.pr_number != '' && inputs.pr_sha != '' && inputs.target_run_id != '' &&
+      github.ref == 'refs/heads/main')) || ((github.event_name != 'pull_request_target' &&
+      (github.event_name != 'pull_request' || github.actor != 'snapetech' ||
+       github.event.pull_request.user.login != 'snapetech' ||
+       github.event.pull_request.head.repo.full_name != github.repository ||
+       github.event.pull_request.head.repo.id != github.repository_id ||
+       github.event.pull_request.base.ref != 'main') &&
+      (github.event_name != 'workflow_dispatch' ||
+       (inputs.pr_number == '' && inputs.pr_sha == '' && inputs.target_run_id == ''))))
+    runs-on: ${{ (github.event_name == 'workflow_dispatch' && (github.actor == 'snapetech' || github.actor == 'github-actions[bot]') && inputs.pr_number != '' && inputs.pr_sha != '' && inputs.target_run_id != '' && github.ref == 'refs/heads/main') && fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","linux","x64","ng-shared-main-iptvtunerr","ng-main-run-{0}","gha-{0}-smoke"]}}', github.run_id)) || (!(github.event_name == 'workflow_dispatch' && (github.actor == 'snapetech' || github.actor == 'github-actions[bot]') && inputs.pr_number != '' && inputs.pr_sha != '' && inputs.target_run_id != '' && github.ref == 'refs/heads/main') && ((vars.NG_HOSTED_FIRST != 'true' || vars.NG_FORCE_JIT == 'true' || github.run_attempt > 1) && (contains(fromJSON('["push","workflow_dispatch","schedule","release","repository_dispatch"]'), github.event_name) && (github.ref == 'refs/heads/main' || (github.ref_type == 'tag' && startsWith(github.ref_name, 'v')))) && fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","linux","x64","ng-shared-main-iptvtunerr","ng-main-run-{0}"]}}', github.run_id)) || 'ubuntu-latest')) }}
     needs: verify
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
+          ref: ${{ inputs.pr_sha != '' && inputs.pr_sha || (github.sha) }}
       - name: Set up Go
         uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
+          cache: ${{ inputs.pr_number == '' }}
           go-version-file: go.mod
 
       - name: Binary smoke
         run: bash ./scripts/ci-smoke.sh
 
   release-assets:
+    if: >-
+      ((github.event_name == 'workflow_dispatch' &&
+      (github.actor == 'snapetech' || github.actor == 'github-actions[bot]') &&
+      inputs.pr_number != '' && inputs.pr_sha != '' && inputs.target_run_id != '' &&
+      github.ref == 'refs/heads/main')) || ((github.event_name != 'pull_request_target' &&
+      (github.event_name != 'pull_request' || github.actor != 'snapetech' ||
+       github.event.pull_request.user.login != 'snapetech' ||
+       github.event.pull_request.head.repo.full_name != github.repository ||
+       github.event.pull_request.head.repo.id != github.repository_id ||
+       github.event.pull_request.base.ref != 'main') &&
+      (github.event_name != 'workflow_dispatch' ||
+       (inputs.pr_number == '' && inputs.pr_sha == '' && inputs.target_run_id == ''))))
     # The JIT broker preinstalls RPM and Debian tools for this job; CI keeps
     # its existing no-sudo guest policy. Hosted runners install them below.
-    runs-on: ${{ (vars.NG_HOSTED_FIRST != 'true' || vars.NG_FORCE_JIT == 'true' || github.run_attempt > 1) && (contains(fromJSON('["push","workflow_dispatch","schedule","release","repository_dispatch"]'), github.event_name) && (github.ref == 'refs/heads/main' || (github.ref_type == 'tag' && startsWith(github.ref_name, 'v')))) && fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","linux","x64","ng-shared-main-iptvtunerr","ng-main-run-{0}"]}}', github.run_id)) || 'ubuntu-latest' }}
+    runs-on: ${{ (github.event_name == 'workflow_dispatch' && (github.actor == 'snapetech' || github.actor == 'github-actions[bot]') && inputs.pr_number != '' && inputs.pr_sha != '' && inputs.target_run_id != '' && github.ref == 'refs/heads/main') && fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","linux","x64","ng-shared-main-iptvtunerr","ng-main-run-{0}","gha-{0}-release-assets"]}}', github.run_id)) || (!(github.event_name == 'workflow_dispatch' && (github.actor == 'snapetech' || github.actor == 'github-actions[bot]') && inputs.pr_number != '' && inputs.pr_sha != '' && inputs.target_run_id != '' && github.ref == 'refs/heads/main') && ((vars.NG_HOSTED_FIRST != 'true' || vars.NG_FORCE_JIT == 'true' || github.run_attempt > 1) && (contains(fromJSON('["push","workflow_dispatch","schedule","release","repository_dispatch"]'), github.event_name) && (github.ref == 'refs/heads/main' || (github.ref_type == 'tag' && startsWith(github.ref_name, 'v')))) && fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","linux","x64","ng-shared-main-iptvtunerr","ng-main-run-{0}"]}}', github.run_id)) || 'ubuntu-latest')) }}
     needs: verify
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
+          ref: ${{ inputs.pr_sha != '' && inputs.pr_sha || (github.sha) }}
       - name: Set up Go
         uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
+          cache: ${{ inputs.pr_number == '' }}
           go-version-file: go.mod
 
       - name: Install Linux package tools
@@ -104,3 +199,75 @@ jobs:
 
       - name: Verify release asset set
         run: ./scripts/verify-release-assets.sh v0.0.0 dist
+
+  dispatch-owner-pr:
+    name: Dispatch trusted owner PR validation
+    if: >-
+      github.event_name == 'pull_request_target' &&
+      github.actor == 'snapetech' &&
+      github.event.pull_request.user.login == 'snapetech' &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.event.pull_request.head.repo.id == github.repository_id &&
+      github.event.pull_request.base.ref == 'main'
+    runs-on: ${{ (github.event_name == 'pull_request_target' && github.actor == 'snapetech' && github.event.pull_request.user.login == 'snapetech' && github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.head.repo.id == github.repository_id && github.event.pull_request.base.ref == 'main') && fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","linux","x64","ng-shared-main-iptvtunerr","ng-main-run-{0}","gha-{0}-owner-pr-dispatcher"]}}', github.run_id)) }}
+    permissions:
+      actions: write
+      contents: none
+    steps:
+      - name: Dispatch PR-head validation from main
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_SHA: ${{ github.event.pull_request.head.sha }}
+          TARGET_RUN_ID: ${{ github.run_id }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: |
+          python3 - <<'PY'
+          import json,os,re
+          from urllib.request import Request,urlopen
+          expected='snapetech-org/iptvtunerr'
+          repository=os.environ['GITHUB_REPOSITORY'];number=os.environ['PR_NUMBER'];sha=os.environ['PR_SHA'].lower();target=os.environ['TARGET_RUN_ID'];token=os.environ['GH_TOKEN']
+          if repository.lower()!=expected.lower() or not re.fullmatch(r'[1-9][0-9]*',number) or not re.fullmatch(r'[0-9a-f]{40}',sha) or not re.fullmatch(r'[1-9][0-9]*',target):raise SystemExit('invalid PR claim')
+          payload=json.dumps({"ref": "main", "inputs": {"pr_number": number, "pr_sha": sha, "target_run_id": target}}).encode()
+          request=Request(
+            'https://api.github.com/repos/snapetech-org/iptvtunerr/actions/workflows/ci.yml/dispatches',
+            data=payload,headers={'Accept':'application/vnd.github+json','Authorization':f'Bearer {token}','Content-Type':'application/json','X-GitHub-Api-Version':'2022-11-28'},method='POST')
+          with urlopen(request,timeout=20) as response:
+            if response.status!=204:raise SystemExit(f'dispatch HTTP {response.status}')
+          PY
+
+  report-owner-pr-check:
+    name: Report trusted owner PR validation
+    needs: [verify, smoke, release-assets]
+    if: >-
+      always() &&
+      github.event_name == 'workflow_dispatch' &&
+      (github.actor == 'snapetech' || github.actor == 'github-actions[bot]') &&
+      inputs.pr_number != '' && inputs.pr_sha != '' && inputs.target_run_id != '' &&
+      github.ref == 'refs/heads/main'
+    runs-on: ${{ (github.event_name == 'workflow_dispatch' && (github.actor == 'snapetech' || github.actor == 'github-actions[bot]') && inputs.pr_number != '' && inputs.pr_sha != '' && inputs.target_run_id != '' && github.ref == 'refs/heads/main') && fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","linux","x64","ng-shared-main-iptvtunerr","ng-main-run-{0}","gha-{0}-owner-pr-reporter"]}}', github.run_id)) }}
+    permissions:
+      checks: write
+      contents: none
+    steps:
+      - name: Attach validation result to the PR head
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ inputs.pr_number }}
+          PR_SHA: ${{ inputs.pr_sha }}
+          VALIDATION_RUN_ID: ${{ github.run_id }}
+          VALIDATION_RESULTS: '{"verify":"${{ needs.verify.result }}","smoke":"${{ needs.smoke.result }}","release-assets":"${{ needs.release-assets.result }}"}'
+        run: |
+          python3 - <<'PY'
+          import json,os,re
+          from urllib.request import Request,urlopen
+          number=os.environ['PR_NUMBER'];sha=os.environ['PR_SHA'].lower();results=json.loads(os.environ['VALIDATION_RESULTS'])
+          if not re.fullmatch(r'[1-9][0-9]*',number) or not re.fullmatch(r'[0-9a-f]{40}',sha) or not results:raise SystemExit('invalid PR check claim')
+          conclusion='success' if all(v=='success' for v in results.values()) else 'failure'
+          summary='Main-pinned, no-secret owner PR validation:\n'+'\n'.join(f'- {n}: {v}' for n,v in results.items())
+          run_id=os.environ['VALIDATION_RUN_ID']
+          payload=json.dumps({"name": "IPTV Tunerr owner PR validation", "head_sha": sha, "external_id": run_id, "status": "completed", "conclusion": conclusion, "details_url": "https://github.com/snapetech-org/iptvtunerr/actions/runs/" + run_id, "output": {"title": "Owner PR validation " + conclusion, "summary": summary}}).encode()
+          request=Request('https://api.github.com/repos/snapetech-org/iptvtunerr/check-runs',data=payload,headers={'Accept':'application/vnd.github+json','Authorization':f"Bearer {os.environ['GH_TOKEN']}",'Content-Type':'application/json','X-GitHub-Api-Version':'2022-11-28'},method='POST')
+          with urlopen(request,timeout=20) as response:
+            if response.status not in {201,202}:raise SystemExit(f'check HTTP {response.status}')
+          PY

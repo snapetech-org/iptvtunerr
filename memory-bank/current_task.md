@@ -1,14 +1,14 @@
-# Current task: Standardize release tags and runner PRs (2026-10-23)
+# Current task: Route trusted owner PR validation through private JIT (2026-10-23)
 
-- **Goal:** use one pushed `v<version>` tag convention to start new product-release builds across all nine runner-using applications; keep PR/main validation separate and limit manual recovery to already-published outputs.
-- **Story IDs:** RELEASE-TAG-001 and RELEASE-TAG-002 in [work_breakdown.md](work_breakdown.md).
-- **Scope:** review nine application repositories plus Packer, close manual release-build bypasses, retain existing release assets and channel recovery, and preserve runner trust and platform boundaries.
-- **Status:** focused changes are pushed to the matching draft PRs: BookshelfNG #193, SeerrNG #395, QuestarrNG #140, SlskR #194, IPTV Tunerr #61, and TorrentNG #232. All nine application PRs remain drafts. Their latest exact-head checks are pending; Packer #2's CI was rejected by the organization billing/spending cap before a job started. No fix was merged or deployed.
-- **Verification:** BookshelfNG 6 workflow-policy tests and release-readiness gate; SeerrNG 36 release-workflow tests plus Prettier; QuestarrNG manual-builder structure check; SlskR release-policy check; TorrentNG 7 runner-policy and 5 release-note tests; IPTV Tunerr 5 dispatcher/release-policy tests, release-channel wiring, 58 action-pin checks, YAML parsing, and embedded Bash syntax. `git diff --check` and YAML parsing pass for changed workflows.
-- **Next step:** inspect exact-head checks as they complete; keep PRs draft pending required checks and infrastructure readiness. Broker deployment, runner-group reconciliation, and live release canaries remain separate outstanding work.
-- **Assumptions:** IPTV Tunerr’s tester ZIPs are user-facing release assets, so the tester workflow now runs as a reusable job after the `v*` release is published; it has no standalone manual build trigger.
-- **Limits:** do not merge PRs, deploy/restart runners, or create a release tag. Preserve existing published tags and native platform requirements.
-- **Rollback:** revert the repository-specific workflow changes; preserve shared broker configuration and retry state.
+- **Goal:** let billing-blocked, same-repository owner PR validation run on a disposable private JIT guest across all nine apps, with Packer independently checking the workflow, PR, actor, head SHA, and run-scoped labels.
+- **Story ID:** JIT-OWNER-PR-001 in [work_breakdown.md](work_breakdown.md).
+- **Scope:** add a main-pinned metadata-only dispatcher and no-secret, read-only validation run to each app's primary Linux CI workflow; preserve hosted execution for forks, bots, secret-bearing jobs, and unsupported platforms. Keep product release builds tied to the shared `v<version>` tag.
+- **Status:** implementation is being added to the existing draft PR branches and Packer #3. The active JIT guest and both host drain gates remain untouched; no live rollout or canary has happened.
+- **Verification:** pending final workflow parsing, broker route tests, and focused CI workflow checks.
+- **Next step:** finish the PR dispatch/report contracts, verify that the selected job sets contain no publisher permissions or secrets, then push reviewable changes. Deploy only after the active guest drains and the broker update is approved.
+- **Assumptions:** only the current core Linux CI job set is dispatched to JIT. Windows/ARM and hosted-only security or metadata checks keep their existing route; none are silently represented as passing by the custom JIT check.
+- **Limits:** do not merge PRs, deploy/restart runners, clear drain markers, or create a release tag in this change. Preserve published tags and the active guest.
+- **Rollback:** revert the repository-specific dispatcher/checkout/report changes and Packer allowlist changes; preserve broker backups and queue state.
 
 ---
 

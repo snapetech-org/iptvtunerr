@@ -13,7 +13,7 @@ permissions:
 
 jobs:
   publish-ppa:
-    runs-on: ubuntu-latest
+    runs-on: ${{ contains(fromJSON('["push","workflow_dispatch","schedule","release","repository_dispatch"]'), github.event_name) && (github.ref == 'refs/heads/main' || (github.ref_type == 'tag' && startsWith(github.ref_name, 'v'))) && fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","linux","x64","ng-shared-main-iptvtunerr","ng-main-run-{0}"]}}', github.run_id)) || 'ubuntu-latest' }}
     timeout-minutes: 120
     concurrency:
       group: release-ppa-${{ matrix.ubuntu_series }}
@@ -132,18 +132,65 @@ jobs:
           mv "${changes}.asc" "$changes"
           gpg --batch --verify "$changes"
 
-      - name: Upload to Launchpad PPA
+      - name: Upload to Launchpad PPA over pinned SFTP
         env:
           TAG: ${{ steps.version.outputs.tag }}
+          LAUNCHPAD_SFTP_KEY: ${{ secrets.LAUNCHPAD_SFTP_KEY }}
+          LAUNCHPAD_SFTP_USER: ${{ secrets.LAUNCHPAD_SFTP_USER }}
         run: |
           set -euo pipefail
           git fetch --quiet origin main --tags
           RELEASE_REPO_DIR="$PWD" RELEASE_TAG_MAIN_MODE=latest \
             bash -c "$(git show origin/main:scripts/ensure-release-tag-on-main.sh)" release-tag-guard "$TAG"
+          if [[ -z "${LAUNCHPAD_SFTP_KEY:-}" ]]; then
+            echo "::error::LAUNCHPAD_SFTP_KEY is required for private-runner PPA uploads."
+            exit 1
+          fi
+          user="${LAUNCHPAD_SFTP_USER:-keefshape}"
+          [[ "$user" =~ ^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$ ]] || {
+            echo 'Invalid Launchpad SFTP username.' >&2
+            exit 1
+          }
+          install -d -m 0700 ~/.ssh
+          printf '%s\n' "$LAUNCHPAD_SFTP_KEY" > ~/.ssh/launchpad_ppa
+          chmod 0600 ~/.ssh/launchpad_ppa
+          cat > ~/.ssh/known_hosts <<'EOF'
+          ppa.launchpad.net ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEA0aKz5UTUndYgIGG7dQBV+HaeuEZJ2xPHo2DS2iSKvUL4xNMSAY4UguNW+pX56nAQmZKIZZ8MaEvSj6zMEDiq6HFfn5JcTlM80UwlnyKe8B8p7Nk06PPQLrnmQt5fh0HmEcZx+JU9TZsfCHPnX7MNz4ELfZE6cFsclClrKim3BHUIGq//t93DllB+h4O9LHjEUsQ1Sr63irDLSutkLJD6RXchjROXkNirlcNVHH/jwLWR5RcYilNX7S5bIkK8NlWPjsn/8Ua5O7I9/YoE97PpO6i73DTGLh5H9JN/SITwCKBkgSDWUt61uPK3Y11Gty7o2lWsBjhBUm2Y38CBsoGmBw==
+          EOF
+          expected_fingerprint='SHA256:MGq+4hxD7RduVTcfwlwwboZnsgJC6SL/NltM8ye+gNg'
+          actual_fingerprint="$(ssh-keygen -lf ~/.ssh/known_hosts -E sha256 | awk '{print $2}')"
+          [[ "$actual_fingerprint" == "$expected_fingerprint" ]] || {
+            echo 'Pinned Launchpad SSH host key fingerprint mismatch.' >&2
+            exit 1
+          }
+          cat > ~/.ssh/config <<EOF
+          Host ppa.launchpad.net
+            HostName ppa.launchpad.net
+            User $user
+            IdentityFile ~/.ssh/launchpad_ppa
+            IdentitiesOnly yes
+            BatchMode yes
+            PasswordAuthentication no
+            KbdInteractiveAuthentication no
+            StrictHostKeyChecking yes
+            UserKnownHostsFile ~/.ssh/known_hosts
+            GlobalKnownHostsFile /dev/null
+            ProxyCommand nc -X connect -x 10.0.2.100:3128 %h %p
+          EOF
+          chmod 0600 ~/.ssh/config ~/.ssh/known_hosts
+          cat > ~/.dput.cf <<EOF
+          [iptvtunerr-ppa-sftp]
+          fqdn = ppa.launchpad.net
+          method = sftp
+          incoming = ~keefshape/ubuntu/iptvtunerr/
+          login = $user
+          allow_unsigned_uploads = 0
+          EOF
           changes="$(find . -maxdepth 1 -name '*.changes' -print -quit)"
           test -n "$changes"
+          gpg --batch --verify "$changes"
           sha256sum "$changes"
-          dput "ppa:keefshape/iptvtunerr" "$changes"
+          dput --config ~/.dput.cf iptvtunerr-ppa-sftp "$changes"
 
       - name: Wait for Launchpad binary publication
         env:
