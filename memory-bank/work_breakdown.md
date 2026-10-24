@@ -1,5 +1,25 @@
 # Work breakdown
 
+## 2026-10-24 - Prevent cross-assignment between queued workflow jobs
+
+Objective: ensure each disposable JIT runner can match only the exact trusted workflow job selected by the broker, without pausing admission or interrupting active builds.
+
+| Story ID | Scope | Status |
+| --- | --- | --- |
+| JIT-QUEUE-001 | Derive a unique run/job/matrix label from the workflow source in Packer, reject missing or duplicate matches at discovery and immediately before dispatch, and add that label to trusted Linux JIT paths across all nine application repositories. | Packer tests pass and Packer PR #3 is updated; app workflow changes are being pushed to their existing draft PRs. Live deployment and canary remain open until active guests drain. |
+
+Guardrail: do not pause or restart the live broker while a guest is active; keep all host pressure and capacity gates; inspect actual GitHub job records to verify assignments.
+
+## 2026-10-23 - Billing-blocked trusted owner PR validation
+
+Objective: let trusted same-repository owner PR checks use the private JIT pool when GitHub-hosted capacity is blocked, without exposing secrets or executing pull-request code from the privileged metadata workflow.
+
+| Story ID | Scope | Status |
+| --- | --- | --- |
+| JIT-OWNER-PR-001 | Extend Packer's exact-workflow broker authorization and add a main-pinned metadata dispatcher plus read-only, no-secret Linux CI validation run for each of the nine application repositories. Keep forks, bots, publishing permissions, Windows/ARM, and hosted-only checks outside the JIT route. | In progress. Packer's source policy and exact repo/workflow/check allowlist are being extended. App workflow edits, focused validation, PR pushes, and live deployment remain outstanding. |
+
+Guardrail: do not checkout or execute PR code in `pull_request_target`; bind the dispatch to the current open owner-authored PR and exact SHA in the broker; keep `contents: read`, disable persisted checkout credentials, and give write permissions only to metadata dispatch and check reporting. Keep the existing active guest and host drain gates intact.
+
 ## 2026-10-23 - Standardize release tags and review runner PRs
 
 Objective: make pushed `v<version>` tags the only source of new application
