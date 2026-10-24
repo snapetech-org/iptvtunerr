@@ -1,15 +1,14 @@
-# Current task: Route trusted owner PR validation through private JIT (2026-10-23)
+# Current task: Bind each JIT runner to its exact workflow job (2026-10-24)
 
-- **Goal:** let billing-blocked, same-repository owner PR validation run on a disposable private JIT guest across all nine apps, with Packer independently checking the workflow, PR, actor, head SHA, and run-scoped labels.
-- **Story ID:** JIT-OWNER-PR-001 in [work_breakdown.md](work_breakdown.md).
-- **Scope:** add a main-pinned metadata-only dispatcher and no-secret, read-only validation run to each app's primary Linux CI workflow; preserve hosted execution for forks, bots, secret-bearing jobs, and unsupported platforms. Keep product release builds tied to the shared `v<version>` tag.
-- **Status:** implementation is being added to the existing draft PR branches and Packer #3. The active JIT guest and both host drain gates remain untouched; no live rollout or canary has happened.
-- **Verification:** pending final workflow parsing, broker route tests, and focused CI workflow checks.
-- **Next step:** finish the PR dispatch/report contracts, verify that the selected job sets contain no publisher permissions or secrets, then push reviewable changes. Deploy only after the active guest drains and the broker update is approved.
-- **Assumptions:** only the current core Linux CI job set is dispatched to JIT. Windows/ARM and hosted-only security or metadata checks keep their existing route; none are silently represented as passing by the custom JIT check.
-- **Limits:** do not merge PRs, deploy/restart runners, clear drain markers, or create a release tag in this change. Preserve published tags and the active guest.
-- **Rollback:** revert the repository-specific dispatcher/checkout/report changes and Packer allowlist changes; preserve broker backups and queue state.
-
+- **Goal:** prevent GitHub from assigning an unrelated queued job to a JIT guest. Packer verifies a unique label derived from the exact workflow source, including the matrix index, and rechecks uniqueness before dispatch.
+- **Story ID:** JIT-QUEUE-001 in [work_breakdown.md](work_breakdown.md).
+- **Scope:** update the Packer broker and all nine application workflow branches; preserve hosted fallback, owner-PR trust policy, runner groups, and resource gates.
+- **Status:** Packer commit `45140cc` is pushed to PR #3. Workflow changes are staged in the nine app worktrees. Three JIT guest units remain active on the primary host; no pool pause or admission marker change was made.
+- **Verification:** 187 focused Packer policy tests pass. All 165 application/Packer workflow files parse, and the label audit verifies 216 exact job contracts, including 25 matrix jobs. Live run evidence confirmed SeerrNG's Cypress job ran on the VM requested for TypeScript tests.
+- **Next step:** commit and push each application workflow update, inspect PR checks and live job assignments, then deploy the broker after active guests finish and validate a live queue canary.
+- **Assumptions:** a trusted-main job label is `gha-<run-id>-<workflow-job-id>`; matrix children add zero-based `strategy.job-index`. Owner-PR-specific labels remain as configured.
+- **Limits:** keep active guests running; do not pause admission, clear gates, or restart the broker while a guest is active. Do not merge draft PRs before required checks and review.
+- **Rollback:** revert the per-job workflow labels and Packer broker commit together; preserve queued runs and active guests.
 ---
 
 ## Prior runner deployment session (historical; live state not reverified)

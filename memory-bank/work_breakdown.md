@@ -1,5 +1,15 @@
 # Work breakdown
 
+## 2026-10-24 - Prevent cross-assignment between queued workflow jobs
+
+Objective: ensure each disposable JIT runner can match only the exact trusted workflow job selected by the broker, without pausing admission or interrupting active builds.
+
+| Story ID | Scope | Status |
+| --- | --- | --- |
+| JIT-QUEUE-001 | Derive a unique run/job/matrix label from the workflow source in Packer, reject missing or duplicate matches at discovery and immediately before dispatch, and add that label to trusted Linux JIT paths across all nine application repositories. | Packer tests pass and Packer PR #3 is updated; app workflow changes are being pushed to their existing draft PRs. Live deployment and canary remain open until active guests drain. |
+
+Guardrail: do not pause or restart the live broker while a guest is active; keep all host pressure and capacity gates; inspect actual GitHub job records to verify assignments.
+
 ## 2026-10-23 - Billing-blocked trusted owner PR validation
 
 Objective: let trusted same-repository owner PR checks use the private JIT pool when GitHub-hosted capacity is blocked, without exposing secrets or executing pull-request code from the privileged metadata workflow.
