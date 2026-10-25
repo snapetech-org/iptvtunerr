@@ -1,21 +1,19 @@
 # ng-runner-policy: hosted-first-v1
-# Gitleaks: secret scanning on push/PR (blocks accidental token commits).
+# Gitleaks runs on release tags or explicit manual dispatches.
 # https://github.com/gitleaks/gitleaks
 
 name: Gitleaks
 
 on:
   push:
-    branches: [main]
-  pull_request:
-    branches: [main, master]
-
+    tags:
+      - '**'
 permissions:
   contents: read
 
 concurrency:
   group: ng-scan-gitleaks-${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   scan:

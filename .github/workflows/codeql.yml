@@ -6,15 +6,11 @@ name: CodeQL
 
 on:
   push:
-    branches: [main]
-  pull_request:
-    branches: [main, master]
-  schedule:
-    - cron: "0 0 * * 1"  # weekly Monday
-
+    tags:
+      - '**'
 concurrency:
   group: ng-scan-codeql-${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   analyze:
