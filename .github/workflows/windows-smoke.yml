@@ -3,19 +3,8 @@ name: Windows Smoke
 on:
   workflow_dispatch:
   push:
-    branches: [main]
-    paths:
-      - "**/*.go"
-      - "go.mod"
-      - "go.sum"
-      - ".github/workflows/windows-smoke.yml"
-  pull_request:
-    paths:
-      - "**/*.go"
-      - "go.mod"
-      - "go.sum"
-      - ".github/workflows/windows-smoke.yml"
-
+    tags:
+      - '**'
 permissions:
   contents: read
 
