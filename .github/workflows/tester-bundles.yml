@@ -1,3 +1,4 @@
+# ng-runner-policy: private-jit-only-v1
 name: Tester Bundles
 
 on:
@@ -14,7 +15,7 @@ permissions:
 
 jobs:
   build-tester-bundle:
-    runs-on: ubuntu-latest
+    runs-on: ${{ fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","linux","x64","ng-shared-main-iptvtunerr","ng-main-run-{0}","gha-{0}-build-tester-bundle"]}}', github.run_id)) }}
     outputs:
       release_name: ${{ steps.out.outputs.release_name }}
     steps:
@@ -79,7 +80,7 @@ jobs:
   attach-release-assets:
     name: Attach tester ZIPs to the published release
     needs: [build-tester-bundle]
-    runs-on: ubuntu-latest
+    runs-on: ${{ fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","linux","x64","ng-shared-main-iptvtunerr","ng-main-run-{0}","gha-{0}-attach-release-assets"]}}', github.run_id)) }}
     permissions:
       actions: read
       contents: write

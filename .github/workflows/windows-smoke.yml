@@ -1,3 +1,4 @@
+# ng-runner-policy: private-jit-only-v1
 name: Windows Smoke
 
 on:
@@ -10,7 +11,7 @@ permissions:
 
 jobs:
   build:
-    runs-on: windows-latest
+    runs-on: ${{ fromJSON(format('{{"group":"packer-windows","labels":["self-hosted","Windows","X64","packer-windows","ng-shared-main-iptvtunerr","ng-main-run-{0}","gha-{0}-build"]}}', github.run_id)) }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
