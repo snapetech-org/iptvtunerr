@@ -1,4 +1,18 @@
-# Current task: Standardize release tags and runner PRs (2026-10-23)
+# Current task: Route IPTV Windows jobs to private Packer JIT (2026-10-26)
+
+- **Goal:** align the two reviewed Windows workflows with the Packer private JIT
+  group, exact run-scoped job labels, the `iptvTunerr` repository label, and the
+  required workflow marker.
+- **Scope:** `.github/workflows/publish-winget.yml` and
+  `.github/workflows/windows-smoke.yml`; no Linux workflow, runner-group
+  permissions, broker, or image changes.
+- **Validation:** no local tests/scans are allowed by the active runner policy.
+  Keep validation private-JIT-only and leave jobs queued if approved capacity is
+  unavailable; do not use hosted fallback.
+- **Next:** submit the focused branch for review and record the private-JIT run
+  state. The Windows group rollout remains a separately gated operation.
+
+## Previous task: Standardize release tags and runner PRs (2026-10-23)
 
 - **Goal:** use one pushed `v<version>` tag convention to start new product-release builds across all nine runner-using applications; keep PR/main validation separate and limit manual recovery to already-published outputs.
 - **Story IDs:** RELEASE-TAG-001 and RELEASE-TAG-002 in [work_breakdown.md](work_breakdown.md).
