@@ -15,7 +15,7 @@ Use for **one granular deliverable** inside an epic. Copy into [memory-bank/work
 - **Verification:** e.g. `scripts/verify`, integration test
 - **Risk flags:** migration / security / perf
 
-**When to use which:** PR-sized task → [current_task.md](../../memory-bank/current_task.md). Multi-PR → [work_breakdown.md](../../memory-bank/work_breakdown.md) or [EPIC-*.md](../epics/EPIC-template.md); each PR references a story ID.
+**When to use which:** One focused task → [current_task.md](../../memory-bank/current_task.md). Cross-repository or larger work → [work_breakdown.md](../../memory-bank/work_breakdown.md) or [EPIC-*.md](../epics/EPIC-template.md); track implementation milestones by story ID.
 
 See also
 --------

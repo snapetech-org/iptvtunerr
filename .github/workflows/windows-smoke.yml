@@ -3,14 +3,23 @@ name: Windows Smoke
 
 on:
   workflow_dispatch:
-  push:
-    tags:
-      - '**'
+    inputs:
+      action_tag:
+        description: Action to run
+        type: choice
+        required: true
+        options: [windows-smoke]
+      runner_pool_tag:
+        description: Private ephemeral JIT runner pool
+        type: choice
+        required: true
+        options: [private]
 permissions:
   contents: read
 
 jobs:
   build:
+    if: inputs.action_tag == 'windows-smoke' && inputs.runner_pool_tag == 'private'
     runs-on: ${{ fromJSON(format('{{"group":"packer-windows","labels":["self-hosted","Windows","X64","packer-windows","ng-shared-main-iptvtunerr","ng-main-run-{0}","gha-{0}-build"]}}', github.run_id)) }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1

@@ -12,8 +12,8 @@ updates, and container images from release tags only. A release tag must be a
 `v*` tag that points at the current `main` commit; release workflows reject tags
 that point anywhere else.
 
-Public GitHub Actions workflows use GitHub-hosted Ubuntu or Windows runners,
-so their logs do not depend on filesystem paths from local machines.
+Build, test, scan, and publish workflows run on compatible private ephemeral
+JIT runners. Missing platform capacity leaves the job queued.
 
 The primary release workflow builds and uploads:
 
@@ -26,9 +26,9 @@ The primary release workflow builds and uploads:
 - populated release notes generated from the versioned `docs/CHANGELOG.md`
   section and tagged commit range.
 
-CI runs the same release asset builder and checksum verifier with a dummy
-version so asset naming, archive layout, and checksum coverage stay tested
-before tags are cut.
+Dispatch CI with `action_tag=ci` and `runner_pool_tag=private` to run the same
+release asset builder and checksum verifier with a dummy version before a
+release tag is cut.
 
 ## Release version parity
 
@@ -52,8 +52,8 @@ release dispatcher explicitly passes `publish_dockerhub=false`; it remains
 paused until manually re-enabled.
 The runtime image uses Debian Bookworm package archives for FFmpeg and its
 supporting tools. The Docker publisher runs BuildKit with host networking so
-its build sandbox can resolve package mirrors through the GitHub runner's DNS;
-the hosted builder failed to resolve Debian mirrors on its isolated network.
+its build sandbox can resolve package mirrors through the private JIT runner's
+DNS.
 The `v0.1.88` run built all three target architectures and published matching
 `latest` and version tags to GHCR. Docker Hub publishing is paused per the
 operator's direction, so Docker Hub images were not updated for this release.
@@ -80,14 +80,14 @@ Docker Hub publishing remains paused per the operator's direction.
 
 ## Release notes and changelog
 
-Each user-facing pull request adds one validated fragment under
+Each user-facing change adds one validated fragment under
 [`release-notes/`](../../release-notes/). Fragments describe the impact for
 users or operators and record their area, required action, and breaking-change
-status. Internal-only pull requests select the explicit no-note option in the
-pull request template. CI rejects missing, malformed, or already-shipped
+status. For internal-only changes, put `release-note: none` on its own line in
+the commit message. Validation rejects missing, malformed, or already-shipped
 fragments. The local tools require Node.js 22; CI installs it automatically.
 
-Preview a pull request's note with:
+Preview a commit range's notes with:
 
 ```bash
 node scripts/preview-release-notes.mjs --base origin/main --head HEAD
@@ -134,7 +134,7 @@ Install local hooks with:
 ```
 
 The local pre-commit hook validates staged note fragments. CI enforces the
-fragment-or-opt-out choice for pull requests and direct pushes.
+fragment or internal-only marker for the commit range.
 
 ## AUR
 

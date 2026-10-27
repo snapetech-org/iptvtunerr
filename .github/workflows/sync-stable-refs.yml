@@ -8,6 +8,17 @@ on:
     workflows: ["Release", "Docker"]
     types: [completed]
   workflow_dispatch:
+    inputs:
+      action_tag:
+        description: Action to run
+        type: choice
+        required: true
+        options: [sync-stable-refs]
+      runner_pool_tag:
+        description: Private ephemeral JIT runner pool
+        type: choice
+        required: true
+        options: [private]
 
 concurrency:
   group: sync-stable-refs

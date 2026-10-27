@@ -5,6 +5,16 @@ run-name: Publish COPR ${{ inputs.tag }}
 on:
   workflow_dispatch:
     inputs:
+      action_tag:
+        description: Action to run
+        type: choice
+        required: true
+        options: [release-copr]
+      runner_pool_tag:
+        description: Private ephemeral JIT runner pool
+        type: choice
+        required: true
+        options: [private]
       tag:
         description: "Release tag to publish, for example v0.1.63"
         required: true

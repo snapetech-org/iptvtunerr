@@ -4,6 +4,16 @@ name: Package Smoke Validation (disabled)
 on:
   workflow_dispatch:
     inputs:
+      action_tag:
+        description: Action to run
+        type: choice
+        required: true
+        options: [package-smoke]
+      runner_pool_tag:
+        description: Private ephemeral JIT runner pool
+        type: choice
+        required: true
+        options: [private]
       version:
         description: "Release tag/version to validate"
         required: true

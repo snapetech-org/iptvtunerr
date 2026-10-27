@@ -5,14 +5,23 @@
 name: CI
 
 on:
-  push:
-    tags:
-      - '**'
+  workflow_dispatch:
+    inputs:
+      action_tag:
+        description: Action to run
+        type: choice
+        required: true
+        options: [ci]
+      runner_pool_tag:
+        description: Private ephemeral JIT runner pool
+        type: choice
+        required: true
+        options: [private]
 permissions:
   contents: read
 
 concurrency:
-  group: ng-ci-${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.run_id }}-${{ github.event.action == 'edited' && 'metadata' || 'code' }}
+  group: ng-ci-${{ github.workflow }}-${{ github.run_id }}-${{ github.run_attempt }}
   cancel-in-progress: false
 
 jobs:
@@ -38,13 +47,17 @@ jobs:
 
       - name: Release-note gate
         env:
-          BASE_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
+          BASE_SHA: ${{ github.event.before || format('{0}~1', github.sha) }}
           HEAD_SHA: ${{ github.sha }}
-          PR_BODY: ${{ github.event_name == 'pull_request' && github.event.pull_request.body || github.event.head_commit.message || '' }}
+          PR_BODY: ${{ github.event.head_commit.message || '' }}
         run: |
           set -euo pipefail
           body_file="$RUNNER_TEMP/release-note-context.md"
-          printf '%s' "$PR_BODY" > "$body_file"
+          commit_context="$PR_BODY"
+          if [[ -z "$commit_context" ]]; then
+            commit_context="$(git show -s --format=%B "$HEAD_SHA")"
+          fi
+          printf '%s' "$commit_context" > "$body_file"
           validation_args=()
           if [[ "$GITHUB_EVENT_NAME" == "push" ]]; then
             validation_args+=(--allow-mixed-push-batch)
