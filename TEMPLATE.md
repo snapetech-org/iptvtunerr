@@ -5,14 +5,13 @@ After **"Use this template"** or cloning this repo as a starting point, do the f
 ## 1. Run the init script
 
 ```bash
-./scripts/init-template --repo https://github.com/YOUR_ORG/YOUR_REPO --project "Your Project Name" --owner-email you@example.com
+./scripts/init-template --repo https://github.com/YOUR_ORG/YOUR_REPO --project "Your Project Name"
 ```
 
-Replace placeholders with your repo URL (GitHub, GitLab, or any host), project name, and owner email. The script updates README, CODEOWNERS, and doc placeholders.
+Replace placeholders with your repo URL (GitHub, GitLab, or any host) and project name. The script updates README and documentation placeholders.
 
 ## 2. Replace placeholders by hand (if needed)
 
-- **.github/CODEOWNERS:** Set `* your@email.com` or your team.
 - **docs/how-to/first-push.md:** Set YOUR_HOST / YOUR_ORG / your-repo for your Git host.
 - **memory-bank/repo_map.md:** Update entrypoints and modules to match your app (or leave generic).
 

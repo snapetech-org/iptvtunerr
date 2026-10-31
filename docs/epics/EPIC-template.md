@@ -7,9 +7,9 @@ tags: [epic, template, planning]
 
 # EPIC-0001-<name> (template)
 
-Copy this file to `EPIC-0001-<short-name>.md` when starting a multi-PR epic. Keeps agents on rails across tasks.
+Copy this file to `EPIC-0001-<short-name>.md` when starting a larger or cross-repository initiative. Track work through direct implementation milestones.
 
-**When to use:** >1 PR, or touches >~5 areas, or multi-stakeholder/UX, or non-trivial migration/rollout, or material security/perf impact. Otherwise use [memory-bank/current_task.md](../../memory-bank/current_task.md) only.
+**When to use:** cross-repository work, several implementation areas, a non-trivial migration/rollout, or material security/performance work. Smaller tasks use [memory-bank/current_task.md](../../memory-bank/current_task.md).
 
 ---
 
@@ -41,15 +41,15 @@ For each story:
 
 ---
 
-## 4. PR plan
+## 4. Milestone plan
 
-| PR | Scope |
+| Milestone | Scope |
 |----|--------|
-| PR-1 | scaffolding + first slice |
-| PR-2 | feature completion |
-| PR-3 | hardening / migrations / docs |
+| M1 | first working slice |
+| M2 | feature completion |
+| M3 | hardening, migration, and docs |
 
-Every task/PR must reference a story ID. No work outside this list; park ideas in [memory-bank/opportunities.md](../../memory-bank/opportunities.md).
+Track completed tasks against the story IDs. Park unrelated ideas in [memory-bank/opportunities.md](../../memory-bank/opportunities.md).
 
 ---
 

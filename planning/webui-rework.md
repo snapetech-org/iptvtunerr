@@ -1,6 +1,6 @@
 # WebUI Rework Plan
 
-Status: draft, awaiting approval
+Status: draft
 Owner: Keith
 Started: 2026-05-07
 

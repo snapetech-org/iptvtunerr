@@ -51,7 +51,7 @@ These are **done enough** that new work should extend them, not re-ask for the b
 
 ## 2. Still open (strategic / epic-sized)
 
-Multi-PR or product-decision items; details in **[EPIC-operator-completion](../epics/EPIC-operator-completion.md)** (all non-postgres, non-admin completion work). That epic now owns the cross-track open slices that are still needed for parity and operator confidence.
+Larger implementation or product-decision items; details in **[EPIC-operator-completion](../epics/EPIC-operator-completion.md)** (all non-postgres, non-admin completion work). That epic now owns the cross-track open slices that are still needed for parity and operator confidence.
 
 - Public-grade multi-user admin plane and Postgres/shared writer architecture are explicitly deferred (intentional exclusions in this cycle).
 - All remaining non-excluded `LP-*`, `PM-*`, `LH-*`, `PAR-*`, `ACC-*`, `HR-*`, `INT-*`, `REC-*`, and `VODX-*` follow-through slices are represented as `CMP-*` stories in that epic.

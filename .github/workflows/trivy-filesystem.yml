@@ -2,20 +2,30 @@
 name: Trivy filesystem scan
 
 on:
-  push:
-    tags: ['**']
   workflow_dispatch:
+    inputs:
+      action_tag:
+        description: Action to run
+        type: choice
+        required: true
+        options: [trivy]
+      runner_pool_tag:
+        description: Private ephemeral JIT runner pool
+        type: choice
+        required: true
+        options: [private]
 
 permissions:
   contents: read
 
 concurrency:
-  group: ng-scan-trivy-filesystem-${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}
+  group: ng-scan-trivy-filesystem-${{ github.run_id }}-${{ github.run_attempt }}
   cancel-in-progress: false
 
 jobs:
   trivy:
     name: Trivy source, dependency, and configuration scan
+    if: inputs.action_tag == 'trivy' && inputs.runner_pool_tag == 'private'
     env:
       TRIVY_DB_REPOSITORY: ghcr.io/aquasecurity/trivy-db:2
     runs-on: ${{ fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","linux","x64","ng-shared-main-iptvtunerr","ng-main-run-{0}"]}}', github.run_id)) }}

@@ -66,7 +66,7 @@ If `scripts/verify-steps.sh` is missing, verify exits success so the template st
 | **`memory-bank/repo_map.md`** | Navigation: main entrypoints, key modules, hot paths, no-go zones. Check before wandering. |
 | **`memory-bank/commands.yml`** | Machine-readable verification commands; `scripts/verify` runs `scripts/verify-steps.sh` (which should align with this file). |
 | **`memory-bank/code_quality.md`** | Code and doc quality: "done" includes doc updates when behavior changes; docs as code. |
-| **`memory-bank/work_breakdown.md`** | Multi-PR epics only: WBS + story list + PR plan. Use when >1 PR or scope warrants it; see guardrail below. |
+| **`memory-bank/work_breakdown.md`** | Cross-repository tasks and larger implementation plans: scope, milestones, and verification. |
 
 Doc layout (Diátaxis): **`docs/index.md`** (tutorials, how-to, reference, explanations, adr, runbooks). New docs: frontmatter + See also; see `docs/_meta/linking.md`.
 
@@ -79,12 +79,12 @@ Doc layout (Diátaxis): **`docs/index.md`** (tutorials, how-to, reference, expla
 
 Phrase entries so that **another agent** can act on them: concise, actionable, and with "why" where it helps.
 
-### Work breakdown (multi-PR only) — guardrail
+### Work breakdown
 
-- **One PR:** Use **only** `current_task.md` (objective, success criteria, In/Out, plan, verification). No work breakdown.
-- **More than one PR:** You **must** create or update the work breakdown ([memory-bank/work_breakdown.md](memory-bank/work_breakdown.md) or [docs/epics/EPIC-*.md](docs/epics/EPIC-template.md)) and **only work on items listed there**. Every task/PR must reference a story ID. Park improvements in `opportunities.md`; don't hijack the epic.
+- **Single-repository task:** Use `current_task.md` (objective, scope, plan and verification).
+- **Cross-repository task:** Track affected repositories and work items in `work_breakdown.md` or `docs/epics/EPIC-*.md`. Keep unrelated work in `opportunities.md`.
 
-**When to create a work breakdown:** Any of: will take >1 PR, touches >~5 modules/areas, multiple stakeholders/UX choices, non-trivial migration/rollout, meaningful security/perf implications. **When to use which:** PR-sized → `current_task.md` only; product scope → `docs/product/PRD-template.md`; multi-PR epic → `work_breakdown.md` or `docs/epics/EPIC-*.md`; story = row in that breakdown (or `docs/stories/STORY-template.md` for format).
+Use a work breakdown for tasks spanning multiple repositories, large migrations or several distinct implementation areas.
 
 ---
 
@@ -152,7 +152,7 @@ The goal is to give future agents **early warnings** and **concrete guidance** s
 
 This repo is an **agentic repo template** for **any language or stack**: memory-bank workflow, single verify script, Diátaxis docs. Add your own code and define verification in `scripts/verify-steps.sh` and `memory-bank/commands.yml`.
 
-**After cloning from template:** Run `scripts/init-template`; replace placeholders in README, CODEOWNERS, and docs. See [TEMPLATE.md](TEMPLATE.md). The memory bank holds **current state**, **known issues**, and **recurring loops**. When behavior/config changes, update or add one doc and file gaps in `opportunities.md`; see [memory-bank/code_quality.md](memory-bank/code_quality.md).
+**After cloning from template:** Run `scripts/init-template`; replace placeholders in README and docs. See [TEMPLATE.md](TEMPLATE.md). The memory bank holds **current state**, **known issues**, and **recurring loops**. When behavior/config changes, update or add one doc and file gaps in `opportunities.md`; see [memory-bank/code_quality.md](memory-bank/code_quality.md).
 
 ## Local Identity Privacy
 

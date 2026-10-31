@@ -1,19 +1,29 @@
 # ng-runner-policy: private-jit-only-v1
-# CodeQL: basic code scanning for security and quality.
+# CodeQL runs only on explicit private-JIT dispatch.
 # https://docs.github.com/en/code-security/code-scanning/automatically-scanning-your-code-for-vulnerabilities-and-errors
 
 name: CodeQL
 
 on:
-  push:
-    tags:
-      - '**'
+  workflow_dispatch:
+    inputs:
+      action_tag:
+        description: Action to run
+        type: choice
+        required: true
+        options: [codeql]
+      runner_pool_tag:
+        description: Private ephemeral JIT runner pool
+        type: choice
+        required: true
+        options: [private]
 concurrency:
-  group: ng-scan-codeql-${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}
+  group: ng-scan-codeql-${{ github.run_id }}-${{ github.run_attempt }}
   cancel-in-progress: false
 
 jobs:
   analyze:
+    if: inputs.action_tag == 'codeql' && inputs.runner_pool_tag == 'private'
     runs-on: ${{ fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","linux","x64","ng-shared-main-iptvtunerr","ng-main-run-{0}"]}}', github.run_id)) }}
     permissions:
       security-events: write

@@ -6,6 +6,16 @@ run-name: Publish Winget ${{ inputs.version }}
 on:
   workflow_dispatch:
     inputs:
+      action_tag:
+        description: Action to run
+        type: choice
+        required: true
+        options: [publish-winget]
+      runner_pool_tag:
+        description: Private ephemeral JIT runner pool
+        type: choice
+        required: true
+        options: [private]
       version:
         description: "Release tag to submit, for example v0.1.63"
         required: true
