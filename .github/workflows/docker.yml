@@ -29,7 +29,7 @@ concurrency:
 
 jobs:
   build:
-    runs-on: ${{ fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","linux","x64","ng-shared-main-iptvtunerr","ng-main-run-{0}"]}}', github.run_id)) }}
+    runs-on: ${{ fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","linux","x64","ng-shared-main-iptvtunerr","ng-main-run-{0}","gha-{0}-build"]}}', github.run_id)) }}
     permissions:
       contents: read
       packages: write

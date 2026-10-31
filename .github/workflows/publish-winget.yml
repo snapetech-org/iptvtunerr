@@ -31,6 +31,18 @@ concurrency:
 jobs:
   submit:
     name: Submit Winget PR
+    if: >-
+      (
+        github.event_name != 'workflow_dispatch' ||
+        (
+          github.ref == 'refs/heads/main' &&
+          inputs.action_tag == 'publish-winget' &&
+          inputs.runner_pool_tag == 'private'
+        )
+      ) &&
+      (
+        true
+      )
     runs-on: ${{ fromJSON(format('{{"group":"packer-windows","labels":["self-hosted","Windows","X64","packer-windows","ng-shared-main-iptvtunerr","ng-main-run-{0}","gha-{0}-submit"]}}', github.run_id)) }}
     steps:
       - name: Checkout

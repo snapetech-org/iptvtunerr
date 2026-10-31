@@ -4,6 +4,8 @@
 
 name: Gitleaks
 
+run-name: ${{ format('action:{0}:pool:{1}', inputs.action, inputs.runner_pool) }}
+
 on:
   workflow_dispatch:
     inputs:
@@ -17,6 +19,18 @@ on:
         type: choice
         required: true
         options: [private]
+      action:
+        description: Run the private security scan
+        required: true
+        type: choice
+        options:
+          - scan
+      runner_pool:
+        description: Select the private ephemeral runner pool
+        required: true
+        type: choice
+        options:
+          - private
 permissions:
   contents: read
 
@@ -26,8 +40,9 @@ concurrency:
 
 jobs:
   scan:
-    if: inputs.action_tag == 'gitleaks' && inputs.runner_pool_tag == 'private'
-    runs-on: ${{ fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","linux","x64","ng-shared-main-iptvtunerr","ng-main-run-{0}"]}}', github.run_id)) }}
+    if: >-
+      (github.event_name == 'workflow_dispatch' && inputs.action == 'scan' && inputs.runner_pool == 'private' && github.ref == 'refs/heads/main') && (inputs.action_tag == 'gitleaks' && inputs.runner_pool_tag == 'private')
+    runs-on: ${{ fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","linux","x64","ng-shared-main-iptvtunerr","ng-main-run-{0}","gha-{0}-scan"]}}', github.run_id)) }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
