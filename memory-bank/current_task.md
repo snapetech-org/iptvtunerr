@@ -1,16 +1,10 @@
-# Current task: Route IPTV Windows jobs to private Packer JIT (2026-10-26)
+# Current task: Route IPTV Windows workflows through private Packer JIT (2026-10-31)
 
-- **Goal:** align the two reviewed Windows workflows with the Packer private JIT
-  group, exact run-scoped job labels, the `iptvTunerr` repository label, and the
-  required workflow marker.
-- **Scope:** `.github/workflows/publish-winget.yml` and
-  `.github/workflows/windows-smoke.yml`; no Linux workflow, runner-group
-  permissions, broker, or image changes.
-- **Validation:** no local tests/scans are allowed by the active runner policy.
-  Keep validation private-JIT-only and leave jobs queued if approved capacity is
-  unavailable; do not use hosted fallback.
-- **Next:** submit the focused branch for review and record the private-JIT run
-  state. The Windows group rollout remains a separately gated operation.
+- **Goal:** gate the Windows Smoke and WinGet publisher jobs to trusted owner dispatches from `main`, using the Packer run-scoped Windows labels.
+- **Actions:** Windows Smoke uses `action:ci:pool:private`; WinGet uses its own `publish-winget` action. Pull requests do not select the trusted Windows group.
+- **Scope:** `.github/workflows/publish-winget.yml` and `.github/workflows/windows-smoke.yml`; no runner-group or broker access changes.
+- **Validation:** `git diff --check` is clean. No local tests/scans were run. Exact-head private Windows validation is pending because group 11 has no registered runner.
+- **Next:** validate the merged workflow revision on a compatible private Windows JIT runner and record the run ID.
 
 ## Previous task: Standardize release tags and runner PRs (2026-10-23)
 
