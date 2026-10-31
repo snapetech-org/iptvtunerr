@@ -1,6 +1,7 @@
 # ng-runner-policy: private-jit-only-v1
+# packer-windows-jit-v1
 name: Publish Winget
-run-name: Publish Winget ${{ inputs.version }}
+run-name: ${{ format('action:{0}:pool:{1}', inputs.action_tag, inputs.runner_pool_tag) }}
 
 on:
   workflow_dispatch:
@@ -31,6 +32,7 @@ concurrency:
 jobs:
   submit:
     name: Submit Winget PR
+    if: github.event_name == 'workflow_dispatch' && github.actor == 'snapetech' && github.ref == 'refs/heads/main' && inputs.action_tag == 'publish-winget' && inputs.runner_pool_tag == 'private'
     runs-on: ${{ fromJSON(format('{{"group":"packer-windows","labels":["self-hosted","Windows","X64","packer-windows","ng-shared-main-iptvtunerr","ng-main-run-{0}","gha-{0}-submit"]}}', github.run_id)) }}
     steps:
       - name: Checkout

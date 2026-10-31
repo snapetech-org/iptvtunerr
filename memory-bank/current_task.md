@@ -1,4 +1,12 @@
-# Current task: Standardize release tags and runner PRs (2026-10-23)
+# Current task: Route IPTV Windows workflows through private Packer JIT (2026-10-31)
+
+- **Goal:** gate the Windows Smoke and WinGet publisher jobs to trusted owner dispatches from `main`, using the Packer run-scoped Windows labels.
+- **Actions:** Windows Smoke uses `action:ci:pool:private`; WinGet uses its own `publish-winget` action. Pull requests do not select the trusted Windows group.
+- **Scope:** `.github/workflows/publish-winget.yml` and `.github/workflows/windows-smoke.yml`; no runner-group or broker access changes.
+- **Validation:** `git diff --check` is clean. No local tests/scans were run. Exact-head private Windows validation is pending because group 11 has no registered runner.
+- **Next:** validate the merged workflow revision on a compatible private Windows JIT runner and record the run ID.
+
+## Previous task: Standardize release tags and runner PRs (2026-10-23)
 
 - **Goal:** use one pushed `v<version>` tag convention to start new product-release builds across all nine runner-using applications; keep PR/main validation separate and limit manual recovery to already-published outputs.
 - **Story IDs:** RELEASE-TAG-001 and RELEASE-TAG-002 in [work_breakdown.md](work_breakdown.md).
