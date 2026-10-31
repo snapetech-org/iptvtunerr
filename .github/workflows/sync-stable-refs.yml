@@ -3,6 +3,12 @@ name: Sync stable refs
 
 # After a release or container publish, keep `master` and the `latest` image
 # aligned with the newest stable tag. See scripts/sync-stable-refs.sh.
+
+run-name: >-
+  ${{ github.event_name == 'workflow_dispatch' && startsWith(github.ref, 'refs/tags/') &&
+      format('action:{0}:pool:{1}:tag:{2}', inputs.action_tag || 'sync', inputs.runner_pool_tag || 'private', github.ref_name) ||
+      github.event_name == 'workflow_dispatch' &&
+      format('action:{0}:pool:{1}', inputs.action_tag || 'sync', inputs.runner_pool_tag || 'private') || format('action:sync-stable-refs:pool:private') }}
 on:
   workflow_run:
     workflows: ["Release", "Docker"]

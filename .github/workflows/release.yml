@@ -1,13 +1,33 @@
 # ng-runner-policy: private-jit-only-v1
 name: Release
 
+
+run-name: >-
+  ${{ format('action:{0}:pool:{1}:tag:{2}', inputs.action, inputs.runner_pool, inputs.release_tag) }}
 on:
-  push:
-    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      action:
+        description: Release action
+        type: choice
+        options: [release]
+        required: true
+      runner_pool:
+        description: Private ephemeral JIT runner pool
+        type: choice
+        options: [private]
+        required: true
+      release_tag:
+        description: Exact version tag to build, publish, and announce
+        type: string
+        required: true
 
 jobs:
   release:
+    if: ${{ github.ref == 'refs/heads/main' && github.actor == 'snapetech' && inputs.action == 'release' && inputs.runner_pool == 'private' && inputs.release_tag != '' }}
     runs-on: ${{ fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","linux","x64","ng-shared-main-iptvtunerr","ng-main-run-{0}","gha-{0}-release"]}}', github.run_id)) }}
+    env:
+      RELEASE_TAG: ${{ inputs.release_tag }}
     permissions:
       contents: write
     outputs:
@@ -15,11 +35,12 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          ref: ${{ inputs.release_tag }}
           fetch-depth: 0
           persist-credentials: false
 
       - name: Require release tag on main
-        run: ./scripts/ensure-release-tag-on-main.sh "${GITHUB_REF_NAME}"
+        run: ./scripts/ensure-release-tag-on-main.sh "$RELEASE_TAG"
 
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
@@ -33,16 +54,16 @@ jobs:
         run: bash scripts/install-ci-tools.sh ripgrep
 
       - name: Require populated changelog section
-        run: ./scripts/verify-changelog-entry.sh release "${GITHUB_REF_NAME}"
+        run: ./scripts/verify-changelog-entry.sh release "$RELEASE_TAG"
 
       - name: Verify changelog matches release-note fragments
-        run: node scripts/verify-release-changelog.mjs "${GITHUB_REF_NAME}"
+        run: node scripts/verify-release-changelog.mjs "$RELEASE_TAG"
 
       - name: Verify changelog history and tag coverage
         run: |
           set -euo pipefail
-          previous_tag="$(git describe --tags --abbrev=0 --match 'v[0-9]*' "${GITHUB_REF_NAME}^")"
-          node scripts/check-changelog-tags.mjs "$previous_tag" "${GITHUB_REF_NAME}"
+          previous_tag="$(git describe --tags --abbrev=0 --match 'v[0-9]*' "${RELEASE_TAG}^")"
+          node scripts/check-changelog-tags.mjs "$previous_tag" "$RELEASE_TAG"
 
       - name: Verify
         run: ./scripts/verify
@@ -54,20 +75,20 @@ jobs:
         run: bash scripts/install-ci-tools.sh rpm zip debian-packaging
 
       - name: Build binaries
-        run: ./scripts/build-release-assets.sh "${GITHUB_REF_NAME}" dist
+        run: ./scripts/build-release-assets.sh "$RELEASE_TAG" dist
 
       - name: Build Linux package assets
-        run: ./scripts/build-linux-package-assets.sh "${GITHUB_REF_NAME}" dist
+        run: ./scripts/build-linux-package-assets.sh "$RELEASE_TAG" dist
 
       - name: Verify release assets
-        run: ./scripts/verify-release-assets.sh "${GITHUB_REF_NAME}" dist
+        run: ./scripts/verify-release-assets.sh "$RELEASE_TAG" dist
 
       - name: Generate release notes
         id: generate-notes
         run: |
           set -euo pipefail
           chmod +x ./scripts/generate-release-notes.sh
-          ./scripts/generate-release-notes.sh "${GITHUB_REF_NAME}" dist/release-notes.md
+          ./scripts/generate-release-notes.sh "$RELEASE_TAG" dist/release-notes.md
           cat dist/release-notes.md
           delimiter="release_body_${GITHUB_RUN_ID}_${GITHUB_RUN_ATTEMPT}"
           while grep -Fxq "$delimiter" dist/release-notes.md; do
@@ -81,6 +102,7 @@ jobs:
 
       - uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3
         with:
+          tag_name: ${{ inputs.release_tag }}
           body_path: dist/release-notes.md
           files: |
             dist/iptv-tunerr-*
@@ -97,7 +119,7 @@ jobs:
       contents: write
     uses: ./.github/workflows/tester-bundles.yml
     with:
-      tag: ${{ github.ref_name }}
+      tag: ${{ inputs.release_tag }}
 
   publish-docker:
     name: Publish Docker image from this release tag
@@ -107,7 +129,7 @@ jobs:
       packages: write
     uses: ./.github/workflows/docker.yml
     with:
-      tag: ${{ github.ref_name }}
+      tag: ${{ inputs.release_tag }}
       publish_dockerhub: false
     secrets:
       GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
@@ -120,9 +142,9 @@ jobs:
     runs-on: ${{ fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","linux","x64","ng-shared-main-iptvtunerr","ng-main-run-{0}","gha-{0}-announce-discord"]}}', github.run_id)) }}
     env:
       DISCORD_RELEASE_WEBHOOK: ${{ secrets.DISCORD_RELEASE_WEBHOOK }}
-      RELEASE_URL: ${{ github.server_url }}/${{ github.repository }}/releases/tag/${{ github.ref_name }}
+      RELEASE_URL: ${{ github.server_url }}/${{ github.repository }}/releases/tag/${{ inputs.release_tag }}
       RELEASE_BODY: ${{ needs.release.outputs.release_body }}
-      VERSION: ${{ github.ref_name }}
+      VERSION: ${{ inputs.release_tag }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -207,8 +229,8 @@ jobs:
           MATRIX_BASE_URL: https://matrix.timeways.net
           MATRIX_ROOM_ID: '!feVqoCPCPPaCQmTCEE:timeways.net'
           MATRIX_PROJECT_KEY: iptvtunerr
-          RELEASE_URL: ${{ github.server_url }}/${{ github.repository }}/releases/tag/${{ github.ref_name }}
-          VERSION: ${{ github.ref_name }}
+          RELEASE_URL: ${{ github.server_url }}/${{ github.repository }}/releases/tag/${{ inputs.release_tag }}
+          VERSION: ${{ inputs.release_tag }}
           RELEASE_BODY: ${{ needs.release.outputs.release_body }}
         run: |
           set -euo pipefail
@@ -324,7 +346,7 @@ jobs:
       - name: Dispatch channel workflows
         env:
           GH_TOKEN: ${{ secrets.GH_WORKFLOW_TOKEN || github.token }}
-          TAG: ${{ github.ref_name }}
+          TAG: ${{ inputs.release_tag }}
           REPO: ${{ github.repository }}
         run: |
           bash scripts/dispatch-release-channels.sh "$TAG" "$REPO"

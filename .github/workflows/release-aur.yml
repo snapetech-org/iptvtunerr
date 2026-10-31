@@ -1,7 +1,13 @@
 # ng-runner-policy: private-jit-only-v1
 name: Publish AUR
-run-name: Publish AUR ${{ inputs.tag }}
-
+run-name: >-
+  ${{ github.event_name == 'workflow_dispatch' && startsWith(github.ref, 'refs/tags/') &&
+      format('action:{0}:pool:{1}:tag:{2}:publish-aur', inputs.action_tag || 'release', inputs.runner_pool_tag || 'private', github.ref_name) ||
+      github.event_name == 'workflow_dispatch' &&
+      (inputs.tag) != '' &&
+      format('action:{0}:pool:{1}:tag:{2}:publish-aur', inputs.action_tag || 'release', inputs.runner_pool_tag || 'private', inputs.tag) ||
+      github.event_name == 'workflow_dispatch' &&
+      format('action:{0}:pool:{1}:publish-aur', inputs.action_tag || 'release', inputs.runner_pool_tag || 'private') || format('action:release-aur:pool:private:publish-aur') }}
 on:
   workflow_dispatch:
     inputs:
@@ -195,4 +201,3 @@ jobs:
           bash packaging/scripts/generate-aur-srcinfo.sh aur-iptvtunerr/PKGBUILD > aur-iptvtunerr/.SRCINFO
           (cd aur-iptvtunerr && git add -A)
           bash packaging/scripts/push-aur-repo.sh aur-iptvtunerr iptvtunerr "Update to ${TAG}"
-

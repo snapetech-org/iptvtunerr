@@ -1,7 +1,13 @@
 # ng-runner-policy: private-jit-only-v1
 name: Publish COPR
-run-name: Publish COPR ${{ inputs.tag }}
-
+run-name: >-
+  ${{ github.event_name == 'workflow_dispatch' && startsWith(github.ref, 'refs/tags/') &&
+      format('action:{0}:pool:{1}:tag:{2}:publish-copr', inputs.action_tag || 'release', inputs.runner_pool_tag || 'private', github.ref_name) ||
+      github.event_name == 'workflow_dispatch' &&
+      (inputs.tag) != '' &&
+      format('action:{0}:pool:{1}:tag:{2}:publish-copr', inputs.action_tag || 'release', inputs.runner_pool_tag || 'private', inputs.tag) ||
+      github.event_name == 'workflow_dispatch' &&
+      format('action:{0}:pool:{1}:publish-copr', inputs.action_tag || 'release', inputs.runner_pool_tag || 'private') || format('action:release-copr:pool:private:publish-copr') }}
 on:
   workflow_dispatch:
     inputs:
@@ -310,4 +316,3 @@ jobs:
             --chroot fedora-rawhide-x86_64 \
             --nowait \
             iptvtunerr "$srpm"
-

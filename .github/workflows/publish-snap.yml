@@ -1,7 +1,13 @@
 # ng-runner-policy: private-jit-only-v1
 name: Publish Snap
-run-name: Publish Snap ${{ inputs.tag }}
-
+run-name: >-
+  ${{ github.event_name == 'workflow_dispatch' && startsWith(github.ref, 'refs/tags/') &&
+      format('action:{0}:pool:{1}:tag:{2}', inputs.action_tag || 'publish', inputs.runner_pool_tag || 'private', github.ref_name) ||
+      github.event_name == 'workflow_dispatch' &&
+      (inputs.tag) != '' &&
+      format('action:{0}:pool:{1}:tag:{2}', inputs.action_tag || 'publish', inputs.runner_pool_tag || 'private', inputs.tag) ||
+      github.event_name == 'workflow_dispatch' &&
+      format('action:{0}:pool:{1}', inputs.action_tag || 'publish', inputs.runner_pool_tag || 'private') || format('action:publish-snap:pool:private') }}
 on:
   workflow_dispatch:
     inputs:
@@ -116,4 +122,3 @@ jobs:
         with:
           snap: ${{ steps.snap.outputs.snap }}
           release: stable
-

@@ -1,7 +1,13 @@
 # ng-runner-policy: private-jit-only-v1
 name: Publish Chocolatey
-run-name: Publish Chocolatey ${{ inputs.version }}
-
+run-name: >-
+  ${{ github.event_name == 'workflow_dispatch' && startsWith(github.ref, 'refs/tags/') &&
+      format('action:{0}:pool:{1}:tag:{2}', inputs.action_tag || 'publish', inputs.runner_pool_tag || 'private', github.ref_name) ||
+      github.event_name == 'workflow_dispatch' &&
+      (inputs.version) != '' &&
+      format('action:{0}:pool:{1}:tag:{2}', inputs.action_tag || 'publish', inputs.runner_pool_tag || 'private', inputs.version) ||
+      github.event_name == 'workflow_dispatch' &&
+      format('action:{0}:pool:{1}', inputs.action_tag || 'publish', inputs.runner_pool_tag || 'private') || format('action:publish-chocolatey:pool:private') }}
 on:
   workflow_dispatch:
     inputs:
@@ -228,4 +234,3 @@ jobs:
           echo "[publish-chocolatey] Pushing $(basename "${nupkg}") to Chocolatey"
           timeout 300 dotnet nuget push "${nupkg}" --source https://push.chocolatey.org/ --api-key "${CHOCO_API_KEY}" --timeout 300 --skip-duplicate
           echo "[publish-chocolatey] Chocolatey push completed"
-
