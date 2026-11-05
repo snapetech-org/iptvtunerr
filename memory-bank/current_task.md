@@ -1,3 +1,9 @@
+# Security dependency remediation (2026-11-05)
+
+- Updated go-jose v4 to 4.1.7, regenerated its vendored sources, and preserved the existing unrelated vendor compatibility patches.
+- Validation: all Go package tests, go vet, and the application build pass. The aggregate verify script stops at the existing release-channel wiring contract failure before reaching Go checks.
+- Delivery: focused draft PR; no live service restart or deployment.
+
 # Current task: Standardize release tags and runner PRs (2026-10-23)
 
 - **Goal:** use one pushed `v<version>` tag convention to start new product-release builds across all nine runner-using applications; keep PR/main validation separate and limit manual recovery to already-published outputs.
