@@ -750,3 +750,7 @@ Application source and package-channel gates were not changed.
 - Focused checks passed: BookshelfNG 6 policy tests and readiness gate; SeerrNG 36 release tests and Prettier; SlskR release policy; TorrentNG 7 policy and 5 release-note tests; IPTV Tunerr 5 dispatcher/release tests, channel wiring, 58 action-pin checks, YAML parsing, and embedded Bash syntax. QuestarrNG's workflow structure check and all changed-workflow `git diff --check` runs passed.
 - Exact-head GitHub checks are pending on the application PRs. Packer #2 has a billing/spending-cap rejection before CI started. An additional IPTV Tunerr push to its GitLab mirror was rejected due to a multi-pack-index signature mismatch after the GitHub PR branch updated successfully; mirror repair is not part of this change.
 - No PR was merged, runner host deployed, or release tag created. Broker deployment and end-to-end live release canaries remain unverified.
+
+## 2026-11-05: go-jose security update
+
+Updated go-jose v4 from 4.1.4 to 4.1.7 and its vendored code. Preserved the existing Brotli and ARM splice patches. Go package tests, vet, and application build pass; aggregate verification is blocked by the pre-existing release-channel wiring check. No runtime deployment.
