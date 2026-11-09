@@ -132,6 +132,7 @@ jobs:
           icon_url="https://cdn.jsdelivr.net/gh/${RELEASE_REPOSITORY}@main/docs/assets/iptvtunerr-icon.svg"
           package_source_url="${project_url}/tree/main/packaging/chocolatey"
           docs_url="${project_url}/blob/main/docs/index.md"
+          mailing_list_url="${project_url}/discussions"
           bug_tracker_url="${project_url}/issues"
           release_notes="${project_url}/releases/tag/${version}"
 
@@ -150,6 +151,7 @@ jobs:
               <packageSourceUrl>${package_source_url}</packageSourceUrl>
               <projectSourceUrl>${project_url}</projectSourceUrl>
               <docsUrl>${docs_url}</docsUrl>
+              <mailingListUrl>${mailing_list_url}</mailingListUrl>
               <bugTrackerUrl>${bug_tracker_url}</bugTrackerUrl>
               <releaseNotes>${release_notes}</releaseNotes>
               <requireLicenseAcceptance>false</requireLicenseAcceptance>
@@ -206,7 +208,7 @@ jobs:
 
           echo "[publish-chocolatey] Checking packed nuspec metadata"
           packed_nuspec="$(unzip -p "${nupkg}" iptvtunerr.nuspec)"
-          for required_tag in packageSourceUrl projectSourceUrl docsUrl bugTrackerUrl releaseNotes iconUrl; do
+          for required_tag in packageSourceUrl projectSourceUrl docsUrl mailingListUrl bugTrackerUrl releaseNotes iconUrl; do
             if ! grep -q "<${required_tag}>" <<<"${packed_nuspec}"; then
               echo "Packed Chocolatey nuspec is missing <${required_tag}>" >&2
               exit 1

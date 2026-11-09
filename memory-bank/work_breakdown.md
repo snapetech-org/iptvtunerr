@@ -1,5 +1,23 @@
 # Work breakdown
 
+## 2026-11-09 - Chocolatey package metadata across repositories
+
+Objective: resolve the Chocolatey source, release-note and software-information feedback and deliver each focused repository change directly to main.
+
+| Repository | Scope |
+| --- | --- |
+| slskr | Complete all missing source, release, documentation and support metadata. |
+| pleazyng | Add release notes, project source, documentation and discussion links. |
+| seerrng | Link the package directory, source, releases, docs, issues and discussions. |
+| bookshelfng | Add project source, release notes and discussion links. |
+| chaptarrng | Update both the native and legacy BookshelfNG migration nuspec templates. |
+| slskdN | Use a durable source release index and include discussions; the publisher retains exact-tag notes. |
+| bookshelfng-unraid | Complete the retained manifest, pointing package source to its own directory and software links to canonical BookshelfNG. |
+| iptvtunerr | Canonical source URLs and discussion metadata in the source and generated nuspec; retain the final ZIP metadata preservation step. |
+
+Validation is scoped to package metadata and release rendering. Existing version tags and submitted packages are outside this source-update task.
+
+
 ## 2026-10-23 - Standardize release tags and review runner PRs
 
 Objective: make pushed `v<version>` tags the only source of new application

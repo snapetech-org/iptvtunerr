@@ -6,14 +6,15 @@
     <title>IPTV Tunerr</title>
     <authors>snapetech</authors>
     <owners>slskdn</owners>
-    <projectUrl>https://github.com/snapetech/iptvtunerr</projectUrl>
-    <iconUrl>https://cdn.jsdelivr.net/gh/snapetech/iptvtunerr@main/docs/assets/iptvtunerr-icon.svg</iconUrl>
-    <licenseUrl>https://github.com/snapetech/iptvtunerr/blob/main/LICENSE</licenseUrl>
-    <packageSourceUrl>https://github.com/snapetech/iptvtunerr/tree/main/packaging/chocolatey</packageSourceUrl>
-    <projectSourceUrl>https://github.com/snapetech/iptvtunerr</projectSourceUrl>
-    <docsUrl>https://github.com/snapetech/iptvtunerr/blob/main/docs/index.md</docsUrl>
-    <bugTrackerUrl>https://github.com/snapetech/iptvtunerr/issues</bugTrackerUrl>
-    <releaseNotes>https://github.com/snapetech/iptvtunerr/releases/tag/v0.1.85</releaseNotes>
+    <projectUrl>https://github.com/snapetech-org/iptvtunerr</projectUrl>
+    <iconUrl>https://cdn.jsdelivr.net/gh/snapetech-org/iptvtunerr@main/docs/assets/iptvtunerr-icon.svg</iconUrl>
+    <licenseUrl>https://github.com/snapetech-org/iptvtunerr/blob/main/LICENSE</licenseUrl>
+    <packageSourceUrl>https://github.com/snapetech-org/iptvtunerr/tree/main/packaging/chocolatey</packageSourceUrl>
+    <projectSourceUrl>https://github.com/snapetech-org/iptvtunerr</projectSourceUrl>
+    <docsUrl>https://github.com/snapetech-org/iptvtunerr/blob/main/docs/index.md</docsUrl>
+    <mailingListUrl>https://github.com/snapetech-org/iptvtunerr/discussions</mailingListUrl>
+    <bugTrackerUrl>https://github.com/snapetech-org/iptvtunerr/issues</bugTrackerUrl>
+    <releaseNotes>https://github.com/snapetech-org/iptvtunerr/releases</releaseNotes>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <tags>iptv plex emby jellyfin hdhomerun xmltv live-tv dvr</tags>
     <summary>IPTV to Plex, Emby, and Jellyfin bridge</summary>

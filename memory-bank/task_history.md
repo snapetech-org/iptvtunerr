@@ -754,3 +754,11 @@ Application source and package-channel gates were not changed.
 ## 2026-11-05: go-jose security update
 
 Updated go-jose v4 from 4.1.4 to 4.1.7 and its vendored code. Preserved the existing Brotli and ARM splice patches. Go package tests, vet, and application build pass; aggregate verification is blocked by the pre-existing release-channel wiring check. No runtime deployment.
+
+
+## 2026-11-09 - Complete Chocolatey package discovery metadata
+
+- Replaced transferred repository URLs with canonical snapetech-org links in the source manifest, used a durable releases index, and added the enabled GitHub Discussions forum.
+- Updated the release nuspec generator and packed-metadata check to retain the discussion URL alongside existing source, docs, issues and exact-tag release notes. Preserved the exact-nuspec ZIP replacement needed after NuGet packing.
+- Verification: XML, workflow YAML and embedded Bash syntax pass. The actual preparation script passed against a synthetic archive and a simulated NuGet metadata rewrite; the final ZIP retained all six metadata links, version and exact release-tag notes. Native Chocolatey packing and publication were not run.
+- Delivery: focused changes committed directly to main as requested; no runtime change or release tag required.

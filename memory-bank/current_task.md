@@ -1,3 +1,12 @@
+# Chocolatey package metadata (2026-11-09)
+
+- Goal: address Chocolatey package-source, release-note and software-information guidance across the maintained packages; push each repository change directly to main as requested.
+- Scope here: canonical repository URLs and discussion links in the checked-in nuspec and release generator; retain the exact-nuspec ZIP replacement required by Chocolatey's extended metadata.
+- Status: source manifest and release generator updated for direct-main delivery; prior unrelated tasks below retain their recorded status.
+- Verification: source XML, all embedded Bash syntax and workflow YAML pass. The real release-preparation script passed with a synthetic release archive and a simulated NuGet rewrite; the final ZIP retained all six metadata links and the exact release tag. Native Windows Chocolatey publication was not run.
+- Assumption: use the GitHub Discussions forum for mailingListUrl because it is enabled; retain exact release-tag notes in generated packages and a durable releases index in the source manifest.
+- Prior tasks below retain their recorded status.
+
 # Security dependency remediation (2026-11-05)
 
 - Updated go-jose v4 to 4.1.7, regenerated its vendored sources, and preserved the existing unrelated vendor compatibility patches.
