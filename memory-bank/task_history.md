@@ -769,3 +769,10 @@ Updated go-jose v4 from 4.1.4 to 4.1.7 and its vendored code. Preserved the exis
   one project-channel link after Discord confirms every changelog message.
 - Documented both Actions secrets in the release-channel guide. Matrix continues
   to use its independent release announcement step.
+
+## 2026-11-10 - Guard the Chocolatey release payload size
+
+- Audit the actual Windows amd64 ZIP rather than the separate EXE; v0.1.95 is 9,559,078 bytes and does not need repacking.
+- Fail publication above 190,000,000 bytes, before preparing or submitting a package. Preserve metadata, checksum generation and installer behavior.
+- The actual Bash guard passed both below/at-limit acceptance cases and the one-byte-over rejection case. Workflow parsing, release-note validation and the targeted security scan passed.
+- Push the focused fix to GitHub main. Preserve the divergent GitLab destination without forcing its history.

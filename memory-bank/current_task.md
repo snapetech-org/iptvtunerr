@@ -1,3 +1,11 @@
+# Chocolatey payload budget (2026-11-10)
+
+- Goal and scope: prevent oversized Windows release downloads from being submitted to Chocolatey without changing the installer or application runtime.
+- Status: the Windows amd64 ZIP publisher enforces a 190,000,000-byte limit before package preparation. The observed v0.1.95 payload is 9,559,078 bytes and needs no shrink.
+- Verification: the actual Bash guard accepts 189,999,999 and 190,000,000 bytes and rejects 190,000,001 bytes. Workflow YAML and staged release-note validation pass; the commit-time security scan reports no findings.
+- Delivery: GitHub main contains the fix. The additional GitLab push destination has diverged by an independent donation-links commit; no force-push or unrelated merge was attempted.
+- Next step: no runtime rollout is required; future Chocolatey submissions use the guard. Earlier task records below retain their status.
+
 # Discord release announcements (2026-11-10)
 
 - Route IPTV Tunerr's curated release notes through #changelogs and send one
