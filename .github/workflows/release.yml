@@ -141,7 +141,8 @@ jobs:
     needs: [release]
     runs-on: ${{ fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","linux","x64","ng-shared-main-iptvtunerr","ng-main-run-{0}","gha-{0}-announce-discord"]}}', github.run_id)) }}
     env:
-      DISCORD_RELEASE_WEBHOOK: ${{ secrets.DISCORD_RELEASE_WEBHOOK }}
+      DISCORD_PROJECT_WEBHOOK: ${{ secrets.DISCORD_RELEASE_WEBHOOK }}
+      DISCORD_CHANGELOG_WEBHOOK: ${{ secrets.DISCORD_CHANGELOG_WEBHOOK }}
       RELEASE_URL: ${{ github.server_url }}/${{ github.repository }}/releases/tag/${{ inputs.release_tag }}
       RELEASE_BODY: ${{ needs.release.outputs.release_body }}
       VERSION: ${{ inputs.release_tag }}
@@ -161,66 +162,29 @@ jobs:
         run: |
           set -euo pipefail
 
-          test -n "$DISCORD_RELEASE_WEBHOOK" || {
+          test -n "$DISCORD_PROJECT_WEBHOOK" || {
             echo 'DISCORD_RELEASE_WEBHOOK is required to complete a release.' >&2
             exit 1
           }
 
-          summary_file="$RUNNER_TEMP/iptvtunerr-discord-release-summary.md"
-          chunks_file="$RUNNER_TEMP/iptvtunerr-discord-release-chunks.json"
-          printf '%s' "$RELEASE_BODY" | node scripts/discord-release-notes.mjs --format > "$summary_file"
-          node scripts/discord-release-notes.mjs --split < "$summary_file" > "$chunks_file"
-          chunk_count="$(jq 'length' "$chunks_file")"
-          (( chunk_count > 0 )) || {
-            echo 'The generated release notes are empty.' >&2
-            exit 1
-          }
-
-          webhook_url="$DISCORD_RELEASE_WEBHOOK"
-          if [[ "$webhook_url" == *'?'* ]]; then
-            webhook_url+='&wait=true'
-          else
-            webhook_url+='?wait=true'
-          fi
-
-          for ((index = 0; index < chunk_count; index += 1)); do
-            description="$(jq -r --argjson index "$index" '.[$index]' "$chunks_file")"
-            number=$((index + 1))
-            title="IPTV Tunerr ${VERSION} release notes (${number}/${chunk_count})"
-            payload_file="$RUNNER_TEMP/iptvtunerr-discord-release-payload.json"
-            jq -n \
-              --arg title "$title" \
-              --arg url "$RELEASE_URL" \
-              --arg description "$description" \
-              --arg release_url "$RELEASE_URL" \
-              --argjson first "$index" \
-              '{
-                allowed_mentions: { parse: [] },
-                username: "IPTV Tunerr Releases",
-                embeds: [{
-                  title: $title,
-                  url: $url,
-                  description: $description,
-                  color: 5814783,
-                  footer: { text: "IPTV Tunerr release" },
-                  fields: (if $first == 0 then [
-                    { name: "Downloads & checksums", value: ("[View release assets and SHA256SUMS](" + $release_url + ")"), inline: false }
-                  ] else [] end)
-                }]
-              }' > "$payload_file"
-
-            response="$(curl --fail --silent --show-error \
-              -H 'Content-Type: application/json' \
-              -X POST \
-              --data @"$payload_file" \
-              "$webhook_url")"
-            jq -e --arg description "$description" \
-              '.id != null and .embeds[0].description == $description' \
-              <<< "$response" > /dev/null
-            if (( number < chunk_count )); then
-              sleep 1
-            fi
-          done
+          summary="$(printf '%s' "$RELEASE_BODY" | node scripts/discord-release-notes.mjs --format)"
+          jq -n \
+            --arg title "IPTV Tunerr ${VERSION} release notes" \
+            --arg url "$RELEASE_URL" \
+            --arg description "$summary" \
+            '{
+              username: "IPTV Tunerr Releases",
+              embeds: [{
+                title: $title,
+                url: $url,
+                description: $description,
+                color: 5814783,
+                footer: { text: "IPTV Tunerr release" },
+                fields: [
+                  { name: "Downloads & checksums", value: ("[View release assets and SHA256SUMS](" + $url + ")"), inline: false }
+                ]
+              }]
+            }' | python3 scripts/discord_release_route.py "IPTV Tunerr" "$VERSION" -
 
       - name: Post Matrix announcement
         if: always()

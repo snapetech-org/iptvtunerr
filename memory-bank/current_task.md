@@ -1,3 +1,11 @@
+# Discord release announcements (2026-11-10)
+
+- Route IPTV Tunerr's curated release notes through #changelogs and send one
+  verified jump link to the existing project channel. Keep Matrix delivery separate.
+- GitHub Actions uses `DISCORD_CHANGELOG_WEBHOOK` for the shared destination and
+  `DISCORD_RELEASE_WEBHOOK` for the existing project channel.
+- The shared secret must be available to this repository for the new route to run.
+
 # Chocolatey package metadata (2026-11-09)
 
 - Goal: address Chocolatey package-source, release-note and software-information guidance across the maintained packages; push each repository change directly to main as requested.

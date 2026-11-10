@@ -762,3 +762,10 @@ Updated go-jose v4 from 4.1.4 to 4.1.7 and its vendored code. Preserved the exis
 - Updated the release nuspec generator and packed-metadata check to retain the discussion URL alongside existing source, docs, issues and exact-tag release notes. Preserved the exact-nuspec ZIP replacement needed after NuGet packing.
 - Verification: XML, workflow YAML and embedded Bash syntax pass. The actual preparation script passed against a synthetic archive and a simulated NuGet metadata rewrite; the final ZIP retained all six metadata links, version and exact release-tag notes. Native Chocolatey packing and publication were not run.
 - Delivery: focused changes committed directly to main as requested; no runtime change or release tag required.
+
+## 2026-11-10 - Link IPTV Tunerr announcements to #changelogs
+
+- Routed curated Discord release notes through the shared webhook and added
+  one project-channel link after Discord confirms every changelog message.
+- Documented both Actions secrets in the release-channel guide. Matrix continues
+  to use its independent release announcement step.

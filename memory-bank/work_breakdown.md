@@ -180,3 +180,13 @@ Objective: resolve the full open Dependabot PR queue and current repository secu
 | SEC-PR-004 | Reconcile GitHub PR state after landing: verify alerts/checks, then close or merge every superseded PR with explicit comments. | Completed |
 
 Guardrail: keep this sweep limited to dependency, workflow, vulnerability, and required memory-bank/changelog updates. Do not change unrelated Plex/tuner behavior.
+
+## Discord changelog routing across repositories (2026-11-10)
+
+- QuestarrNG and ROMarrNG already post the full notes to #changelogs and link
+  there from their project channels.
+- The rollout covers slskdN, SlskR, TorrentNG, SeerrNG, BookshelfNG, ChaptarrNG,
+  Pleazyng, and IPTV Tunerr. Each repository keeps its project webhook and uses
+  the shared `DISCORD_CHANGELOG_WEBHOOK` secret to post the notes first.
+- IPTV Tunerr retains the curated What Changed sections and validates each
+  returned Discord message before posting its project link.

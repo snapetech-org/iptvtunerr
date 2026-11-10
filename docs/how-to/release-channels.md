@@ -119,11 +119,12 @@ and record the reason in `scripts/changelog-tag-exceptions.json`. Remove the
 exception when a changelog section is added.
 
 The GitHub Release body contains the curated notes, technical commit list,
-checksums, and install notes. Discord receives the categorized user-facing
-summary, with a direct link to the release page for assets and checksums. The
-workflow checks Discord's response for every chunk so no later notes are
-silently dropped. A missing webhook or rejected message fails the announcement
-job. Matrix receives the full release notes as bounded, HTML-escaped messages;
+checksums, and install notes. When the Actions secret `DISCORD_CHANGELOG_WEBHOOK`
+is configured, #changelogs receives every categorized user-facing note and a
+link to the release assets. The workflow verifies each message before using
+`DISCORD_RELEASE_WEBHOOK` to post a link in the IPTV Tunerr channel. Until the
+shared secret is configured, the existing channel receives the notes. A missing
+project webhook or rejected message fails the announcement job. Matrix receives the full release notes as bounded, HTML-escaped messages;
 same-day retry chunks are redacted before replacements are posted. Matrix
 announcement failures do not fail the release.
 
