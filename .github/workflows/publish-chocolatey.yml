@@ -104,6 +104,11 @@ jobs:
             "${auth_header[@]}" \
             "${url}"
           test -s "${download_dir}/${asset}"
+          archive_bytes="$(wc -c < "${download_dir}/${asset}")"
+          if (( archive_bytes > 190000000 )); then
+            echo "Chocolatey payload exceeds the 190000000-byte budget: ${asset} (${archive_bytes} bytes)." >&2
+            exit 1
+          fi
 
       - name: Prepare Chocolatey package
         id: pack
