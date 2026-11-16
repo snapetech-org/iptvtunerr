@@ -66,6 +66,7 @@ func negotiateContentEncoding(r *http.Request, offers []string) string {
 			bestOffer = offer
 		}
 	}
+
 	if bestQ == 0 {
 		bestOffer = ""
 	}
